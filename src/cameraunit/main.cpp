@@ -48,8 +48,12 @@ using namespace cv;
 
 FlyCaptureContext flycapture;
 FlyCaptureInfoEx flycaptureInfo;
+TriclopsContext triclops;
+
 char* szCalFile;
 unsigned long ulDevice = 0;
+
+unsigned char* rowIntColor = NULL;
 
 bool InitializeBumblebee()
 {
@@ -92,6 +96,9 @@ bool InitializeBumblebee()
     ::CopyFileA( szCalFile, oss.str().c_str(), FALSE );
     cout << " The data is stored to '" << oss.str() << "'" << endl;
 
+    // Create a Triclops context from the cameras calibration file
+    te = triclopsGetDefaultContextFromFile( &triclops, szCalFile );
+    _HANDLE_TRICLOPS_ERROR( "triclopsGetDefaultContextFromFile()", te );
 
     //
     // End the program
@@ -110,6 +117,81 @@ bool CloseBumblebee()
     cout << endl << "Camera" << ulDevice << " closed." << endl;
 
     return true;
+}
+
+void grabcolor( TriclopsInput* pDst )
+{
+    TriclopsError te;
+    FlyCaptureError fe;
+    
+    FlyCaptureImage flycaptureImage;
+   
+    // Grab an image from the camera
+    fe = flycaptureGrabImage2( flycapture, &flycaptureImage );
+    _HANDLE_FLYCAPTURE_ERROR( "flycaptureGrabImage()", fe );
+
+    // Extract information from the FlycaptureImage
+    int imageCols = flycaptureImage.iCols;
+    int imageRows = flycaptureImage.iRows;
+    int imageRowInc = flycaptureImage.iRowInc;
+    int iSideBySideImages = flycaptureImage.iNumImages;
+    unsigned long timeStampSeconds = flycaptureImage.timeStamp.ulSeconds;
+    unsigned long timeStampMicroSeconds = flycaptureImage.timeStamp.ulMicroSeconds;
+
+    // Create buffers for holding the color and mono images
+    if( rowIntColor == NULL ) {
+        rowIntColor = new unsigned char[ imageCols * imageRows * iSideBySideImages * 4 ];
+    }
+
+    // Create a temporary FlyCaptureImage for preparing the stereo image
+    FlyCaptureImage tempImage;
+    tempImage.pData = rowIntColor;
+
+    // Convert the pixel interleaved raw data to row interleaved format
+    fe = flycapturePrepareStereoImage( flycapture, flycaptureImage, NULL, &tempImage );
+    _HANDLE_FLYCAPTURE_ERROR( "flycapturePrepareStereoImage()", fe );
+
+    // Pointers to positions in the color buffer that correspond to the beginning
+    // of the red, green and blue sections
+    unsigned char* redColor = NULL;
+    unsigned char* greenColor = NULL;
+    unsigned char* blueColor = NULL;
+
+    redColor = rowIntColor;
+    if (flycaptureImage.iNumImages == 2)
+    {
+        greenColor = redColor + ( 4 * imageCols );
+        blueColor = redColor + ( 4 * imageCols );
+    }
+    if (flycaptureImage.iNumImages == 3)
+    {
+        greenColor = redColor + ( 4 * imageCols );
+        blueColor = redColor + ( 2 * 4 * imageCols );
+    }
+
+    // Use the row interleaved images to build up a packed TriclopsInput.
+    // A packed triclops input will contain a single image with 32 bpp.
+    te = triclopsBuildPackedTriclopsInput(
+        imageCols,
+        imageRows,
+        imageRowInc * 4,
+        timeStampSeconds,
+        timeStampMicroSeconds,
+        redColor,
+        pDst );
+    _HANDLE_TRICLOPS_ERROR( "triclopsBuildPackedTriclopsInput()", te );
+    
+   
+/*
+    // rectify the color image
+    te = triclopsRectifyPackedColorImage( triclops, 
+			       TriCam_REFERENCE, 
+			       &colorInput, 
+			       &colorImage );
+    _HANDLE_TRICLOPS_ERROR( "triclopsRectifyPackedColorImage()", te );
+
+    memcpy( pDst->data, colorImage.data, colorImage.rowinc * colorImage.nrows );
+*/
 }
 
 int main( int argc, char *argv[] )
@@ -169,28 +251,27 @@ int main( int argc, char *argv[] )
     // "DCAM Format 7"規格を用いた画像取得プロセスを開始
     FlyCapturePixelFormat pixelFormat = FLYCAPTURE_RAW16;
     unsigned int width = 1280, height = 960;
+    //unsigned int width = 640, height = 480;
     fe = flycaptureStartCustomImage( flycapture, 3, 0, 0, width, height, 100, pixelFormat );
     _HANDLE_FLYCAPTURE_ERROR( "flycaptureStart()", fe );
     cout << endl << "Capturing Started. The image size is " << width << "x" << height << endl;
 
-    FlyCaptureImage _fly_img;
-    cv::Mat img( width * 2, height, CV_8U );
-    FlyCaptureImage flycaptureImage;
+    //FlyCaptureImage _fly_img;
+    //Mat img( height, width * 2, CV_8U ), imgdisp( 480, 640 * 2, CV_8U );
+    TriclopsInput colorInput;
+    Mat img( height, width * 2, CV_8UC4 ), imgdisp( 240, 320 * 2, CV_8UC4 );
+    //FlyCaptureImage flycaptureImage;
     while( 1 ) {
-        // Grab an image from the camera
-        // 最新の画像を取得（この関数は画像取得可能になるまで待機する）
-        fe = flycaptureGrabImage2( flycapture, &flycaptureImage );
-        _HANDLE_FLYCAPTURE_ERROR( "flycaptureGrabImage()", fe );
+        grabcolor( &colorInput );
+        memcpy( img.data, colorInput.u.rgb32BitPacked.data, colorInput.rowinc * colorInput.nrows );
 
-        // Convert the pixel interleaved raw data to row interleaved format
-        // pixel interleaved形式である生データをrow interleaved形式に変換し，
-        // tempImageに格納。
-        // pixel interleaved形式:ピクセルごとに「左･右･左･右･･･」となっている。
-        // row interleaved形式:左右画像が並べられたもの。行ごとに「左･右･左･右･･･」となっている。
-        
-        _fly_img.pData = img.data;
-        fe = flycapturePrepareStereoImage( flycapture, flycaptureImage, &_fly_img, NULL );
-        _HANDLE_FLYCAPTURE_ERROR( "flycapturePrepareStereoImage()", fe );
+        resize( img, imgdisp, imgdisp.size(), 0, 0 );
+        imshow( "image", imgdisp );
+
+        char c = cvWaitKey( 1 );
+        if ( c == 27 ) {
+            break;
+        }
     }
 
 
@@ -200,6 +281,10 @@ int main( int argc, char *argv[] )
 
     // Close the camera
     CloseBumblebee();
+
+    if( rowIntColor ) {
+        delete [] rowIntColor;
+    }
 
     return 0;
 }

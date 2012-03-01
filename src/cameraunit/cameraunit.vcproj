@@ -61,10 +61,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="triclops.lib pgrflycapture.lib opencv_core231d.lib opencv_highgui231d.lib"
+				AdditionalDependencies="triclops.lib pgrflycapture.lib opencv_core231d.lib opencv_highgui231d.lib opencv_imgproc231d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)d.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;C:\Program Files\Point Grey Research\PGR FlyCapture\lib&quot;;&quot;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib&quot;;C:\opencv\build\x86\vc9\lib"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\Point Grey Research\PGR FlyCapture\lib&quot;;&quot;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib&quot;;C:\opencv\build\x86\vc8\lib\debug"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -138,9 +138,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="triclops.lib pgrflycapture.lib opencv_core231.lib opencv_highgui231.lib"
+				AdditionalDependencies="triclops.lib pgrflycapture.lib opencv_core231.lib opencv_highgui231.lib opencv_imgproc231.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;C:\Program Files\Point Grey Research\PGR FlyCapture\lib&quot;;&quot;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib&quot;;C:\opencv\build\x86\vc9\lib"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\Point Grey Research\PGR FlyCapture\lib&quot;;&quot;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib&quot;;C:\opencv\build\x86\vc8\lib\release"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
