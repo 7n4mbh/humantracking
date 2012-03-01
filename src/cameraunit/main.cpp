@@ -207,10 +207,10 @@ int main( int argc, char *argv[] )
     }
 
     //
-    // Change the camera parameters
+    // Change camera parameters
 
     cout << endl;
-    cout << "Changing the parameters..." << endl; 
+    cout << "Changing camera parameters..." << endl; 
 
     // Set the bus speed as high as possible.
     FlyCaptureBusSpeed bs1, bs2;
@@ -246,28 +246,47 @@ int main( int argc, char *argv[] )
 
     cout << endl << "Done." << endl;
 
+    //
+    // Change stereo parameters
+    cout << endl;
+    cout << "Changing stereo parameters..." << endl; 
+    
+    cout << endl << "Done." << endl;
+    
 
     // Start capturing
     // "DCAM Format 7"規格を用いた画像取得プロセスを開始
     FlyCapturePixelFormat pixelFormat = FLYCAPTURE_RAW16;
     unsigned int width = 1280, height = 960;
-    //unsigned int width = 640, height = 480;
     fe = flycaptureStartCustomImage( flycapture, 3, 0, 0, width, height, 100, pixelFormat );
     _HANDLE_FLYCAPTURE_ERROR( "flycaptureStart()", fe );
     cout << endl << "Capturing Started. The image size is " << width << "x" << height << endl;
 
-    //FlyCaptureImage _fly_img;
-    //Mat img( height, width * 2, CV_8U ), imgdisp( 480, 640 * 2, CV_8U );
     TriclopsInput colorInput;
     Mat img( height, width * 2, CV_8UC4 ), imgdisp( 240, 320 * 2, CV_8UC4 );
-    //FlyCaptureImage flycaptureImage;
+    DWORD t, tref;
+    int framecnt = 0;
     while( 1 ) {
+        if( framecnt == 0 ) {
+            tref = timeGetTime();
+        }
+
+        // Fetch an image
         grabcolor( &colorInput );
         memcpy( img.data, colorInput.u.rgb32BitPacked.data, colorInput.rowinc * colorInput.nrows );
+        ++framecnt;
 
         resize( img, imgdisp, imgdisp.size(), 0, 0 );
         imshow( "image", imgdisp );
 
+        // Calculate FPS.
+        t = timeGetTime();
+        if( t - tref >= 1000 ) {
+            cout << framecnt << endl;
+            framecnt = 0;
+        }
+
+        // Exit when ESC is hit.
         char c = cvWaitKey( 1 );
         if ( c == 27 ) {
             break;
