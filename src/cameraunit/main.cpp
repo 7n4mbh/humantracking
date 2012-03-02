@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <fstream>
 #include <stdio.h>
 
 #include "windows.h"
@@ -503,6 +504,64 @@ void execute()
     cout << endl << "Capturing stopped." << endl;
 }
 
+bool load_background()
+{
+    ifstream ifs;
+
+    ostringstream oss;
+    oss << "background" << flycaptureInfo.SerialNumber << ".dat";
+    ifs.open( oss.str().c_str(), ios::in | ios::binary );
+
+    if( !ifs ) {
+        return false;
+    }
+
+    int rowinc = (int)( img_background.step1() * img_background.elemSize1() );
+    ifs.read( (char*)img_background.data, img_background.rows * rowinc ); 
+
+    ifs.close();
+
+    return true;
+}
+
+bool save_background()
+{
+    ofstream ofs;
+
+    ostringstream oss;
+    oss << "background" << flycaptureInfo.SerialNumber << ".dat";
+
+    ofs.open( oss.str().c_str(), ios::out | ios::binary | ios::trunc );
+    if( !ofs ) {
+        cout << "Error occured in saving the background image." << endl;
+        return false;
+    }
+
+    int rowinc = (int)( img_background.step1() * img_background.elemSize1() );
+    ofs.write( (char*)img_background.data, img_background.rows * rowinc ); 
+
+    ofs.close();
+
+    return true;
+}
+
+void show_background()
+{
+    Mat img_display( height, width, CV_8U );
+    img_background.convertTo( img_display, CV_8U, 25.0, 0.0 );
+    imshow( "background image", img_display );  
+
+    while( 1 ) {
+        // Exit when ESC is hit.
+        char c = cvWaitKey( 10 );
+        if ( c == 27 ) {
+            break;
+        }
+    }
+
+    destroyWindow( "background image" );
+}
+
 void update_background( int nFrame )
 {
     FlyCaptureError fe;
@@ -516,7 +575,6 @@ void update_background( int nFrame )
     TriclopsInput triclopsInput;
     TriclopsImage16 depthImage16;
     Mat cnt( height, width, CV_8U );
-    Mat img_display( height, width, CV_8U );
     int framecnt = 0;
 
     for( int x = 0; x < img_background.cols; ++x ) {
@@ -567,19 +625,16 @@ void update_background( int nFrame )
             img_background.at<float>( y, x ) = img_background.at<float>( y, x ) / (float)(cnt.at<unsigned char>( y, x ));
         }
     }
-
-    img_background.convertTo( img_display, CV_8U, 25.0, 0.0 );
-    imshow( "background image", img_display );  
-
-    while( 1 ) {
-        // Exit when ESC is hit.
-        char c = cvWaitKey( 10 );
-        if ( c == 27 ) {
-            break;
-        }
+    
+    // Save the background image
+    if( save_background() ) {
+        cout << "Background image saved." << endl;
+    } else {
+        cout << "Saving background image failed." << endl;
     }
 
-    destroyWindow( "background image" );
+    // Show the background image
+    show_background();
 }
 
 int main( int argc, char *argv[] )
@@ -600,6 +655,14 @@ int main( int argc, char *argv[] )
         cout << "Parameters setting failed." << endl;
         exit( 1 );
     }
+
+    // Load a background image
+    cout << endl;
+    if( load_background() ) {
+        cout << "Background image loaded." << endl;
+    } else {
+        cout << "No background image loaded." << endl;
+    }
     
     //
     // Command Prompt
@@ -611,6 +674,8 @@ int main( int argc, char *argv[] )
             execute();
         } else if( strCmd == "update" ) {
             update_background( 20 );
+        } else if( strCmd == "background" ) {
+            show_background();
         } else if( strCmd == "quit" || strCmd == "exit" ) {
             break;
         } else {
