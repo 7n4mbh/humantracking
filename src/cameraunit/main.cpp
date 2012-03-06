@@ -4,7 +4,11 @@
 #include <fstream>
 #include <stdio.h>
 
+#if defined(WINDOWS) || defined(_WIN32) || defined(WIN32)
 #include "windows.h"
+#elif defined(linux) || defined(__linux__)
+#endif
+
 #include "triclops.h"
 #include "pgrflycapture.h"
 #include "pgrflycapturestereo.h"
