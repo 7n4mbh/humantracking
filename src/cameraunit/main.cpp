@@ -7,17 +7,30 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
-#include "FrameRateCounter.h"
+#if defined(WINDOWS) || defined(_WIN32)
+#define WINDOWS_OS
+#elif defined(linux) || defined(__linux__)
+#define LINUX_OS
+#endif
 
-#define _HANDLE_TRICLOPS_ERROR( description, error )	\
+#ifdef WINDOWS_OS
+#include "FrameRateCounter.h"
+#endif
+
+
+#ifdef LINUX_OS
+#include <sys/times.h>
+#endif
+
+#define _HANDLE_TRICLOPS_ERROR( description, error )    \
 { \
    if( error != TriclopsErrorOk ) \
    { \
       printf( \
-	 "*** Triclops Error '%s' at line %d :\n\t%s\n", \
-	 triclopsErrorToString( error ), \
-	 __LINE__, \
-	 description );	\
+     "*** Triclops Error '%s' at line %d :\n\t%s\n", \
+     triclopsErrorToString( error ), \
+     __LINE__, \
+     description ); \
       printf( "Press any key to exit...\n" ); \
       getchar(); \
       exit( 1 ); \
@@ -34,6 +47,7 @@ TriclopsContext triclops;
 
 int iMaxCols = 1280, iMaxRows = 960;
 int width = 512, height = 384;
+//int width = 320, height = 240 ;
 
 void PrintError( Error error )
 {
@@ -43,25 +57,25 @@ void PrintError( Error error )
 void PrintCameraInfo()
 {
     cout << endl;
-	cout << " Serial Number: " << camInfo.serialNumber << endl;
-	cout << " Camera model: " << camInfo.modelName << endl;
-	cout << " Color/Mono: ";
-	if( camInfo.isColorCamera ) {
-		cout << "Color" << endl;
-	} else {
-		cout << "Mono" << endl;
-	}
-	cout << " Vendor name: " << camInfo.vendorName << endl;
-	cout << " Sensor info: " << camInfo.sensorInfo << endl;
-	cout << " Sensor Resolution: " << camInfo.sensorResolution << endl;
-	cout << " Firmware Version: " << camInfo.firmwareVersion << endl;
-	cout << " Firmware Build Time: " << camInfo.firmwareBuildTime << endl;
-	cout << " Driver Name: " << camInfo.driverName << endl;
+    cout << " Serial Number: " << camInfo.serialNumber << endl;
+    cout << " Camera model: " << camInfo.modelName << endl;
+    cout << " Color/Mono: ";
+    if( camInfo.isColorCamera ) {
+        cout << "Color" << endl;
+    } else {
+        cout << "Mono" << endl;
+    }
+    cout << " Vendor name: " << camInfo.vendorName << endl;
+    cout << " Sensor info: " << camInfo.sensorInfo << endl;
+    cout << " Sensor Resolution: " << camInfo.sensorResolution << endl;
+    cout << " Firmware Version: " << camInfo.firmwareVersion << endl;
+    cout << " Firmware Build Time: " << camInfo.firmwareBuildTime << endl;
+    cout << " Driver Name: " << camInfo.driverName << endl;
 }
 
 bool InitializeBumblebee()
 {
-	Error err;
+    Error err;
     TriclopsError te;
 
     // Connect to a camera
@@ -70,7 +84,7 @@ bool InitializeBumblebee()
         PrintError( err );
         return false;
     }
-	cout << "Connected to a Camera." << endl;
+    cout << "Connected to a Camera." << endl;
 
     // Get and print the camera information
     err = bumblebee.GetCameraInfo( &camInfo );
@@ -78,15 +92,16 @@ bool InitializeBumblebee()
         PrintError( err );
         return false;
     }
-	PrintCameraInfo();
+    PrintCameraInfo();
 
     // Create a Triclops context from the cameras calibration file
     ostringstream oss;
     oss << "calibration" << camInfo.serialNumber << ".txt";
-	te = triclopsGetDefaultContextFromFile( &triclops, (char*)oss.str().c_str() );
+    cout << oss.str() << " Loaded." << endl;
+    te = triclopsGetDefaultContextFromFile( &triclops, (char*)oss.str().c_str() );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetDefaultContextFromFile()", te );
 
-	return true;
+    return true;
 }
 
 bool SetBumblebeeParameteres( int width, int height )
@@ -109,27 +124,27 @@ bool SetBumblebeeParameteres( int width, int height )
 
     // Use the center and right cameras for stereo processing.
     Property prop;
-	prop.type = PAN;
-	bumblebee.GetProperty( &prop );
-	cout << endl;
-	cout << " PAN(old): " << "valueA=" << prop.valueA << ", valueB=" << prop.valueB << ", autoManualMode=" << prop.autoManualMode << endl;
-	prop.valueA = 1;
-	prop.valueB = 0;
-	bumblebee.SetProperty( &prop );
-	bumblebee.GetProperty( &prop );
-	cout << " PAN(new): " << "valueA=" << prop.valueA << ", valueB=" << prop.valueB << ", autoManualMode=" << prop.autoManualMode << endl;
+    prop.type = PAN;
+    bumblebee.GetProperty( &prop );
+    cout << endl;
+    cout << " PAN(old): " << "valueA=" << prop.valueA << ", valueB=" << prop.valueB << ", autoManualMode=" << prop.autoManualMode << endl;
+    prop.valueA = 1;
+    prop.valueB = 0;
+    bumblebee.SetProperty( &prop );
+    bumblebee.GetProperty( &prop );
+    cout << " PAN(new): " << "valueA=" << prop.valueA << ", valueB=" << prop.valueB << ", autoManualMode=" << prop.autoManualMode << endl;
     cout << " Make sure valueA=1 (Use center and right cameras for stereo)." << endl;
 
-	// Set FPS 12.
-	prop.type = FRAME_RATE;
-	bumblebee.GetProperty( &prop );
-	cout << endl;
-	cout << " FRAME_RATE(old): " << "valueA=" << prop.valueA << ", valueB=" << prop.valueB << ", autoManualMode=" << prop.autoManualMode << endl;
-	//prop.valueA = 1;
-	//prop.valueB = 0;
-	//bumblebee.SetProperty( &prop );
-	//bumblebee.GetProperty( &prop );
-	//cout << " FRAME_RATE(new): " << "valueA=" << prop.valueA << ", valueB=" << prop.valueB << ", autoManualMode=" << prop.autoManualMode << endl;
+    // Set FPS 12.
+    prop.type = FRAME_RATE;
+    bumblebee.GetProperty( &prop );
+    cout << endl;
+    cout << " FRAME_RATE(old): " << "valueA=" << prop.valueA << ", valueB=" << prop.valueB << ", autoManualMode=" << prop.autoManualMode << endl;
+    //prop.valueA = 1;
+    //prop.valueB = 0;
+    //bumblebee.SetProperty( &prop );
+    //bumblebee.GetProperty( &prop );
+    //cout << " FRAME_RATE(new): " << "valueA=" << prop.valueA << ", valueB=" << prop.valueB << ", autoManualMode=" << prop.autoManualMode << endl;
 
 
     cout << endl << "Done." << endl;
@@ -170,7 +185,7 @@ bool SetBumblebeeParameteres( int width, int height )
     _HANDLE_TRICLOPS_ERROR( "triclopsGetDisparity()", te );   
     cout << endl;
     cout << " Disparity range(old): " << minDisparity << " - " << maxDisparity << endl;
-    te = triclopsSetDisparity( triclops, 0, 100 );
+    te = triclopsSetDisparity( triclops, 5, 60 );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetDisparity()", te );   
     te = triclopsGetDisparity( triclops, &minDisparity, &maxDisparity );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetDisparity()", te );   
@@ -222,6 +237,20 @@ bool SetBumblebeeParameteres( int width, int height )
     _HANDLE_TRICLOPS_ERROR( "triclopsGetSubpixelInterpolation()", te );
     cout << " SubpixelInterpolation(new): " << on << endl;
 
+    // With Linux, Set # of thread to one in order to avoid a segmentation 
+    // falut at triclopsStereo(), which seems a bug in the triclopsSDK.
+#ifdef LINUX_OS
+    int maxThreadCount;
+    te = triclopsGetMaxThreadCount( triclops, &maxThreadCount );
+    _HANDLE_TRICLOPS_ERROR( "triclopsGetMaxThreadCount()", te );
+    cout << " The maximum number of threads(old): " << maxThreadCount << endl;
+    te = triclopsSetMaxThreadCount( triclops, 1 );
+    _HANDLE_TRICLOPS_ERROR( "triclopsSetMaxThreadCount()", te );
+    te = triclopsGetMaxThreadCount( triclops, &maxThreadCount );
+    _HANDLE_TRICLOPS_ERROR( "triclopsGetMaxThreadCount()", te );
+    cout << " The maximum number of threads(new): " << maxThreadCount << endl;
+#endif
+
     cout << endl << "Done." << endl;
 
     return true;
@@ -229,9 +258,9 @@ bool SetBumblebeeParameteres( int width, int height )
 
 bool CloseBumblebee()
 {
-	Error err;
+    Error err;
 
-	err = bumblebee.Disconnect();
+    err = bumblebee.Disconnect();
     if( err != PGRERROR_OK ) {
         PrintError( err );
         return false;
@@ -244,30 +273,19 @@ bool CloseBumblebee()
 
 void PrintImageInformation( Image& image )
 {
-	cout << "# of cols = " << image.GetCols()
-		 << ", # of rows = " << image.GetRows()
-		 << ", # of bits/pixel = " << image.GetBitsPerPixel()
-		 << ", stride = " << image.GetStride()
-		 << ", data size = " << image.GetDataSize()
-		 << ", Pixel format = " << image.GetPixelFormat()// << "(" << PIXEL_FORMAT_RAW16 << ")"
-		 << ", BayerTileFormat = " << image.GetBayerTileFormat();// << "(" << GBRG << ")" 
+    cout << "# of cols = " << image.GetCols()
+         << ", # of rows = " << image.GetRows()
+         << ", # of bits/pixel = " << image.GetBitsPerPixel()
+         << ", stride = " << image.GetStride()
+         << ", data size = " << image.GetDataSize()
+         << ", Pixel format = " << image.GetPixelFormat()// << "(" << PIXEL_FORMAT_RAW16 << ")"
+         << ", BayerTileFormat = " << image.GetBayerTileFormat();// << "(" << GBRG << ")" 
 }
 
 void stereo( TriclopsImage16* pDst/*Mat* pDst*/, TriclopsInput& triclopsInput )
 {
     TriclopsError te;
-/*
-    TriclopsPackedColorImage  colorImage;
 
-    // rectify the color image
-    te = triclopsRectifyPackedColorImage( triclops, 
-			       TriCam_REFERENCE, 
-			       &colorInput, 
-			       &colorImage );
-    _HANDLE_TRICLOPS_ERROR( "triclopsRectifyPackedColorImage()", te );
-
-    //memcpy( pDst->data, colorImage.data, colorImage.rowinc * colorImage.nrows );
-*/
     // Preprocessing the image
     te = triclopsRectify( triclops, &triclopsInput );
     _HANDLE_TRICLOPS_ERROR( "triclopsRectify()", te );
@@ -282,163 +300,154 @@ void stereo( TriclopsImage16* pDst/*Mat* pDst*/, TriclopsInput& triclopsInput )
                 TriCam_REFERENCE, 
                 pDst );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetImage16()", te );
-
-	//TriclopsImage tmp;
-	//te = triclopsGetImage( triclops, TriImg_RECTIFIED, TriCam_REFERENCE, &tmp );
-	//_HANDLE_TRICLOPS_ERROR( "triclopsGetImage()", te );
-
-	//memcpy( pDst->data, tmp.data, tmp.nrows * tmp.rowinc );
 }
 
 void execute()
 {
-	Error err;
+    Error err;
 
-	// Configure Format7
-	Format7ImageSettings imageSettings;
-	imageSettings.width = iMaxCols;
-	imageSettings.height = iMaxRows;
-	imageSettings.offsetX = 0;
-	imageSettings.offsetY = 0;
-	imageSettings.mode = MODE_3;
-	imageSettings.pixelFormat= PIXEL_FORMAT_RAW16;
-	err = bumblebee.SetFormat7Configuration( &imageSettings, 100.0f );
+    // Configure Format7
+    Format7ImageSettings imageSettings;
+    imageSettings.width = iMaxCols;
+    imageSettings.height = iMaxRows;
+    imageSettings.offsetX = 0;
+    imageSettings.offsetY = 0;
+    imageSettings.mode = MODE_3;
+    imageSettings.pixelFormat= PIXEL_FORMAT_RAW16;
+    err = bumblebee.SetFormat7Configuration( &imageSettings, 100.0f );
     if( err != PGRERROR_OK ) {
         PrintError( err );
         exit( 1 );
     }
 
     // Start capturing images
-	err = bumblebee.StartCapture();
+    err = bumblebee.StartCapture();
     if( err != PGRERROR_OK ) {
         PrintError( err );
         exit( 1 );
     }
 
-	FrameRateCounter framerate;
-	framerate.SetFrameRate( 0.0 );
+#ifdef WINDOWS_OS
+    FrameRateCounter framerate;
+    framerate.SetFrameRate( 0.0 );
+#endif
 
-	Image rawImage;
-	unsigned char* buffer = new unsigned char[ iMaxCols * 2 * iMaxRows ];
-	Image deinterlacedImage( iMaxRows, iMaxCols * 2, iMaxCols * 2, buffer, iMaxRows * iMaxCols * 2, PIXEL_FORMAT_RAW8, GBRG );
-	Mat img( iMaxRows, iMaxCols * 2, CV_8UC4 );
-	Mat img_display( height, width, CV_8U );
-	//Mat img_display( height, width * 2, CV_8UC4 );
-	Image convertedImage( img.data, 4 * iMaxCols * 2 * iMaxRows );//img.rows() * img.cols() * 3 );
-	TriclopsImage16 depthImage16;
-	Mat img_disparity( height, width, CV_32F );
-	while( true ) {
+    Image rawImage;
+    unsigned char* buffer = new unsigned char[ iMaxCols * 2 * iMaxRows ];
+    Image deinterlacedImage( iMaxRows, iMaxCols * 2, iMaxCols * 2, buffer, iMaxRows * iMaxCols * 2, PIXEL_FORMAT_RAW8, GBRG );
+    //Mat img( iMaxRows, iMaxCols * 2, CV_8UC4 );
+    Mat img_display( height, width, CV_8U );
+    //Mat img_display2( height, width * 2, CV_8UC4 );
+    //Image convertedImage( img.data, 4 * iMaxCols * 2 * iMaxRows );//img.rows() * img.cols() * 3 );
+    TriclopsImage16 depthImage16;
+    Mat img_disparity( height, width, CV_32F );
+    while( true ) {
         // Exit when ESC is hit.
         char c = cvWaitKey( 1 );
         if ( c == 27 ) {
             break;
         }
 
-		// Retrieve an image
+        // Retrieve an image
         err = bumblebee.RetrieveBuffer( &rawImage );
         if( err != PGRERROR_OK ) {
             PrintError( err );
             continue;
         }
-		framerate.NewFrame();
-		cout << "Frame Rate: " << framerate.GetFrameRate() << endl;
-		//cout << "Raw image: ";
-		//PrintImageInformation( rawImage );
-		//cout << endl;
+#ifdef WINDOWS_OS
+        framerate.NewFrame();
+        cout << "Frame Rate: " << framerate.GetFrameRate() << endl;
+#endif
+        //cout << "Raw image: ";
+        //PrintImageInformation( rawImage );
+        //cout << endl;
 
-		// de-interlace
-		// ## Should be optimized for faster processing
-		for( int x = 0; x < iMaxCols; ++x ) {
-			for( int y = 0; y < iMaxRows; ++y ) {
-				const unsigned char* data = rawImage.GetData();
+        // de-interlace
+        // ## Should be optimized for faster processing
+        for( int x = 0; x < iMaxCols; ++x ) {
+            for( int y = 0; y < iMaxRows; ++y ) {
+                const unsigned char* data = rawImage.GetData();
 /*
-				// left
-				buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
-				// right
-				buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
+                // left
+                buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
+                // right
+                buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
 */
-				// left
-				buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
-				// right
-				buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
-			}
-		}
 
-        // Create a converted image
-        //Image convertedImage;
+                // left
+                buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
+                // right
+                buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
 
-        // Convert the raw image
-		err = deinterlacedImage.Convert( PIXEL_FORMAT_BGRU, &convertedImage );
-        if( err != PGRERROR_OK ) {
-            PrintError( err );
-            exit( 1 );
-        }  
+            }
+        }
 
-		//cout << "Converted image: ";
-		//PrintImageInformation( convertedImage );
-		//cout << endl;
+        // debug code for showing convertedImage
+        //{
+        //    // Create a converted image
+        //    err = deinterlacedImage.Convert( PIXEL_FORMAT_BGRU, &convertedImage );
+        //    if( err != PGRERROR_OK ) {
+        //        PrintError( err );
+        //        exit( 1 );
+        //    }  
 
-		//resize( img, img_display, img_display.size(), 0, 0 );
-		//imshow( "image", img_display );
+        //    //cout << "Converted image: ";
+        //    //PrintImageInformation( convertedImage );
+        //    //cout << endl;
 
-		// Stereo Processing
-		TriclopsError te;
-		TriclopsInput triclopsInput;
-		//triclopsInput.ncols = iMaxCols;
-		//triclopsInput.nrows = iMaxRows;
-		//triclopsInput.rowinc = iMaxCols * 2 * 4;
-		//triclopsInput.inputType = TriInp_RGB_32BIT_PACKED;
-		//triclopsInput.u.rgb32BitPacked.data = convertedImage.GetData();
+        //    memcpy( img.data, convertedImage.GetData(), convertedImage.GetDataSize() );
+        //    resize( img, img_display2, img_display2.size(), 0, 0 );
+        //    imshow( "image", img_display2 );
+        //}
 
-		int imageCols = iMaxCols;//convertedImage.GetCols();// flycaptureImage.iCols;
-		int imageRows = iMaxRows;//convertedImage.GetRows();// flycaptureImage.iRows;
-		int imageRowInc = rawImage.GetStride();// flycaptureImage.iRowInc;
-		int iSideBySideImages = 2;//flycaptureImage.iNumImages;
-		unsigned long timeStampSeconds = convertedImage.GetTimeStamp().seconds;// flycaptureImage.timeStamp.ulSeconds;
-		unsigned long timeStampMicroSeconds = convertedImage.GetTimeStamp().microSeconds;//flycaptureImage.timeStamp.ulMicroSeconds;
+        // Stereo Processing
+        TriclopsError te;
+        TriclopsInput triclopsInput;
 
-		// Pointers to positions in the mono buffer that correspond to the beginning
-		// of the red, green and blue sections
-		unsigned char* redMono = NULL;
-		unsigned char* greenMono = NULL;
-		unsigned char* blueMono = NULL;
+        int imageCols = iMaxCols;
+        int imageRows = iMaxRows;
+        int imageRowInc = rawImage.GetStride();
+        unsigned long timeStampSeconds = rawImage.GetTimeStamp().seconds;
+        unsigned long timeStampMicroSeconds = rawImage.GetTimeStamp().microSeconds;
 
-		redMono = deinterlacedImage.GetData();//rowIntMono;
-		//if (flycaptureImage.iNumImages == 2)
-		//{
-		   greenMono = redMono + imageCols;
-		   blueMono = redMono + imageCols;
-		//}
-		//if (flycaptureImage.iNumImages == 3)
-		//{
-		//   greenMono = redMono + imageCols;
-		//   blueMono = redMono + ( 2 * imageCols );
-		//}
+        // Pointers to positions in the mono buffer that correspond to the beginning
+        // of the red, green and blue sections
+        unsigned char* redMono = NULL;
+        unsigned char* greenMono = NULL;
+        unsigned char* blueMono = NULL;
 
-		// Use the row interleaved images to build up an RGB TriclopsInput.  
-		// An RGB triclops input will contain the 3 raw images (1 from each camera).
-		te = triclopsBuildRGBTriclopsInput(
-		  imageCols, 
-		  imageRows, 
-		  imageRowInc,  
-		  timeStampSeconds, 
-		  timeStampMicroSeconds, 
-		  redMono, 
-		  greenMono, 
-		  blueMono, 
-		  &triclopsInput );
-		_HANDLE_TRICLOPS_ERROR( "triclopsBuildRGBTriclopsInput()", te );
+        redMono = deinterlacedImage.GetData();
+        greenMono = redMono + imageCols;
+        blueMono = redMono + imageCols;
 
-		//stereo( &img_display, triclopsInput );
-		stereo( &depthImage16, triclopsInput );
+        // Use the row interleaved images to build up an RGB TriclopsInput.  
+        // An RGB triclops input will contain the 3 raw images (1 from each camera).
+        te = triclopsBuildRGBTriclopsInput(
+          imageCols, 
+          imageRows, 
+          imageRowInc,  
+          timeStampSeconds, 
+          timeStampMicroSeconds, 
+          redMono, 
+          greenMono, 
+          blueMono, 
+          &triclopsInput );
+        _HANDLE_TRICLOPS_ERROR( "triclopsBuildRGBTriclopsInput()", te );
+
+        clock_t t = clock();
+        stereo( &depthImage16, triclopsInput );
+        cout << (double)( clock() - t ) / (double)CLOCKS_PER_SEC << "[sec]" << endl;
+        cout << "done." << endl << flush;
 
         unsigned short disparity;
         float xx, yy, zz;
         
         // （OpenMPなどで高速化の余地あり）
+        // zzの代入が、zzを表示する行を入れないとなぜか成功しない（真っ黒の画面が表示される）。
+        // debugビルドではちゃんと表示されるので最適化の問題か？
         for( int x = 0; x < depthImage16.ncols; x++ ) {
             for( int y = 0; y < depthImage16.nrows; y++ ) {
-                disparity = *(unsigned short*)((BYTE*)depthImage16.data + depthImage16.rowinc * y + x * 2 );
+                disparity = *(unsigned short*)((unsigned char*)depthImage16.data + depthImage16.rowinc * y + x * 2 );
                 triclopsRCD16ToXYZ( triclops, y, x, disparity, &xx, &yy, &zz );
                 if( disparity >= 0xff00 ) {
                     zz = 0.0f;
@@ -446,19 +455,32 @@ void execute()
                     yy = 0.0f;
                 }
                 img_disparity.at<float>( y, x ) = zz;
+                img_display.at<unsigned char>( y, x ) = (unsigned char)( 25.0f * zz );
+                if( x == 100 && y == 100 ) {
+                    cout << zz << ", " << 25.0f * zz << ", " << (int)( (25.0f * zz) ) << endl;//", ";
+                }
             }
         }
 
-        img_disparity.convertTo( img_display, CV_8U, 25.0, 0.0 );
-        imshow( "image", img_display );
-		//cout << endl;
 
-	}
+        //TriclopsImage3d* pImage3d;
+        //te = triclopsCreateImage3d( triclops, &pImage3d );
+        //te = triclopsExtractImage3d( triclops, pImage3d );
+        //for( int x = 0; x < pImage3d->ncols; ++x ) {
+        //  for( int y = 0; y < pImage3d->nrows; ++y ) {
+        //      img_disparity.at<float>( y, x ) = pImage3d->points[ x + y * pImage3d->ncols ].point[ 2 ];
+        //  }
+        //}
+        //triclopsDestroyImage3d( &pImage3d );
 
-	err = bumblebee.StopCapture();
-	destroyWindow( "image" );
 
-	delete [] buffer;
+        imshow( "Disparity", img_display );
+    }
+
+    err = bumblebee.StopCapture();
+    destroyWindow( "Disparity" );
+
+    delete [] buffer;
 }
 
 int main( int argc, char *argv[] )
@@ -472,10 +494,10 @@ int main( int argc, char *argv[] )
         exit( 1 );
     }
 
-	SetBumblebeeParameteres( width, height );
+    SetBumblebeeParameteres( width, height );
 
-	FC2Config config; // debug
-	bumblebee.GetConfiguration( &config ); // debug
+    FC2Config config; // debug
+    bumblebee.GetConfiguration( &config ); // debug
 
     //
     // Command Prompt
@@ -496,8 +518,8 @@ int main( int argc, char *argv[] )
         }
     }
 
-	// Close Bumblebee
+    // Close Bumblebee
     CloseBumblebee();
 
-	return 0;
+    return 0;
 }
