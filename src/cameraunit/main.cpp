@@ -8,18 +8,6 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "f2c.h"
-#include "blaswrap.h"
-#include "clapack.h"
-
-#ifdef __cplusplus
-}
-#endif
-
 #if defined(WINDOWS) || defined(_WIN32)
 #define WINDOWS_OS
 #elif defined(linux) || defined(__linux__)
@@ -62,6 +50,7 @@ int iMaxCols = 1280, iMaxRows = 960;
 int stereo_width = 512, stereo_height = 384;
 //int width = 320, height = 240 ;
 Mat img_background( stereo_height, stereo_width, CV_32F );
+Mat H( 3, 4, CV_32F );
 
 void PrintError( Error error )
 {
@@ -347,15 +336,19 @@ void execute()
     framerate.SetFrameRate( 0.0 );
 #endif
 
+    const float roi_width = 4.0f, roi_height = 4.0f;
+    const float scale_m2px = 20.0f;
+    
     Image rawImage;
     unsigned char* buffer = new unsigned char[ iMaxCols * 2 * iMaxRows ];
     Image deinterlacedImage( iMaxRows, iMaxCols * 2, iMaxCols * 2, buffer, iMaxRows * iMaxCols * 2, PIXEL_FORMAT_RAW8, GBRG );
     //Mat img( iMaxRows, iMaxCols * 2, CV_8UC4 );
     Mat img_display( height, width, CV_8U );
-    //Mat img_display2( height, width * 2, CV_8UC4 );
+    Mat img_occupancy( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
+    Mat img_display2( (int)( scale_m2px * roi_height ) * 10, (int)( scale_m2px * roi_width ) * 10, CV_8U );
     //Image convertedImage( img.data, 4 * iMaxCols * 2 * iMaxRows );//img.rows() * img.cols() * 3 );
     TriclopsImage16 depthImage16;
-    Mat img_disparity( height, width, CV_32F );
+    Mat img_depth( height, width, CV_32F );
     while( true ) {
         // Exit when ESC is hit.
         char c = cvWaitKey( 1 );
@@ -469,7 +462,7 @@ void execute()
                     xx = 0.0f;
                     yy = 0.0f;
                 }
-                img_disparity.at<float>( y, x ) = zz;
+                img_depth.at<float>( y, x ) = zz;
                 //img_display.at<unsigned char>( y, x ) = (unsigned char)( 25.0f * zz );
                 if( x == 100 && y == 100 ) {
                     cout << zz << ", " << 25.0f * zz << ", " << (int)( (25.0f * zz) ) << endl;//", ";
@@ -483,27 +476,92 @@ void execute()
         //te = triclopsExtractImage3d( triclops, pImage3d );
         //for( int x = 0; x < pImage3d->ncols; ++x ) {
         //  for( int y = 0; y < pImage3d->nrows; ++y ) {
-        //      img_disparity.at<float>( y, x ) = pImage3d->points[ x + y * pImage3d->ncols ].point[ 2 ];
+        //      img_depth.at<float>( y, x ) = pImage3d->points[ x + y * pImage3d->ncols ].point[ 2 ];
         //  }
         //}
         //triclopsDestroyImage3d( &pImage3d );
 
         // background subtraction（ベクトル計算で高速化の余地あり）
-        for( int x = 0; x < img_disparity.cols; ++x ) {
-            for( int y  = 0; y < img_disparity.rows; ++y ) {
-                if( abs( img_disparity.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
-                    img_disparity.at<float>( y, x ) = 0.0f;
+        vector<Point3f> point_foreground;
+        Mat xvec( 4, 1, CV_32F );
+        Mat point_planview( 3, 1, CV_32F );
+        for( int x = 0; x < img_depth.cols; ++x ) {
+            for( int y  = 0; y < img_depth.rows; ++y ) {
+                if( abs( img_depth.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
+                    img_depth.at<float>( y, x ) = 0.0f;
+                } else {
+                    disparity = *(unsigned short*)((unsigned char*)depthImage16.data + depthImage16.rowinc * y + x * 2 );
+                    if( disparity < 0xff00 ) {
+                        triclopsRCD16ToXYZ( triclops, y, x, disparity, &xx, &yy, &zz );
+                        xvec.at<float>( 0, 0 ) = xx; xvec.at<float>( 1, 0 ) = yy; xvec.at<float>( 2, 0 ) = zz; xvec.at<float>( 3, 0 ) = 1.0;
+                        point_planview =  H * xvec ;
+                        point_foreground.push_back( Point3f( point_planview.at<float>( 0, 0 ), point_planview.at<float>( 1, 0 ), point_planview.at<float>( 2, 0 ) ) );
+                    }                    
                 }
             }
         }
 
-        img_disparity.convertTo( img_display, CV_8U, 25.0, 0.0 );
+        // debug code
+        if( !point_foreground.empty() ) {
+            Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+            for( vector<Point3f>::iterator it = point_foreground.begin(); it != point_foreground.end(); ++it ) {
+                int row = (int)( scale_m2px * ( it->x + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( it->y + roi_width / 2.0f ) );
+                if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
+                    occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
+                }
+            }
+            for( int row = 0; row < occupancy.rows; ++row ) {
+                for( int col = 0; col < occupancy.cols; ++col ) {
+                    if( occupancy.at<unsigned short>( row, col ) < 100 ) {
+                        occupancy.at<unsigned short>( row, col ) = 0;
+                    }
+                }
+            }
+            occupancy.convertTo( img_occupancy, CV_8U );
+            resize( img_occupancy, img_display2, img_display2.size() );
+            imshow( "Occupancy Map", img_display2 );
+
+            //{
+            //    int hbins = 255, sbins = 255;
+            //    int histSize[] = { hbins, sbins };
+            //    float hranges[] = { 0, 255 };
+            //    float sranges[] = { 0, 255 };
+            //    const float* ranges[] = { hranges, sranges };
+            //    MatND hist;
+            //    int channels [] = { 0 };
+            //    calcHist( &img_occupancy, 1, channels, Mat(), hist, 2, histSize, ranges, true, false );
+
+            //    double maxVal=0;
+            //    minMaxLoc(hist, 0, &maxVal, 0, 0);
+
+            //    int scale = 10;
+            //    Mat histImg = Mat::zeros(sbins*scale, hbins*10, CV_8UC3);
+
+            //    for( int h = 0; h < hbins; h++ ) {
+            //        for( int s = 0; s < sbins; s++ )
+            //        {
+            //            float binVal = hist.at<float>(h, s);
+            //            int intensity = cvRound(binVal*255/maxVal);
+            //            rectangle( histImg, Point(h*scale, s*scale),
+            //                        Point( (h+1)*scale - 1, (s+1)*scale - 1),
+            //                        Scalar::all(intensity),
+            //                        CV_FILLED );
+            //        }
+            //     }
+
+            //     imshow( "histogram", histImg );
+            //}
+
+        }
+
+        img_depth.convertTo( img_display, CV_8U, 25.0, 0.0 );
 
         imshow( "Disparity", img_display );
     }
 
     err = bumblebee.StopCapture();
     destroyWindow( "Disparity" );
+    destroyWindow( "Occupancy Map" );
 
     delete [] buffer;
 }
@@ -544,7 +602,7 @@ void calibration()
     Mat img_display2( height, width, CV_8U );
     //Image convertedImage( img.data, 4 * iMaxCols * 2 * iMaxRows );//img.rows() * img.cols() * 3 );
     TriclopsImage16 depthImage16;
-    Mat img_disparity( height, width, CV_32F );
+    Mat img_depth( height, width, CV_32F );
 
     // Retrieve an image
     err = bumblebee.RetrieveBuffer( &rawImage );
@@ -649,7 +707,7 @@ void calibration()
                 xx = 0.0f;
                 yy = 0.0f;
             }
-            img_disparity.at<float>( y, x ) = zz;
+            img_depth.at<float>( y, x ) = zz;
             img_display.at<unsigned char>( y, x ) = (unsigned char)( 25.0f * zz );
             if( x == 100 && y == 100 ) {
                 cout << zz << ", " << 25.0f * zz << ", " << (int)( (25.0f * zz) ) << endl;//", ";
@@ -694,7 +752,7 @@ void calibration()
         //Mat ref_mat( 3, width_pattern * height_pattern, CV_32F ), pos_mat( 3, width_pattern * height_pattern, CV_32F );
         //Mat ref_mat( width_pattern * height_pattern, 3, CV_32F ), pos_mat( width_pattern * height_pattern, 3, CV_32F );
         Mat ref_mat( width_pattern * height_pattern, 1, CV_32FC3 ), pos_mat( width_pattern * height_pattern, 1, CV_32FC3 );
-        Mat H;
+
         //vector<Point3f> inliers( width_pattern * height_pattern );
         //vector<int> inliers( width_pattern * height_pattern );
         Mat inliers;
@@ -1161,7 +1219,7 @@ void capture()
     Mat img_display2( height, width, CV_8U );
     //Image convertedImage( img.data, 4 * iMaxCols * 2 * iMaxRows );//img.rows() * img.cols() * 3 );
     TriclopsImage16 depthImage16;
-    Mat img_disparity( height, width, CV_32F );
+    Mat img_depth( height, width, CV_32F );
 
     // Retrieve an image
     err = bumblebee.RetrieveBuffer( &rawImage );
@@ -1298,6 +1356,12 @@ int main( int argc, char *argv[] )
     } else {
         cout << "No background image loaded." << endl;
     }
+
+
+    // Load extrinsic parameters
+        H.at<float>( 0, 0 ) = 0.556880; H.at<float>( 0, 1 ) = -0.326309; H.at<float>( 0, 2 ) = 0.763811; H.at<float>( 0, 3 ) = -1.818401435;
+        H.at<float>( 1, 0 ) = -0.829754; H.at<float>( 1, 1 ) = -0.259884; H.at<float>( 1, 2 ) = 0.493932; H.at<float>( 1, 3 ) = -1.335204279;
+        H.at<float>( 2, 0 ) = 0.037327; H.at<float>( 2, 1 ) = -0.908836; H.at<float>( 2, 2 ) = -0.415480; H.at<float>( 2, 3 ) = 2.237207354;
 
     //
     // Command Prompt
