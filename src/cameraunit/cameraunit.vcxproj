@@ -118,7 +118,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\include;C:\Program Files\opencv\build\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\include;C:\Program Files\opencv\build\include;C:\Program Files\zlib</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -128,9 +128,9 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>triclops.lib;FlyCapture2.lib;opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>triclops.lib;FlyCapture2.lib;opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib;winmm.lib;zlibd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName)d.exe</OutputFile>
-      <AdditionalLibraryDirectories>C:\Program Files\Point Grey Research\FlyCapture2\lib64;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib64;C:\Program Files\opencv\build\lib\Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files\Point Grey Research\FlyCapture2\lib64;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib64;C:\Program Files\opencv\build\lib\Debug;C:\Program Files\zlib\build\Debug</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -157,7 +157,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\include;C:\Program Files\opencv\build\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\include;C:\Program Files\opencv\build\include;C:\Program Files\zlib</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -166,8 +166,8 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>triclops.lib;FlyCapture2.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_imgproc231.lib;opencv_calib3d231.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Program Files\Point Grey Research\FlyCapture2\lib64;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib64;C:\Program Files\opencv\build\x64\vc10\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>triclops.lib;FlyCapture2.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_imgproc231.lib;opencv_calib3d231.lib;winmm.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\Point Grey Research\FlyCapture2\lib64;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib64;C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files\zlib\build\Release</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>

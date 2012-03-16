@@ -8,6 +8,8 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
+#include "zlib.h"
+
 #if defined(WINDOWS) || defined(_WIN32)
 #define WINDOWS_OS
 #elif defined(linux) || defined(__linux__)
@@ -17,7 +19,6 @@
 #ifdef WINDOWS_OS
 #include "FrameRateCounter.h"
 #endif
-
 
 #ifdef LINUX_OS
 #include <sys/times.h>
@@ -338,6 +339,9 @@ void execute()
 
     const float roi_width = 4.0f, roi_height = 4.0f;
     const float scale_m2px = 20.0f;
+    const size_t len_compress_buf = (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) * 2;
+
+    unsigned char* compress_buf = new unsigned char[ len_compress_buf ];
     
     Image rawImage;
     unsigned char* buffer = new unsigned char[ iMaxCols * 2 * iMaxRows ];
@@ -501,58 +505,74 @@ void execute()
             }
         }
 
-        // debug code
-        if( !point_foreground.empty() ) {
-            Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
-            for( vector<Point3f>::iterator it = point_foreground.begin(); it != point_foreground.end(); ++it ) {
-                int row = (int)( scale_m2px * ( it->x + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( it->y + roi_width / 2.0f ) );
-                if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
-                    occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
-                }
+        // 
+        // Create an occupancy map with foreground data
+        Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+        for( vector<Point3f>::iterator it = point_foreground.begin(); it != point_foreground.end(); ++it ) {
+            int row = (int)( scale_m2px * ( it->x + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( it->y + roi_width / 2.0f ) );
+            if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
+                occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
             }
-            for( int row = 0; row < occupancy.rows; ++row ) {
-                for( int col = 0; col < occupancy.cols; ++col ) {
-                    if( occupancy.at<unsigned short>( row, col ) < 100 ) {
-                        occupancy.at<unsigned short>( row, col ) = 0;
-                    }
-                }
-            }
-            occupancy.convertTo( img_occupancy, CV_8U );
-            resize( img_occupancy, img_display2, img_display2.size() );
-            imshow( "Occupancy Map", img_display2 );
-
-            //{
-            //    int hbins = 255, sbins = 255;
-            //    int histSize[] = { hbins, sbins };
-            //    float hranges[] = { 0, 255 };
-            //    float sranges[] = { 0, 255 };
-            //    const float* ranges[] = { hranges, sranges };
-            //    MatND hist;
-            //    int channels [] = { 0 };
-            //    calcHist( &img_occupancy, 1, channels, Mat(), hist, 2, histSize, ranges, true, false );
-
-            //    double maxVal=0;
-            //    minMaxLoc(hist, 0, &maxVal, 0, 0);
-
-            //    int scale = 10;
-            //    Mat histImg = Mat::zeros(sbins*scale, hbins*10, CV_8UC3);
-
-            //    for( int h = 0; h < hbins; h++ ) {
-            //        for( int s = 0; s < sbins; s++ )
-            //        {
-            //            float binVal = hist.at<float>(h, s);
-            //            int intensity = cvRound(binVal*255/maxVal);
-            //            rectangle( histImg, Point(h*scale, s*scale),
-            //                        Point( (h+1)*scale - 1, (s+1)*scale - 1),
-            //                        Scalar::all(intensity),
-            //                        CV_FILLED );
-            //        }
-            //     }
-
-            //     imshow( "histogram", histImg );
-            //}
-
         }
+        for( int row = 0; row < occupancy.rows; ++row ) {
+            for( int col = 0; col < occupancy.cols; ++col ) {
+                if( occupancy.at<unsigned short>( row, col ) < 100 ) {
+                    occupancy.at<unsigned short>( row, col ) = 0;
+                }
+            }
+        }
+
+        // Compress occupancy map
+        uLongf len_compressed = len_compress_buf;
+        compress( compress_buf
+                , &len_compressed
+                , occupancy.data
+                , len_compress_buf );
+        cout << "Compressed the occupancy map: size=" << len_compress_buf << " -> " << len_compressed << "[bytes]" << endl;
+
+            
+        // test code for checking compression validity, where the occupancy maps are restored with the compressed data.
+        uLongf len_uncompressed = len_compress_buf;
+        uncompress( occupancy.data
+                    , &len_uncompressed
+                    , compress_buf
+                    , len_compressed );
+        cout << "(Test Code!)Unompressed the occupancy map: size=" << len_compressed << " -> " << len_uncompressed << "[bytes]" << endl;
+
+        occupancy.convertTo( img_occupancy, CV_8U );
+        resize( img_occupancy, img_display2, img_display2.size() );
+        imshow( "Occupancy Map", img_display2 );
+
+        //{
+        //    int hbins = 255, sbins = 255;
+        //    int histSize[] = { hbins, sbins };
+        //    float hranges[] = { 0, 255 };
+        //    float sranges[] = { 0, 255 };
+        //    const float* ranges[] = { hranges, sranges };
+        //    MatND hist;
+        //    int channels [] = { 0 };
+        //    calcHist( &img_occupancy, 1, channels, Mat(), hist, 2, histSize, ranges, true, false );
+
+        //    double maxVal=0;
+        //    minMaxLoc(hist, 0, &maxVal, 0, 0);
+
+        //    int scale = 10;
+        //    Mat histImg = Mat::zeros(sbins*scale, hbins*10, CV_8UC3);
+
+        //    for( int h = 0; h < hbins; h++ ) {
+        //        for( int s = 0; s < sbins; s++ )
+        //        {
+        //            float binVal = hist.at<float>(h, s);
+        //            int intensity = cvRound(binVal*255/maxVal);
+        //            rectangle( histImg, Point(h*scale, s*scale),
+        //                        Point( (h+1)*scale - 1, (s+1)*scale - 1),
+        //                        Scalar::all(intensity),
+        //                        CV_FILLED );
+        //        }
+        //     }
+
+        //     imshow( "histogram", histImg );
+        //}
 
         img_depth.convertTo( img_display, CV_8U, 25.0, 0.0 );
 
@@ -564,6 +584,7 @@ void execute()
     destroyWindow( "Occupancy Map" );
 
     delete [] buffer;
+    delete [] compress_buf;
 }
 
 void calibration()
