@@ -17,11 +17,16 @@
 #endif
 
 #ifdef WINDOWS_OS
+#include <conio.h>
 #include "FrameRateCounter.h"
 #endif
 
 #ifdef LINUX_OS
 #include <sys/times.h>
+#include <termios.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <curses.h>
 #endif
 
 #define _HANDLE_TRICLOPS_ERROR( description, error )    \
@@ -47,11 +52,43 @@ Camera bumblebee;
 CameraInfo camInfo;
 TriclopsContext triclops;
 
+bool flgWindow = true;
+
 int iMaxCols = 1280, iMaxRows = 960;
 int stereo_width = 512, stereo_height = 384;
 //int width = 320, height = 240 ;
 Mat img_background( stereo_height, stereo_width, CV_32F );
 Mat H( 3, 4, CV_32F );
+
+#ifdef LINUX_OS
+
+int kbhit(void)
+{
+    struct termios oldt, newt;
+    int ch;
+    int oldf;
+
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+    ch = getchar();
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    fcntl(STDIN_FILENO, F_SETFL, oldf);
+
+    if (ch != EOF) {
+        ungetc(ch, stdin);
+        return 1;
+    }
+
+    return 0;
+}
+
+#endif
 
 void PrintError( Error error )
 {
@@ -100,6 +137,9 @@ bool InitializeBumblebee()
 
     // Create a Triclops context from the cameras calibration file
     ostringstream oss;
+#ifdef LINUX_OS
+    oss << "/home/kumalab/project/HumanTracking/bin/";
+#endif
     oss << "calibration" << camInfo.serialNumber << ".txt";
     cout << oss.str() << " Loaded." << endl;
     te = triclopsGetDefaultContextFromFile( &triclops, (char*)oss.str().c_str() );
@@ -355,8 +395,20 @@ void execute()
     Mat img_depth( height, width, CV_32F );
     while( true ) {
         // Exit when ESC is hit.
-        char c = cvWaitKey( 1 );
-        if ( c == 27 ) {
+        char c = 0;
+        if( flgWindow ) {
+            c = cvWaitKey( 1 );
+
+        } else {
+#ifdef WINDOWS_OS
+            if( _kbhit() ) {
+#else
+            if( kbhit() ) {
+#endif
+                c = getchar();
+            }
+        }
+        if ( c == 27 || c == 'q' ) {
             break;
         }
 
@@ -539,9 +591,11 @@ void execute()
                     , len_compressed );
         cout << "(Test Code!)Unompressed the occupancy map: size=" << len_compressed << " -> " << len_uncompressed << "[bytes]" << endl;
 
-        occupancy.convertTo( img_occupancy, CV_8U );
-        resize( img_occupancy, img_display2, img_display2.size() );
-        imshow( "Occupancy Map", img_display2 );
+        if( flgWindow ) {
+            occupancy.convertTo( img_occupancy, CV_8U );
+            resize( img_occupancy, img_display2, img_display2.size() );
+            imshow( "Occupancy Map", img_display2 );
+        }
 
         //{
         //    int hbins = 255, sbins = 255;
@@ -574,9 +628,11 @@ void execute()
         //     imshow( "histogram", histImg );
         //}
 
-        img_depth.convertTo( img_display, CV_8U, 25.0, 0.0 );
+        if( flgWindow ) {
+            img_depth.convertTo( img_display, CV_8U, 25.0, 0.0 );
 
-        imshow( "Disparity", img_display );
+            imshow( "Disparity", img_display );
+        }
     }
 
     err = bumblebee.StopCapture();
@@ -989,6 +1045,9 @@ bool load_background()
     ifstream ifs;
 
     ostringstream oss;
+#ifdef LINUX_OS
+    oss << "/home/kumalab/project/HumanTracking/bin/";
+#endif
     oss << "background" << camInfo.serialNumber << ".dat";
     ifs.open( oss.str().c_str(), ios::in | ios::binary );
 
@@ -1009,6 +1068,9 @@ bool save_background()
     ofstream ofs;
 
     ostringstream oss;
+#ifdef LINUX_OS
+    oss << "/home/kumalab/project/HumanTracking/bin/";
+#endif
     oss << "background" << camInfo.serialNumber << ".dat";
 
     ofs.open( oss.str().c_str(), ios::out | ios::binary | ios::trunc );
@@ -1027,19 +1089,21 @@ bool save_background()
 
 void show_background()
 {
-    Mat img_display( img_background.size(), CV_8U );
-    img_background.convertTo( img_display, CV_8U, 25.0, 0.0 );
-    imshow( "background image", img_display );  
+    if( flgWindow ) {
+        Mat img_display( img_background.size(), CV_8U );
+        img_background.convertTo( img_display, CV_8U, 25.0, 0.0 );
+        imshow( "background image", img_display );  
 
-    while( 1 ) {
-        // Exit when ESC is hit.
-        char c = cvWaitKey( 10 );
-        if ( c == 27 ) {
-            break;
+        while( 1 ) {
+            // Exit when ESC is hit.
+            char c = cvWaitKey( 10 );
+            if ( c == 27 ) {
+                break;
+            }
         }
-    }
 
-    destroyWindow( "background image" );
+        destroyWindow( "background image" );
+    }
 }
 
 void update_background( int nFrame )
@@ -1339,17 +1403,19 @@ void capture()
     _HANDLE_TRICLOPS_ERROR( "triclopsGetImage()", te );
     memcpy( img_display2.data, rectifiedImage.data, rectifiedImage.rowinc * rectifiedImage.nrows );
 
-    imshow( "image", img_display2 );
     imwrite( "image.png", img_display2 );
-    
-    while( true ) {
-        // Exit when ESC is hit.
-        char c = cvWaitKey( 1 );
-        if ( c == 27 ) {
-            break;
+
+    if( flgWindow ) {
+        imshow( "image", img_display2 );
+        while( true ) {
+            // Exit when ESC is hit.
+            char c = cvWaitKey( 1 );
+            if ( c == 27 ) {
+                break;
+            }
         }
+        destroyWindow( "image" );
     }
-    destroyWindow( "image" );
 
     SetBumblebeeParameteres( stereo_width, stereo_height );
 
@@ -1359,6 +1425,15 @@ void capture()
 int main( int argc, char *argv[] )
 {
     bool ret;
+
+    // Option
+    for( int i = 0; i < argc; ++i ) {
+        string strOpt = argv[ i ];
+        if( strOpt == "--nowindow" ) {
+            cout << "No window mode." << endl;
+            flgWindow = false;
+        }
+    }
 
     // Initialize Bumblebee
     ret = InitializeBumblebee();
