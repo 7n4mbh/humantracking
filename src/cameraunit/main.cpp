@@ -632,8 +632,10 @@ void execute()
         cout << "(Test Code!)Unompressed the occupancy map: size=" << len_compressed << " -> " << len_uncompressed << "[bytes]" << endl;
 
 	// Send PEPMap data to stdout
-	cout << "<PEPMap>" << endl << len_compressed << endl;
-	for( size_t i = 0; i < len_compressed; ++i ) {
+	cout << "<PEPMap>" << endl // Header
+         << timeStampSeconds << timeStampMicroSeconds << endl // Time stamp
+         << len_compressed << endl; // PEPMap data length
+	for( size_t i = 0; i < len_compressed; ++i ) { // PEPMap data
 	  cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf[ i ];
 	}
 	cout << dec << endl;
