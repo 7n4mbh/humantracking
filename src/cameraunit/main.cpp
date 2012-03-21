@@ -168,6 +168,9 @@ bool InitializeBumblebee()
     te = triclopsGetDefaultContextFromFile( &triclops, (char*)oss.str().c_str() );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetDefaultContextFromFile()", te );
 
+    cout << "<Camera Initialized>" << endl;
+    cout << camInfo.serialNumber << endl;
+
     return true;
 }
 
@@ -215,6 +218,7 @@ bool SetBumblebeeParameteres( int width, int height )
 
 
     cout << endl << "Done." << endl;
+    cout << "<Camera Parameters Changed>" << endl;
 
     //
     // Change stereo parameters
@@ -319,6 +323,7 @@ bool SetBumblebeeParameteres( int width, int height )
 #endif
 
     cout << endl << "Done." << endl;
+    cout << "<Stereo Parameters Changed>" << endl;
 
     return true;
 }
@@ -625,6 +630,13 @@ void execute()
                     , compress_buf
                     , len_compressed );
         cout << "(Test Code!)Unompressed the occupancy map: size=" << len_compressed << " -> " << len_uncompressed << "[bytes]" << endl;
+
+	// Send PEPMap data to stdout
+	cout << "<PEPMap>" << endl << len_compressed << endl;
+	for( size_t i = 0; i < len_compressed; ++i ) {
+	  cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf[ i ];
+	}
+	cout << dec << endl;
 
         if( flgWindow ) {
             occupancy.convertTo( img_occupancy, CV_8U );
