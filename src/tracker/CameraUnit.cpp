@@ -264,8 +264,16 @@ void CameraUnit::PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
     // Child.exe). Make sure Child.exe is in the same directory as
     // redirect.c launch redirect from a command line to prevent location
     // confusion.
-    if (!CreateProcess(NULL,"child.exe",NULL,NULL,TRUE,
-                        CREATE_NEW_CONSOLE,NULL,NULL,&si,&pi))
+    if (!CreateProcess( NULL
+                      , "C:\\Windows\\SUA\\bin\\rsh 192.168.1.16 -l kumalab /home/kumalab/project/HumanTracking/bin/cameraunit --nowindow"
+                      , NULL
+                      , NULL
+                      , TRUE
+                      , CREATE_NEW_CONSOLE
+                      , NULL
+                      , NULL
+                      , &si
+                      , &pi) )
         DisplayError("CreateProcess");
 
 

@@ -27,7 +27,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -38,13 +38,13 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -84,10 +84,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Program Files\opencv\build\include;C:\Program Files\zlib</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\lib\Debug;C:\Program Files\zlib\build\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib;zlibd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -97,13 +100,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\opencv\build\include;C:\Program Files (x86)\freeglut\include;C:\Program Files (x86)\glui\src\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\opencv\build\include;C:\Program Files (x86)\freeglut\include;C:\Program Files (x86)\glui\src\include\;C:\Program Files\zlib</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\lib\Debug;C:\Program Files (x86)\freeglut\lib\x64\Debug;C:\Program Files (x86)\glui\src\msvc\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib;glui32d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\lib\Debug;C:\Program Files (x86)\freeglut\lib\x64\Debug;C:\Program Files (x86)\glui\src\msvc\lib;C:\Program Files\zlib\build\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib;zlibd.lib;glui32d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -115,12 +118,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Program Files\opencv\build\include;C:\Program Files\zlib</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files\zlib\build\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_core231.lib;opencv_highgui231.lib;opencv_imgproc231.lib;opencv_calib3d231.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -132,15 +138,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\opencv\build\include;C:\Program Files (x86)\freeglut\include;C:\Program Files (x86)\glui\src\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\opencv\build\include;C:\Program Files (x86)\freeglut\include;C:\Program Files (x86)\glui\src\include\;C:\Program Files\zlib</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\lib\Release;C:\Program Files (x86)\freeglut\lib\x64;C:\Program Files (x86)\glui\src\msvc\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_core231.lib;opencv_highgui231.lib;opencv_imgproc231.lib;opencv_calib3d231.lib;glui32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files (x86)\freeglut\lib\x64;C:\Program Files (x86)\glui\src\msvc\lib;C:\Program Files\zlib\build\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_core231.lib;opencv_highgui231.lib;opencv_imgproc231.lib;opencv_calib3d231.lib;zlib.lib;glui32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
