@@ -60,6 +60,8 @@ int stereo_width = 512, stereo_height = 384;
 Mat img_background( stereo_height, stereo_width, CV_32F );
 Mat H( 3, 4, CV_32F );
 
+volatile bool flgEscape;
+
 #ifdef LINUX_OS
 
 int kbhit(void)
@@ -89,6 +91,27 @@ int kbhit(void)
 }
 
 #endif
+
+#ifdef WINDOWS_OS
+DWORD WINAPI KeyInThread( LPVOID p_param )
+#else
+void* KeyInThread( void* p_param )
+#endif
+{
+    char buf[ 10 ];
+    string str;
+
+    for( ; ; ) {
+        cin >> str;
+        if( str == "q" ) {
+            flgEscape = true;
+            break;
+        }
+    }
+#ifdef WINDOWS_OS
+    return 1;
+#endif
+}
 
 void PrintError( Error error )
 {
@@ -393,22 +416,34 @@ void execute()
     //Image convertedImage( img.data, 4 * iMaxCols * 2 * iMaxRows );//img.rows() * img.cols() * 3 );
     TriclopsImage16 depthImage16;
     Mat img_depth( height, width, CV_32F );
-    while( true ) {
-        // Exit when ESC is hit.
-        char c = 0;
-        if( flgWindow ) {
-            c = cvWaitKey( 1 );
 
-        } else {
+    flgEscape = false;
 #ifdef WINDOWS_OS
-            if( _kbhit() ) {
+    DWORD idThread;
+    HANDLE hThread = CreateThread( NULL, 0, KeyInThread, NULL, NULL, &idThread );
 #else
-            if( kbhit() ) {
+    pthread_t thread;
+    pthread_create(&thread , NULL , KeyInThread , NULL)
 #endif
-                c = getchar();
-            }
+    for( ; ; ) {
+        // Exit when ESC is hit.
+//        char c = 0;
+        if( flgWindow ) {
+            (void)cvWaitKey( 1 );
         }
-        if ( c == 27 || c == 'q' ) {
+//        } else {
+//#ifdef WINDOWS_OS
+//            if( _kbhit() ) {
+//#else
+//            if( kbhit() ) {
+//#endif
+//                c = getchar();
+//            }
+//        }
+//        if ( c == 27 || c == 'q' ) {
+//            break;
+//        }
+        if( flgEscape ) {
             break;
         }
 
@@ -638,6 +673,12 @@ void execute()
     err = bumblebee.StopCapture();
     destroyWindow( "Disparity" );
     destroyWindow( "Occupancy Map" );
+
+#ifdef WINDOWS_OS
+    WaitForSingleObject( hThread, INFINITE );
+#else
+    pthread_join(thread , NULL);
+#endif
 
     delete [] buffer;
     delete [] compress_buf;
