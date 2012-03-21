@@ -423,7 +423,7 @@ void execute()
     HANDLE hThread = CreateThread( NULL, 0, KeyInThread, NULL, NULL, &idThread );
 #else
     pthread_t thread;
-    pthread_create(&thread , NULL , KeyInThread , NULL)
+    pthread_create(&thread , NULL , KeyInThread , NULL);
 #endif
     for( ; ; ) {
         // Exit when ESC is hit.
