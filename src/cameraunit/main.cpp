@@ -9,6 +9,8 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
+//#include "BlobResult.h"
+
 #include "zlib.h"
 
 #if defined(WINDOWS) || defined(_WIN32)
@@ -60,6 +62,7 @@ VideoCapture video;
 vector<unsigned long long> frame_to_timestamp;
 
 bool flgSavePEPMap = false;
+bool flgStdOutPEPMap = true;
 
 int iMaxCols = 1280, iMaxRows = 960;
 int stereo_width = 512, stereo_height = 384;
@@ -70,7 +73,7 @@ Mat H( 3, 4, CV_32F );
 volatile bool flgEscape;
 
 const float roi_width = 4.0f, roi_height = 4.0f;
-const float roi_x = 0.0f, roi_y = 6.0f;
+const float roi_x = 0.0f, roi_y = 5.0f;
 const float scale_m2px = 20.0f;
 
 #ifdef LINUX_OS
@@ -381,6 +384,36 @@ bool SetStereoParameters( int width, int height ) {
     _HANDLE_TRICLOPS_ERROR( "triclopsGetSubpixelInterpolation()", te );
     cout << " SubpixelInterpolation(new): " << on << endl;
 
+
+    cout << endl;
+    float diff;
+    te = triclopsGetSurfaceValidation( triclops, &on );
+    _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidation()", te );
+    cout << " Surfafe Validation(old): " << on << endl;
+    te = triclopsGetSurfaceValidationDifference( triclops, &diff );
+    _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidationDifference()", te );
+    cout << " Maximum disparity difference(old): " << diff << endl;
+    te = triclopsGetSurfaceValidationSize( triclops, &size );
+    _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidationSize()", te );
+    cout << " Surface validation size(old): " << size << endl;
+
+    te = triclopsSetSurfaceValidation( triclops, 1 );
+    _HANDLE_TRICLOPS_ERROR( "triclopsSetSurfaceValidation()", te );
+    te = triclopsSetSurfaceValidationDifference( triclops, 2/*diff*/ );
+    _HANDLE_TRICLOPS_ERROR( "triclopsSetSurfaceValidationDifference()", te );
+    te = triclopsSetSurfaceValidationSize( triclops, 1000/*size*/ );
+    _HANDLE_TRICLOPS_ERROR( "triclopsSetSurfaceValidationSize()", te );
+
+    te = triclopsGetSurfaceValidation( triclops, &on );
+    _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidation()", te );
+    cout << " Surfafe Validation(new): " << on << endl;
+    te = triclopsGetSurfaceValidationDifference( triclops, &diff );
+    _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidationDifference()", te );
+    cout << " Maximum disparity difference(new): " << diff << endl;
+    te = triclopsGetSurfaceValidationSize( triclops, &size );
+    _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidationSize()", te );
+    cout << " Surface validation size(new): " << size << endl;
+
     // With Linux, Set # of thread to one in order to avoid a segmentation 
     // falut at triclopsStereo(), which seems a bug in the triclopsSDK.
 #ifdef LINUX_OS
@@ -512,7 +545,7 @@ void grab_from_bumblebee( Mat* pDst )
     }
 }
 
-void grab_from_video( Mat* pDst )
+bool grab_from_video( Mat* pDst )
 {
     Mat tmp;
     video >> tmp;//imgFromVideo;
@@ -522,6 +555,10 @@ void grab_from_video( Mat* pDst )
     //cvtColor( tmp, tmp2, CV_BGR2GRAY );
     //resize( tmp2, imgFromVideo, imgFromVideo.size() );
     //a = imgFromVideo.channels();
+    if( tmp == NULL ) {
+        return false;
+    }
+
     pDst->create( tmp.size(), CV_8U );
     cvtColor( tmp, *pDst, CV_BGR2GRAY );
 
@@ -568,7 +605,7 @@ void execute()
 
     // debug code
     if( flgVideoFile ) {
-        video.set( CV_CAP_PROP_POS_FRAMES, 1500 );
+        video.set( CV_CAP_PROP_POS_FRAMES, 1800 );
     }
 
 #ifdef WINDOWS_OS
@@ -616,7 +653,9 @@ void execute()
             grab_from_bumblebee( &image );
             timeStamp = 0; // debug
         } else {
-            grab_from_video( &image );
+            if( !grab_from_video( &image ) ) {
+                break;
+            }
             int frame = video.get( CV_CAP_PROP_POS_FRAMES );
             timeStamp = frame_to_timestamp[ frame ];
             cout << "Next frame # is " << frame << endl;
@@ -669,7 +708,7 @@ void execute()
                 img_depth.at<float>( y, x ) = zz;
                 //img_display.at<unsigned char>( y, x ) = (unsigned char)( 25.0f * zz );
                 if( x == 100 && y == 100 ) {
-                    cout << zz << ", " << 25.0f * zz << ", " << (int)( (25.0f * zz) ) << endl;//", ";
+                    cout << zz << ", " << 25.0f * zz << ", " << (int)( (25.0f * img_depth.at<float>( y, x )/*zz*/) ) << endl;//", ";
                 }
             }
         }
@@ -685,8 +724,26 @@ void execute()
         //}
         //triclopsDestroyImage3d( &pImage3d );
 
+
+        //// test code
+        //// blob detection and labling/filtering
+        //CBlobResult blobs;
+
+        //IplImage img_blob = img_depth;
+        //blobs = CBlobResult( &img_blob, NULL, 0 );
+        //cout << "nBlobs:" << blobs.GetNumBlobs() << endl;
+
+        //Mat matimg( img_depth.size(), CV_8UC3 );
+        //IplImage imgd = matimg;
+        //for ( int i = 0; i < blobs.GetNumBlobs(); i++ ) {
+        //    CBlob* currentBlob = blobs.GetBlob(i);
+        //    currentBlob->FillBlob( &imgd, CV_RGB(255,0,0));
+        //}
+        //imshow( "Blob", matimg );
+
         // background subtraction（ベクトル計算で高速化の余地あり）
-        vector<Point3f> point_foreground;
+        Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+        //vector<Point3f> point_foreground;
         Mat xvec( 4, 1, CV_32F );
         Mat point_planview( 3, 1, CV_32F );
         for( int x = 0; x < img_depth.cols; ++x ) {
@@ -699,7 +756,12 @@ void execute()
                         triclopsRCD16ToXYZ( triclops, y, x, disparity, &xx, &yy, &zz );
                         xvec.at<float>( 0, 0 ) = xx; xvec.at<float>( 1, 0 ) = yy; xvec.at<float>( 2, 0 ) = zz; xvec.at<float>( 3, 0 ) = 1.0;
                         point_planview =  H * xvec ;
-                        point_foreground.push_back( Point3f( point_planview.at<float>( 0, 0 ), point_planview.at<float>( 1, 0 ), point_planview.at<float>( 2, 0 ) ) );
+                        //point_foreground.push_back( Point3f( point_planview.at<float>( 0, 0 ), point_planview.at<float>( 1, 0 ), point_planview.at<float>( 2, 0 ) ) );
+                        float pv_x = point_planview.at<float>( 0, 0 ), pv_y = point_planview.at<float>( 1, 0 ), pv_z = point_planview.at<float>( 2, 0 );
+                        int row = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( ( pv_y - roi_y ) + roi_width / 2.0f ) );
+                        if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
+                            occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
+                        }
                     }                    
                 }
             }
@@ -707,16 +769,16 @@ void execute()
 
         // 
         // Create an occupancy map with foreground data
-        Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
-        for( vector<Point3f>::iterator it = point_foreground.begin(); it != point_foreground.end(); ++it ) {
-            int row = (int)( scale_m2px * ( ( it->x - roi_x ) + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( ( it->y - roi_y ) + roi_width / 2.0f ) );
-            if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
-                occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
-            }
-        }
+        //Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+        //for( vector<Point3f>::iterator it = point_foreground.begin(); it != point_foreground.end(); ++it ) {
+        //    int row = (int)( scale_m2px * ( ( it->x - roi_x ) + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( ( it->y - roi_y ) + roi_width / 2.0f ) );
+        //    if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
+        //        occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
+        //    }
+        //}
         for( int row = 0; row < occupancy.rows; ++row ) {
             for( int col = 0; col < occupancy.cols; ++col ) {
-                if( occupancy.at<unsigned short>( row, col ) < 100 ) {
+                if( occupancy.at<unsigned short>( row, col ) < 50 ) {
                     occupancy.at<unsigned short>( row, col ) = 0;
                 }
             }
@@ -740,14 +802,16 @@ void execute()
         cout << "(Test Code!)Unompressed the occupancy map: size=" << len_compressed << " -> " << len_uncompressed << "[bytes]" << endl;
 
 	    // Send PEPMap data to stdout
-	    cout << "<PEPMap>" << endl // Header
-             << camInfo.serialNumber << endl // Serial Number
-             << timeStamp << endl // Time stamp             
-             << len_compressed << endl; // PEPMap data length
-	    for( size_t i = 0; i < len_compressed; ++i ) { // PEPMap data
-	      cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf[ i ];
-	    }
-	    cout << dec << endl;
+        if( flgStdOutPEPMap ) {
+	        cout << "<PEPMap>" << endl // Header
+                 << camInfo.serialNumber << endl // Serial Number
+                 << timeStamp << endl // Time stamp             
+                 << len_compressed << endl; // PEPMap data length
+	        for( size_t i = 0; i < len_compressed; ++i ) { // PEPMap data
+	          cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf[ i ];
+	        }
+	        cout << dec << endl;
+        }
 
         // Save PEPMap data to file
         if( flgSavePEPMap ) {
@@ -1212,6 +1276,8 @@ int main( int argc, char *argv[] )
             strVideoFile = string( argv[ ++i ] );
         } else if( strOpt == "--save-pepmap" ) {
             flgSavePEPMap = true;
+        } else if( strOpt == "--no-stdout-pepmap" ) {
+            flgStdOutPEPMap = false;
         }
     }
 
