@@ -37,7 +37,7 @@ int main()
 		//cout << buf << endl;
 
 		string str( buf );
-		if( str.find( "<Camera Initialized>" ) != str.npos ) {
+		if( str.find( "<Initialized>" ) != str.npos ) {
             cout << str << endl;
             cameraunit.readline( buf, 1000 );
             strSerial = string( buf );
