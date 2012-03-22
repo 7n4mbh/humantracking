@@ -72,9 +72,9 @@ Mat H( 3, 4, CV_32F );
 
 volatile bool flgEscape;
 
-const float roi_width = 4.0f, roi_height = 4.0f;
-const float roi_x = 0.0f, roi_y = 5.0f;
-const float scale_m2px = 20.0f;
+float roi_width, roi_height;
+float roi_x, roi_y;
+float scale_m2px;
 
 #ifdef LINUX_OS
 
@@ -548,16 +548,16 @@ void grab_from_bumblebee( Mat* pDst )
 bool grab_from_video( Mat* pDst )
 {
     Mat tmp;
-    video >> tmp;//imgFromVideo;
+    if( !video.read( tmp ) ) {
+        return false;
+    }
+    //video >> tmp;//imgFromVideo;
     //tmp.convertTo( imgFromVideo, CV_8U );
     //int a = tmp.channels();
     //Mat tmp2( 480, 1280, CV_8UC1 );
     //cvtColor( tmp, tmp2, CV_BGR2GRAY );
     //resize( tmp2, imgFromVideo, imgFromVideo.size() );
     //a = imgFromVideo.channels();
-    if( tmp == NULL ) {
-        return false;
-    }
 
     pDst->create( tmp.size(), CV_8U );
     cvtColor( tmp, *pDst, CV_BGR2GRAY );
@@ -918,6 +918,49 @@ bool load_extrinsic_parameters()
     //H.at<float>( 0, 0 ) = 0.556880; H.at<float>( 0, 1 ) = -0.326309; H.at<float>( 0, 2 ) = 0.763811; H.at<float>( 0, 3 ) = -1.818401435;
     //H.at<float>( 1, 0 ) = -0.829754; H.at<float>( 1, 1 ) = -0.259884; H.at<float>( 1, 2 ) = 0.493932; H.at<float>( 1, 3 ) = -1.335204279;
     //H.at<float>( 2, 0 ) = 0.037327; H.at<float>( 2, 1 ) = -0.908836; H.at<float>( 2, 2 ) = -0.415480; H.at<float>( 2, 3 ) = 2.237207354;
+}
+
+bool load_pepmap_config()
+{
+    ifstream ifs;
+
+    string strPath, strName, strNoextName;
+    
+    if( flgVideoFile ) {
+        getfilename( strVideoFile, &strPath, &strName, &strNoextName );
+    }
+
+    ostringstream oss;
+    oss << strPath << "pepmap.cfg";
+    ifs.open( oss.str().c_str() );
+
+    if( !ifs.is_open() ) {
+        return false;
+    }
+
+    char buf[ 1000 ];
+    vector<float> value;
+    while( !ifs.eof() ) {
+        ifs.getline( buf, sizeof( buf ) );
+        string str( buf );
+        if( str[ 0 ] == '#' ) {
+            continue;
+        }
+        float v = atof( str.c_str() );
+        value.push_back( v );
+    }
+
+    if( value.size() != 5 ) {
+        return false;
+    }
+
+    roi_width = value[ 0 ];
+    roi_height = value[ 1 ];
+    roi_x = value[ 2 ];
+    roi_y = value[ 3 ];
+    scale_m2px = value[ 4 ];
+
+    return true;
 }
 
 bool load_background()
@@ -1304,6 +1347,11 @@ int main( int argc, char *argv[] )
     }
     cout << "<Initialized>" << endl;
     cout << camInfo.serialNumber << endl;
+
+    if( !load_pepmap_config() ) {
+        cout << "Failed in loading the PEP-map config file." << endl;
+        exit( 1 );
+    }
 
     if( !flgVideoFile ) {
         // Set bumblebee parameters
