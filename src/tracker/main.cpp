@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <fstream>
 //#include <tchar.h>
 
 #include "opencv/cv.h"
@@ -24,22 +25,93 @@
 using namespace std;
 using namespace cv;
 
-int main()
+#define SIZE_BUFFER ( 10000 )
+
+bool flgPEPMapFile = false;
+string strPEPMapFile;
+
+float roi_width, roi_height;
+float roi_x, roi_y;
+float scale_m2px;
+
+void getfilename( const string src, string* p_str_path, string* p_str_name, string* p_str_noextname )
 {
+    int idxExt = src.rfind( ".", src.npos );
+#ifdef WINDOWS_OS
+    int idxPath = src.rfind( "\\", src.npos );
+#else
+    int idxPath = src.rfind( "/", src.npos );
+#endif
+    *p_str_path = src.substr( 0, idxPath + 1 );
+    *p_str_name = src.substr( idxPath + 1 );
+    *p_str_noextname = src.substr( idxPath + 1, idxExt - idxPath - 1 );
+}
+
+bool load_pepmap_config()
+{
+    ifstream ifs;
+
+    string strPath, strName, strNoextName;
+    
+    if( flgPEPMapFile ) {
+        getfilename( strPEPMapFile, &strPath, &strName, &strNoextName );
+    }
+
+    ostringstream oss;
+    oss << strPath << "pepmap.cfg";
+    ifs.open( oss.str().c_str() );
+
+    if( !ifs.is_open() ) {
+        return false;
+    }
+
+    char buf[ 1000 ];
+    vector<float> value;
+    while( !ifs.eof() ) {
+        ifs.getline( buf, sizeof( buf ) );
+        string str( buf );
+        if( str[ 0 ] == '#' ) {
+            continue;
+        }
+        float v = atof( str.c_str() );
+        value.push_back( v );
+    }
+
+    if( value.size() != 5 ) {
+        return false;
+    }
+
+    roi_width = value[ 0 ];
+    roi_height = value[ 1 ];
+    roi_x = value[ 2 ];
+    roi_y = value[ 3 ];
+    scale_m2px = value[ 4 ];
+
+    return true;
+}
+
+bool track( const Mat& occupancy )
+{
+    return true;
+}
+
+int bumblebee_mode()
+{
+
 	CameraUnit cameraunit;
     string strSerial;
 
 	cameraunit.connect();
 
-	char buf[ 1000 ];
+	char buf[ SIZE_BUFFER ];
 	for( ; ; ) {
-		cameraunit.readline( buf, 1000 );
+		cameraunit.readline( buf, SIZE_BUFFER );
 		//cout << buf << endl;
 
 		string str( buf );
 		if( str.find( "<Initialized>" ) != str.npos ) {
             cout << str << endl;
-            cameraunit.readline( buf, 1000 );
+            cameraunit.readline( buf, SIZE_BUFFER );
             strSerial = string( buf );
             cout << strSerial << endl;
         } else if( str.find( "<Camera Parameters Changed>" ) != str.npos ) {
@@ -55,20 +127,31 @@ int main()
 
 	Sleep( 2000 );
 
-    const float roi_width = 4.0f, roi_height = 4.0f;
-    const float scale_m2px = 20.0f;
     Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
     Mat img_occupancy( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
-
+    Mat img_display2( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8U );
+    unsigned long long timeStamp;
+    unsigned int serialNumber;
     cameraunit.send( "run\n", 4 );
     int cnt = 0;
 	do {
-		cameraunit.readline( buf, 1000 );
+		cameraunit.readline( buf, SIZE_BUFFER );
 
 		string str( buf );
 		if( str.find( "<PEPMap>" ) != str.npos ) {
 			cout << "Detect a PEP-map.";
-            cameraunit.readline( buf, 1000 );
+            {
+                cameraunit.readline( buf, SIZE_BUFFER );
+                istringstream iss( string( buf ) );
+                //iss >> serialNumber;
+            }
+            {
+                cameraunit.readline( buf, SIZE_BUFFER );
+                istringstream iss( string( buf ) );
+                //iss >> timeStamp;
+            }            
+            cout << "Serial #: " << serialNumber << ", time: " << timeStamp;
+            cameraunit.readline( buf, SIZE_BUFFER );
             int size = atoi( buf );
             cout << " size = " << size << "...";
             cameraunit.read( buf, size * 2 );
@@ -89,9 +172,12 @@ int main()
             , size );
 
             occupancy.convertTo( img_occupancy, CV_8U );
-            //resize( img_occupancy, img_display2, img_display2.size() );
-            imshow( "Occupancy Map", img_occupancy );
+            resize( img_occupancy, img_display2, img_display2.size() );
+            imshow( "Occupancy Map", img_display2 );
             (void)cvWaitKey( 1 );
+
+            // Tracking
+            track( occupancy );
 		}
 	} while( cnt < 100 );
     //buf[ 0 ] = 27; buf[ 1 ] = '\n';
@@ -185,4 +271,83 @@ int main()
     CloseHandle( hWrite );
     CloseHandle( hRead );
 */
+}
+
+int pepmapfile_mode( string strVideoFile )
+{
+    ifstream ifs( strVideoFile );
+
+    if( !ifs.is_open() ) {
+        cout << "Error occured in opening the PEP-map file.";
+        return false;
+    }
+
+	char buf[ SIZE_BUFFER ];
+    string str;
+    Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+    Mat img_occupancy( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
+    Mat img_display2( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8U );
+    unsigned long long timeStamp;
+    unsigned int serialNumber;
+    int size;
+    while( !ifs.eof() ) {
+        //ifs.getline( buf, SIZE_BUFFER );
+        ifs >> str;
+
+		//string str( buf );
+		if( str.find( "<PEPMap>" ) != str.npos ) {
+			cout << "Detect a PEP-map.";
+            //ifs.getline( buf, SIZE_BUFFER );
+            ifs >> serialNumber >> timeStamp >> size;
+            //int size = atoi( buf );
+            cout << "Serial #: " << serialNumber << ", time: " << timeStamp;
+            cout << ", size = " << size << "...";
+            //ifs.read( buf, size * 2 );
+            //str = string( buf );
+            ifs >> str;
+            char a[ 3 ]; a[ 2 ] = '\0';
+            for( int j = 0; j < size; ++j ) {
+                a[ 0 ] = str[ j * 2 ];
+                a[ 1 ] = str[ j * 2 + 1 ];
+                buf[ j ] = strtol( a, NULL, 16 );
+            }
+            cout << "Data Received." << endl;
+
+            uLongf len_uncompressed = (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) * 2;
+            uncompress( occupancy.data
+            , &len_uncompressed
+            , (const Bytef*)buf
+            , size );
+
+            occupancy.convertTo( img_occupancy, CV_8U );
+            resize( img_occupancy, img_display2, img_display2.size() );
+            imshow( "Occupancy Map", img_display2 );
+            (void)cvWaitKey( 1 );
+            
+            // Tracking
+            track( occupancy );
+        }
+
+    }
+    return 0;
+}
+
+
+int main( int argc, char *argv[] )
+{
+    for( int i = 0; i < argc; ++i ) {
+        string strOpt = argv[ i ];
+        if( strOpt == "-f" ) {
+            flgPEPMapFile = true;
+            strPEPMapFile = string( argv[ ++i ] );
+        }
+    }
+
+    load_pepmap_config();
+
+    if( !flgPEPMapFile ) {
+        return bumblebee_mode();
+    } else {
+        return pepmapfile_mode( strPEPMapFile );
+    }
 }
