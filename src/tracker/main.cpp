@@ -11,6 +11,7 @@
 //#include "GL/glui.h"
 
 #include "CameraUnit.h"
+#include "track.h"
 
 #if defined(WINDOWS) || defined(_WIN32)
 #define WINDOWS_OS
@@ -87,11 +88,6 @@ bool load_pepmap_config()
     roi_y = value[ 3 ];
     scale_m2px = value[ 4 ];
 
-    return true;
-}
-
-bool track( const Mat& occupancy )
-{
     return true;
 }
 
@@ -177,7 +173,7 @@ int bumblebee_mode()
             (void)cvWaitKey( 1 );
 
             // Tracking
-            track( occupancy );
+            track( occupancy, timeStamp );
 		}
 	} while( cnt < 100 );
     //buf[ 0 ] = 27; buf[ 1 ] = '\n';
@@ -299,6 +295,7 @@ int pepmapfile_mode( string strVideoFile )
 			cout << "Detect a PEP-map.";
             //ifs.getline( buf, SIZE_BUFFER );
             ifs >> serialNumber >> timeStamp >> size;
+            timeStamp /= 10;
             //int size = atoi( buf );
             cout << "Serial #: " << serialNumber << ", time: " << timeStamp;
             cout << ", size = " << size << "...";
@@ -319,13 +316,20 @@ int pepmapfile_mode( string strVideoFile )
             , (const Bytef*)buf
             , size );
 
+            for( int row = 0; row < occupancy.rows; ++row ) {
+                for( int col = 0; col < occupancy.cols; ++col ) {
+                    if( occupancy.at<unsigned short>( row, col ) < 50 ) {
+                        occupancy.at<unsigned short>( row, col ) = 0;
+                    }
+                }
+            }
             occupancy.convertTo( img_occupancy, CV_8U );
             resize( img_occupancy, img_display2, img_display2.size() );
             imshow( "Occupancy Map", img_display2 );
             (void)cvWaitKey( 1 );
             
             // Tracking
-            track( occupancy );
+            track( occupancy, timeStamp );
         }
 
     }
@@ -335,15 +339,21 @@ int pepmapfile_mode( string strVideoFile )
 
 int main( int argc, char *argv[] )
 {
+    string strPath, strName, strNoextName;
+
     for( int i = 0; i < argc; ++i ) {
         string strOpt = argv[ i ];
         if( strOpt == "-f" ) {
             flgPEPMapFile = true;
             strPEPMapFile = string( argv[ ++i ] );
+            getfilename( strPEPMapFile, &strPath, &strName, &strNoextName );
         }
     }
 
+    initialize_tracker();
+
     load_pepmap_config();
+    load_track_parameters( strPath );
 
     if( !flgPEPMapFile ) {
         return bumblebee_mode();

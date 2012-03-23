@@ -706,13 +706,12 @@ void execute()
                     yy = 0.0f;
                 }
                 img_depth.at<float>( y, x ) = zz;
-                //img_display.at<unsigned char>( y, x ) = (unsigned char)( 25.0f * zz );
-                if( x == 100 && y == 100 ) {
-                    cout << zz << ", " << 25.0f * zz << ", " << (int)( (25.0f * img_depth.at<float>( y, x )/*zz*/) ) << endl;//", ";
-                }
+                ////img_display.at<unsigned char>( y, x ) = (unsigned char)( 25.0f * zz );
+                //if( x == 100 && y == 100 ) {
+                //    cout << zz << ", " << 25.0f * zz << ", " << (int)( (25.0f * img_depth.at<float>( y, x )/*zz*/) ) << endl;//", ";
+                //}
             }
         }
-
 
         //TriclopsImage3d* pImage3d;
         //te = triclopsCreateImage3d( triclops, &pImage3d );

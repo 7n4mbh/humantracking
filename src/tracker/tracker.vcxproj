@@ -100,13 +100,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\opencv\build\include;C:\Program Files (x86)\freeglut\include;C:\Program Files (x86)\glui\src\include\;C:\Program Files\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\opencv\build\include;C:\Program Files (x86)\freeglut\include;C:\Program Files (x86)\glui\src\include\;C:\Program Files\zlib;C:\Program Files (x86)\boost_1_49_0;C:\Program Files\Intel\IPP\6.1.3.047\em64t\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files (x86)\freeglut\lib\x64\Debug;C:\Program Files (x86)\glui\src\msvc\lib;C:\Program Files\zlib\build\Debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib;zlibd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files (x86)\freeglut\lib\x64\Debug;C:\Program Files (x86)\glui\src\msvc\lib;C:\Program Files\zlib\build\Debug;C:\Program Files\Intel\IPP\6.1.3.047\em64t\stublib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib;zlibd.lib;ippcoreem64t.lib;ippiem64t.lib;ippsem64t.lib;ippmem64t.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -138,23 +138,36 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\opencv\build\include;C:\Program Files (x86)\freeglut\include;C:\Program Files (x86)\glui\src\include\;C:\Program Files\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\opencv\build\include;C:\Program Files (x86)\freeglut\include;C:\Program Files (x86)\glui\src\include\;C:\Program Files\zlib;C:\Program Files (x86)\boost_1_49_0;C:\Program Files\Intel\IPP\6.1.3.047\em64t\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files (x86)\freeglut\lib\x64;C:\Program Files (x86)\glui\src\msvc\lib;C:\Program Files\zlib\build\Release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_core231.lib;opencv_highgui231.lib;opencv_imgproc231.lib;opencv_calib3d231.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files (x86)\freeglut\lib\x64;C:\Program Files (x86)\glui\src\msvc\lib;C:\Program Files\zlib\build\Release;C:\Program Files\Intel\IPP\6.1.3.047\em64t\stublib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_core231.lib;opencv_highgui231.lib;opencv_imgproc231.lib;opencv_calib3d231.lib;zlib.lib;ippcoreem64t.lib;;ippiem64t.lib;ippsem64t.lib;ippmem64t.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CameraUnit.cpp" />
+    <ClCompile Include="ExtendTrajectories.cpp" />
+    <ClCompile Include="ExtractLUM.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MakeLUMSlice.cpp" />
+    <ClCompile Include="PlotCalculationProcess.cpp" />
+    <ClCompile Include="track.cpp" />
+    <ClCompile Include="Trajectory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraUnit.h" />
+    <ClInclude Include="LinearUniformMotion.h" />
+    <ClInclude Include="PersonTrackingCommon.h" />
+    <ClInclude Include="PosXYT.h" />
+    <ClInclude Include="ProbSampleReplace.h" />
+    <ClInclude Include="pttype.h" />
+    <ClInclude Include="track.h" />
+    <ClInclude Include="Trajectory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
