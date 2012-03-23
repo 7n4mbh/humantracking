@@ -151,11 +151,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CameraUnit.cpp" />
+    <ClCompile Include="ClusterTrajectories.cpp" />
     <ClCompile Include="ExtendTrajectories.cpp" />
     <ClCompile Include="ExtractLUM.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MakeLUMSlice.cpp" />
     <ClCompile Include="PlotCalculationProcess.cpp" />
+    <ClCompile Include="RenovateTrajectory.cpp" />
     <ClCompile Include="track.cpp" />
     <ClCompile Include="Trajectory.cpp" />
   </ItemGroup>
@@ -166,6 +168,7 @@
     <ClInclude Include="PosXYT.h" />
     <ClInclude Include="ProbSampleReplace.h" />
     <ClInclude Include="pttype.h" />
+    <ClInclude Include="RenovateTrajectory.h" />
     <ClInclude Include="track.h" />
     <ClInclude Include="Trajectory.h" />
   </ItemGroup>

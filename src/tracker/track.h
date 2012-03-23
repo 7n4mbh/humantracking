@@ -12,6 +12,7 @@
 #include "PersonTrackingCommon.h"
 #include "ProbSampleReplace.h"
 #include "Trajectory.h"
+#include "RenovateTrajectory.h"
 
 typedef Vier::CProbSampleReplace<PosXYTVID> SamplerPosXYTVID; ///< 位置情報のサンプラー
 typedef std::map< TIME_MICRO_SEC, std::vector<CLinearUniformMotion> > LUMStorage; ///< 等速直線運動ストレージ
@@ -84,6 +85,21 @@ int ExtractLUM( SamplerPosXYTVID* pSampler
 void AddPEPMapToSampler( /*CPEPMap* pPEPMap*/const cv::Mat& occupancy, unsigned long long time_stamp, SamplerPosXYTVID* pSampler, double minPEPMapValue, double maxPEPMapValue );
 int MakeLUMSlice( TIME_MICRO_SEC tk, LUMStorage* pStorageLUM, std::vector<LUMSlice>* pDst, const PARAM_EXTRACTLUM* pExtractlumParam );
 int ExtendTrajectories( TIME_MICRO_SEC startTime, TIME_MICRO_SEC endingTime, vector<TrajectoryElement>* pSrcDst, const vector<LUMSlice>* pLUMSlice, const PARAM_COMMON* pCommonParam, const PARAM_MKTRAJECTORY* pMkTrajectoryParam );
+void CalculateDistanceTable( double* distTable
+                                , std::vector<size_t>* pIdxTrjToCol
+                                , size_t stepDistTable
+                                , std::map<int,CTrajectory>::iterator itStart
+                                , std::map<int,CTrajectory>::iterator itEnd
+                                , std::map<int,CTrajectory>* pTrajectories
+                                , CTrajectory_Distance& funcDist );
+int Clustering( std::vector<int>* pIndexCluster, double* distTable, size_t nElements, double threshold );
+int Clustering2( std::vector< std::vector<int> >* pDst, std::vector<int>& classID, double* distTable, size_t nElements, double thConnect, double thDiameter );
+bool VerifyClusteredTrajectories( CTrajectory& trj, double threshold );
+void CalcFrequency( double* pDst, double* distTable, int size, double sigma, double thDist );
+void ReduceTrajectory( vector<int>* pDst, double* frequency, int size, double fval );
+void DivideIntoSections( TrajectoriesInfo* pInfoTrj, PARAM_RENOVATE_TRAJECTORY param );
+void MakeSet( int idxSection, TrajectoriesInfo* pInfoTrj, map<int,int>* pReserve );
+double Optimize( std::vector<TrajectoryElement>* pDst, std::vector<int>* pDstID, std::map<int,int>* pReserve, int idxSection, int idxSet, int nStart, TrajectoriesInfo* pInfoTrj, PARAM_RENOVATE_TRAJECTORY param, double* p_t1 = NULL, double* p_t2 = NULL, double* p_t3 = NULL );
 
 void OutputProcess( TIME_MICRO_SEC timeBegin
                      , TIME_MICRO_SEC timeEnd
