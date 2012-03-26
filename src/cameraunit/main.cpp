@@ -13,6 +13,8 @@
 
 #include "zlib.h"
 
+#define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
+
 #if defined(WINDOWS) || defined(_WIN32)
 #define WINDOWS_OS
 #elif defined(linux) || defined(__linux__)
@@ -64,6 +66,7 @@ vector<unsigned long long> frame_to_timestamp;
 
 bool flgSavePEPMap = false;
 bool flgStdOutPEPMap = true;
+bool flgCompatible = false;
 
 int iMaxCols = 1280, iMaxRows = 960;
 int stereo_width = 512, stereo_height = 384;
@@ -526,6 +529,27 @@ void grab_from_bumblebee( Mat* pDst, unsigned long long* p_time_stamp = NULL )
         return;
     }
 
+#ifdef WINDOWS_OS
+    FILETIME ft;
+    unsigned __int64 tmpres = 0;
+    time_t _sec, _usec;
+    GetSystemTimeAsFileTime( &ft );
+    tmpres |= ft.dwHighDateTime;
+    tmpres <<= 32;
+    tmpres |= ft.dwLowDateTime;
+    tmpres /= 10;
+    tmpres -= DELTA_EPOCH_IN_MICROSECS; 
+    _sec = tmpres / 1000000ULL;
+    _usec = tmpres % 1000000ULL;
+    cout << "Time Stamp: " << _sec << "." << _usec;
+    if( p_time_stamp ) {
+      *p_time_stamp = (unsigned long long)tmpres;
+      cout << endl << " -> " << *p_time_stamp 
+                << ", " << ctime( &_sec ) << endl;
+        
+    }
+#endif
+#ifdef LINUX_OS
     timeval tv;
     gettimeofday( &tv, NULL );
     cout << "Time Stamp: " << tv.tv_sec << "." << tv.tv_usec;
@@ -536,6 +560,7 @@ void grab_from_bumblebee( Mat* pDst, unsigned long long* p_time_stamp = NULL )
         
     }
     cout << endl;
+#endif
 
     pDst->create( iMaxRows, iMaxCols * 2, CV_8U );
     buffer = pDst->data;
@@ -668,13 +693,19 @@ void execute( int start_frame = 0 )
 
         // Retrieve an image
         if( !flgVideoFile ) {
-	    grab_from_bumblebee( &image, &timeStamp );
+	        grab_from_bumblebee( &image, &timeStamp );
         } else {
+            int frame = video.get( CV_CAP_PROP_POS_FRAMES );
             if( !grab_from_video( &image ) ) {
                 break;
             }
-            int frame = video.get( CV_CAP_PROP_POS_FRAMES );
             timeStamp = frame_to_timestamp[ frame ];
+            if( flgCompatible ) {
+                // The old version of capturing program stores time stamp using GetSystemTimeAsFileTime().
+                // Conversion is required.
+                timeStamp /= 10;
+                timeStamp -= DELTA_EPOCH_IN_MICROSECS; 
+            }
             cout << "Next frame # is " << frame << endl;
             
         }
@@ -1337,6 +1368,8 @@ int main( int argc, char *argv[] )
             flgSavePEPMap = true;
         } else if( strOpt == "--no-stdout-pepmap" ) {
             flgStdOutPEPMap = false;
+        } else if( strOpt == "--compatible" ) {
+            flgCompatible = true;
         }
     }
 

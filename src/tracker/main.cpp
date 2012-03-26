@@ -146,7 +146,9 @@ int bumblebee_mode()
                 istringstream iss( string( buf ) );
                 //iss >> timeStamp;
             }            
-            cout << "Serial #: " << serialNumber << ", time: " << timeStamp;
+            //cout << "Serial #: " << serialNumber << ", time: " << timeStamp;
+            time_t _sec = timeStamp / 1000000ULL;
+            cout << "Serial #: " << serialNumber << ", time: " << timeStamp << "(" << ctime( &_sec ) << ")";
             cameraunit.readline( buf, SIZE_BUFFER );
             int size = atoi( buf );
             cout << " size = " << size << "...";
@@ -295,10 +297,11 @@ int pepmapfile_mode( string strVideoFile )
 			cout << "Detect a PEP-map.";
             //ifs.getline( buf, SIZE_BUFFER );
             ifs >> serialNumber >> timeStamp >> size;
-            timeStamp /= 10;
+            //timeStamp /= 10;
             //int size = atoi( buf );
-            cout << "Serial #: " << serialNumber << ", time: " << timeStamp;
-            cout << ", size = " << size << "...";
+            time_t _sec = timeStamp / 1000000ULL;
+            cout << "Serial #: " << serialNumber << ", time: " << timeStamp << "(" << ctime( _sec ) << ")";
+            //cout << ", size = " << size << "...";
             //ifs.read( buf, size * 2 );
             //str = string( buf );
             ifs >> str;
