@@ -25,11 +25,12 @@
 #endif
 
 #ifdef LINUX_OS
-#include <sys/times.h>
-#include <termios.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <curses.h>
+#include <sys/time.h>
+//#include <sys/times.h>
+//#include <termios.h>
+//#include <unistd.h>
+//#include <fcntl.h>
+//#include <curses.h>
 #endif
 
 #define _HANDLE_TRICLOPS_ERROR( description, error )    \
@@ -77,7 +78,7 @@ float roi_x, roi_y;
 float scale_m2px;
 
 #ifdef LINUX_OS
-
+/*
 int kbhit(void)
 {
     struct termios oldt, newt;
@@ -103,7 +104,7 @@ int kbhit(void)
 
     return 0;
 }
-
+*/
 #endif
 
 #ifdef WINDOWS_OS
@@ -126,7 +127,7 @@ void* KeyInThread( void* p_param )
     return 1;
 #endif
 #ifdef LINUX_OS
-    return null;
+    return NULL;
 #endif
 }
 
@@ -470,8 +471,8 @@ void stereo( TriclopsImage16* pDst/*Mat* pDst*/, const Mat& src/*TriclopsInput& 
     int imageCols = src.cols / 2;
     int imageRows = src.rows;
     int imageRowInc = src.elemSize1() * src.cols * src.channels();
-    unsigned long timeStampSeconds = 12880571209;//rawImage.GetTimeStamp().seconds;
-    unsigned long timeStampMicroSeconds = 9890000;//rawImage.GetTimeStamp().microSeconds;
+    unsigned long timeStampSeconds = 0;//12880571209;//rawImage.GetTimeStamp().seconds;
+    unsigned long timeStampMicroSeconds = 0;//9890000;//rawImage.GetTimeStamp().microSeconds;
 
     // Pointers to positions in the mono buffer that correspond to the beginning
     // of the red, green and blue sections
@@ -513,7 +514,7 @@ void stereo( TriclopsImage16* pDst/*Mat* pDst*/, const Mat& src/*TriclopsInput& 
     _HANDLE_TRICLOPS_ERROR( "triclopsGetImage16()", te );
 }
 
-void grab_from_bumblebee( Mat* pDst )
+void grab_from_bumblebee( Mat* pDst, unsigned long long* p_time_stamp = NULL )
 {
     Error err;
     Image rawImage;
@@ -524,6 +525,17 @@ void grab_from_bumblebee( Mat* pDst )
         PrintError( err );
         return;
     }
+
+    timeval tv;
+    gettimeofday( &tv, NULL );
+    cout << "Time Stamp: " << tv.tv_sec << "." << tv.tv_usec;
+    if( p_time_stamp ) {
+      *p_time_stamp = (unsigned long long)tv.tv_sec * 1000000ULL + (unsigned long long)tv.tv_usec;
+      cout << endl << " -> " << *p_time_stamp 
+                << ", " << ctime( &tv.tv_sec ) << endl;
+        
+    }
+    cout << endl;
 
     pDst->create( iMaxRows, iMaxCols * 2, CV_8U );
     buffer = pDst->data;
@@ -656,8 +668,7 @@ void execute( int start_frame = 0 )
 
         // Retrieve an image
         if( !flgVideoFile ) {
-            grab_from_bumblebee( &image );
-            timeStamp = 0; // debug
+	    grab_from_bumblebee( &image, &timeStamp );
         } else {
             if( !grab_from_video( &image ) ) {
                 break;
