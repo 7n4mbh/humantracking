@@ -514,7 +514,7 @@ void grab_from_bumblebee( Mat* pDst )
 {
     Error err;
     Image rawImage;
-    unsigned char* buffer = pDst->data;
+    unsigned char* buffer;
 
     err = bumblebee.RetrieveBuffer( &rawImage );
     if( err != PGRERROR_OK ) {
@@ -523,6 +523,7 @@ void grab_from_bumblebee( Mat* pDst )
     }
 
     pDst->create( iMaxRows, iMaxCols * 2, CV_8U );
+    buffer = pDst->data;
 
     // de-interlace
     // ## Should be optimized for faster processing
@@ -707,9 +708,9 @@ void execute()
                 }
                 img_depth.at<float>( y, x ) = zz;
                 ////img_display.at<unsigned char>( y, x ) = (unsigned char)( 25.0f * zz );
-                //if( x == 100 && y == 100 ) {
-                //    cout << zz << ", " << 25.0f * zz << ", " << (int)( (25.0f * img_depth.at<float>( y, x )/*zz*/) ) << endl;//", ";
-                //}
+                if( x == 100 && y == 100 ) {
+                    cout << zz << ", " << 25.0f * zz << ", " << (int)( (25.0f * img_depth.at<float>( y, x )/*zz*/) ) << endl;//", ";
+                }
             }
         }
 
