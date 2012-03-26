@@ -5,6 +5,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cameraunit", "cameraunit\ca
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tracker", "tracker\tracker.vcxproj", "{467CC5A1-F850-4608-A3B7-8A0ADB00828C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "integrate", "integrate\integrate.vcxproj", "{3A38F52F-15AA-46ED-950E-3A1F5BA70205}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -28,6 +30,12 @@ Global
 		{467CC5A1-F850-4608-A3B7-8A0ADB00828C}.Release|Win32.Build.0 = Release|Win32
 		{467CC5A1-F850-4608-A3B7-8A0ADB00828C}.Release|x64.ActiveCfg = Release|x64
 		{467CC5A1-F850-4608-A3B7-8A0ADB00828C}.Release|x64.Build.0 = Release|x64
+		{3A38F52F-15AA-46ED-950E-3A1F5BA70205}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3A38F52F-15AA-46ED-950E-3A1F5BA70205}.Debug|Win32.Build.0 = Debug|Win32
+		{3A38F52F-15AA-46ED-950E-3A1F5BA70205}.Debug|x64.ActiveCfg = Debug|Win32
+		{3A38F52F-15AA-46ED-950E-3A1F5BA70205}.Release|Win32.ActiveCfg = Release|Win32
+		{3A38F52F-15AA-46ED-950E-3A1F5BA70205}.Release|Win32.Build.0 = Release|Win32
+		{3A38F52F-15AA-46ED-950E-3A1F5BA70205}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

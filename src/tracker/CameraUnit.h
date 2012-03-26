@@ -22,19 +22,20 @@ class CameraUnit{
 public:
 
 private:
-   HANDLE hChildProcess;
-   HANDLE hStdIn; // Handle to parents std input.
-   BOOL bRunThread;
-	HANDLE hOutputRead, hInputWrite;
-      HANDLE hThread;
-      DWORD ThreadId;
-	  std::deque<char> buffer;
-	  CRITICAL_SECTION cs;
+    HANDLE hChildProcess;
+    HANDLE hStdIn; // Handle to parents std input.
+    BOOL bRunThread;
+    HANDLE hOutputRead, hInputWrite;
+    HANDLE hThread;
+    DWORD ThreadId;
+	std::deque<char> buffer;
+	CRITICAL_SECTION cs;
+    std::string strAddr;
 
 public:
 	CameraUnit();
 
-	void connect();
+	void connect( const std::string& addr );
 	void disconnect();
     void read( char* buf, size_t size );
 	void readline( char* buf, size_t size );
