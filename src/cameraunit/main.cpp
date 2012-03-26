@@ -125,6 +125,9 @@ void* KeyInThread( void* p_param )
 #ifdef WINDOWS_OS
     return 1;
 #endif
+#ifdef LINUX_OS
+    return null;
+#endif
 }
 
 void PrintError( Error error )
@@ -565,9 +568,11 @@ bool grab_from_video( Mat* pDst )
 
     //imshow( "video", imgFromVideo );
     //cvWaitKey( 0 );
+
+    return true;
 }
 
-void execute()
+void execute( int start_frame = 0 )
 {
     int width = stereo_width, height = stereo_height;
     Error err;
@@ -606,7 +611,7 @@ void execute()
 
     // debug code
     if( flgVideoFile ) {
-        video.set( CV_CAP_PROP_POS_FRAMES, 1800 );
+        video.set( CV_CAP_PROP_POS_FRAMES, start_frame );
     }
 
 #ifdef WINDOWS_OS
@@ -1373,25 +1378,47 @@ int main( int argc, char *argv[] )
 
     //
     // Command Prompt
-    string strCmd;
+    vector<string> strCmd;
+    string str;
     while( 1 ) {
         cout << ">";
-        cin >> strCmd;
-        if( strCmd == "run" ) {
-            execute();
-        //} else if( strCmd == "update" ) {
+        //cin >> str;
+        getline( cin, str );
+        if( str.empty() ) {
+            continue;
+        }
+
+        strCmd.clear();
+        char* cstrcmd = new char[ str.size() + 1 ];
+        strcpy( cstrcmd, str.c_str() );
+        
+        char* tp = strtok( cstrcmd, " " );
+        strCmd.push_back( string( tp ) );
+        while ( tp != NULL ) {
+            tp = strtok( NULL, " " );
+            if ( tp != NULL ) {
+                strCmd.push_back( string( tp ) );
+            }
+        }
+
+        delete [] cstrcmd;
+        cstrcmd = NULL;
+
+        if( strCmd[ 0 ] == "run" ) {
+            execute( strCmd.size() == 2 ? atoi( strCmd[ 1 ].c_str() ) : 0 );
+        //} else if( strCmd[ 0 ] == "update" ) {
         //    update_background( 20 );
-        //} else if( strCmd == "background" ) {
+        //} else if( strCmd[ 0 ] == "background" ) {
         //    show_background();
-        //} else if( strCmd == "calibrate" ) {
+        //} else if( strCmd[ 0 ] == "calibrate" ) {
         //    calibration();
-        } else if( strCmd == "capture" ) {
+        } else if( strCmd[ 0 ] == "capture" ) {
             capture();
-        } else if( strCmd == "background" ) {
+        } else if( strCmd[ 0 ] == "background" ) {
             show_background();
-        } else if( strCmd == "update" ) {
+        } else if( strCmd[ 0 ] == "update" ) {
             update_background( 20 );
-        } else if( strCmd == "quit" || strCmd == "exit" ) {
+        } else if( strCmd[ 0 ] == "quit" || strCmd[ 0 ] == "exit" ) {
             break;
         } else {
             cout << "Unkown command." << endl;

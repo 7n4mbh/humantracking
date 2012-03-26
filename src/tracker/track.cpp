@@ -406,7 +406,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                                 , &sampler
                                 , nSample
                                 , &trajectoriesClustered
-                                , "C:\\Users\\kenichiro\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+                                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
                                 , oss.str()
                                 , NULL
                                 , &plotParam );

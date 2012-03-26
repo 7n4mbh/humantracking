@@ -44,7 +44,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         }
 
         // ファイルを開きサンプルのデータを出力する
-        oss << "C:\\Users\\kenichiro\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\samples_" << timeBegin << ".csv";
+        oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\samples_" << timeBegin << ".csv";
         strSampleFile = oss.str();
         ofs.open( strSampleFile.c_str() );
         ofs << "x, z, t" << endl;
@@ -61,7 +61,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         ofstream ofs;
         ostringstream oss;
 
-        oss << "C:\\Users\\kenichiro\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\trajectories_" << timeBegin << ".csv";
+        oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\trajectories_" << timeBegin << ".csv";
         strTrajectoriesFile = oss.str();
         ofs.open( strTrajectoriesFile.c_str() );
         CTrajectory trajectory;
@@ -85,7 +85,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         ofstream ofs;
         ostringstream oss;
 
-        oss << "C:\\Users\\kenichiro\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\plot_trajectories_" << timeBegin << ".plt";
+        oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\plot_trajectories_" << timeBegin << ".plt";
         strScriptFile = oss.str();
         ofs.open( strScriptFile.c_str() );
         ofs << "set nokey" << endl;
@@ -274,7 +274,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         }
 
         // ファイルを開きサンプルのデータを出力する
-        oss << "C:\\Users\\kenichiro\\Documents\\project\\HumanTracking\\bin\\tmp_renovate\\samples_" << timeBegin << ".csv";
+        oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_renovate\\samples_" << timeBegin << ".csv";
         strSampleFile = oss.str();
         ofs.open( strSampleFile.c_str() );
         ofs << "x, z, t" << endl;
@@ -292,7 +292,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         for( itResult = pResult->begin(); itResult != pResult->end(); ++itResult ) {
             ofstream ofs;
             ostringstream oss;
-            oss << "C:\\Users\\kenichiro\\Documents\\project\\HumanTracking\\bin\\tmp_renovate\\trajectories_result_" << itResult->first << "_" << timeBegin << ".csv";
+            oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_renovate\\trajectories_result_" << itResult->first << "_" << timeBegin << ".csv";
             strTrajectoriesFile.push_back( oss.str() );
             ofs.open( oss.str().c_str() );
             CTrajectory trajectory;
@@ -317,7 +317,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         ofstream ofs;
         ostringstream oss;
 
-        oss << "C:\\Users\\kenichiro\\Documents\\project\\HumanTracking\\bin\\tmp_renovate\\plot_trajectories_result" << timeBegin << ".plt";
+        oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_renovate\\plot_trajectories_result" << timeBegin << ".plt";
         strScriptFile = oss.str();
         ofs.open( strScriptFile.c_str() );
         ofs << "set nokey" << endl;
