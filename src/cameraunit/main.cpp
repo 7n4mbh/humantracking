@@ -67,6 +67,7 @@ vector<unsigned long long> frame_to_timestamp;
 bool flgSavePEPMap = false;
 bool flgStdOutPEPMap = true;
 bool flgCompatible = false;
+bool flgNullPEPMap = false;
 
 int iMaxCols = 1280, iMaxRows = 960;
 int stereo_width = 512, stereo_height = 384;
@@ -787,45 +788,47 @@ void execute( int start_frame = 0 )
         //}
         //imshow( "Blob", matimg );
 
-        // background subtraction（ベクトル計算で高速化の余地あり）
-        Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
-        //vector<Point3f> point_foreground;
-        Mat xvec( 4, 1, CV_32F );
-        Mat point_planview( 3, 1, CV_32F );
-        for( int x = 0; x < img_depth.cols; ++x ) {
-            for( int y  = 0; y < img_depth.rows; ++y ) {
-                if( abs( img_depth.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
-                    img_depth.at<float>( y, x ) = 0.0f;
-                } else {
-                    disparity = *(unsigned short*)((unsigned char*)depthImage16.data + depthImage16.rowinc * y + x * 2 );
-                    if( disparity < 0xff00 ) {
-                        triclopsRCD16ToXYZ( triclops, y, x, disparity, &xx, &yy, &zz );
-                        xvec.at<float>( 0, 0 ) = xx; xvec.at<float>( 1, 0 ) = yy; xvec.at<float>( 2, 0 ) = zz; xvec.at<float>( 3, 0 ) = 1.0;
-                        point_planview =  H * xvec ;
-                        //point_foreground.push_back( Point3f( point_planview.at<float>( 0, 0 ), point_planview.at<float>( 1, 0 ), point_planview.at<float>( 2, 0 ) ) );
-                        float pv_x = point_planview.at<float>( 0, 0 ), pv_y = point_planview.at<float>( 1, 0 ), pv_z = point_planview.at<float>( 2, 0 );
-                        int row = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( ( pv_y - roi_y ) + roi_width / 2.0f ) );
-                        if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
-                            occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
-                        }
-                    }                    
-                }
-            }
-        }
-
         // 
         // Create an occupancy map with foreground data
-        //Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
-        //for( vector<Point3f>::iterator it = point_foreground.begin(); it != point_foreground.end(); ++it ) {
-        //    int row = (int)( scale_m2px * ( ( it->x - roi_x ) + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( ( it->y - roi_y ) + roi_width / 2.0f ) );
-        //    if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
-        //        occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
-        //    }
-        //}
-        for( int row = 0; row < occupancy.rows; ++row ) {
-            for( int col = 0; col < occupancy.cols; ++col ) {
-                if( occupancy.at<unsigned short>( row, col ) < 50 ) {
-                    occupancy.at<unsigned short>( row, col ) = 0;
+        // （ベクトル計算で高速化の余地あり）
+        Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+        if( !flgNullPEPMap ) {
+            //vector<Point3f> point_foreground;
+            Mat xvec( 4, 1, CV_32F );
+            Mat point_planview( 3, 1, CV_32F );
+            for( int x = 0; x < img_depth.cols; ++x ) {
+                for( int y  = 0; y < img_depth.rows; ++y ) {
+                    if( abs( img_depth.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
+                        img_depth.at<float>( y, x ) = 0.0f;
+                    } else {
+                        disparity = *(unsigned short*)((unsigned char*)depthImage16.data + depthImage16.rowinc * y + x * 2 );
+                        if( disparity < 0xff00 ) {
+                            triclopsRCD16ToXYZ( triclops, y, x, disparity, &xx, &yy, &zz );
+                            xvec.at<float>( 0, 0 ) = xx; xvec.at<float>( 1, 0 ) = yy; xvec.at<float>( 2, 0 ) = zz; xvec.at<float>( 3, 0 ) = 1.0;
+                            point_planview =  H * xvec ;
+                            //point_foreground.push_back( Point3f( point_planview.at<float>( 0, 0 ), point_planview.at<float>( 1, 0 ), point_planview.at<float>( 2, 0 ) ) );
+                            float pv_x = point_planview.at<float>( 0, 0 ), pv_y = point_planview.at<float>( 1, 0 ), pv_z = point_planview.at<float>( 2, 0 );
+                            int row = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( ( pv_y - roi_y ) + roi_width / 2.0f ) );
+                            if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
+                                occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
+                            }
+                        }                    
+                    }
+                }
+            }
+
+            //Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+            //for( vector<Point3f>::iterator it = point_foreground.begin(); it != point_foreground.end(); ++it ) {
+            //    int row = (int)( scale_m2px * ( ( it->x - roi_x ) + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( ( it->y - roi_y ) + roi_width / 2.0f ) );
+            //    if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
+            //        occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
+            //    }
+            //}
+            for( int row = 0; row < occupancy.rows; ++row ) {
+                for( int col = 0; col < occupancy.cols; ++col ) {
+                    if( occupancy.at<unsigned short>( row, col ) < 50 ) {
+                        occupancy.at<unsigned short>( row, col ) = 0;
+                    }
                 }
             }
         }
@@ -1374,6 +1377,8 @@ int main( int argc, char *argv[] )
             flgSavePEPMap = true;
         } else if( strOpt == "--no-stdout-pepmap" ) {
             flgStdOutPEPMap = false;
+        } else if( strOpt == "--null-pepmap" ) {
+            flgNullPEPMap = true;
         } else if( strOpt == "--compatible" ) {
             flgCompatible = true;
         }
@@ -1396,9 +1401,15 @@ int main( int argc, char *argv[] )
 
     }
     // Load extrinsic parameters
-    if( !load_extrinsic_parameters() ) {
-        cout << "Failed in loading the extrinsic parameters." << endl;
-        exit( 1 );
+    if( !flgNullPEPMap ) {
+        if( !load_extrinsic_parameters() ) {
+            cout << "Failed in loading the extrinsic parameters." << endl;
+            exit( 1 );
+        }
+    } else {
+        H.at<float>( 0, 0 ) = 1.0; H.at<float>( 0, 1 ) = 0.0; H.at<float>( 0, 2 ) = 0.0; H.at<float>( 0, 3 ) = 0.0;
+        H.at<float>( 1, 0 ) = 0.0; H.at<float>( 1, 1 ) = 1.0; H.at<float>( 1, 2 ) = 0.0; H.at<float>( 1, 3 ) = 0.0;
+        H.at<float>( 2, 0 ) = 0.0; H.at<float>( 2, 1 ) = 0.0; H.at<float>( 2, 2 ) = 1.0; H.at<float>( 2, 3 ) = 0.0;
     }
     cout << "<Initialized>" << endl;
     cout << camInfo.serialNumber << endl;
