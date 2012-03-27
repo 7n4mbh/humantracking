@@ -1,4 +1,7 @@
 #include <iostream>
+#include <vector>
+#include <deque>
+#include <map>
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -34,6 +37,18 @@ string strPEPMapFile;
 float roi_width, roi_height;
 float roi_x, roi_y;
 float scale_m2px;
+
+map<unsigned int,string> cameraName;
+volatile bool flgRunGetPEPMapThread;
+
+typedef struct {
+    unsigned int serialNumber;
+    unsigned long long timeStamp;
+    string data;
+} PEPMapInfo;
+
+CRITICAL_SECTION cs;
+deque<PEPMapInfo> bufPEPMap;
 
 void getfilename( const string src, string* p_str_path, string* p_str_name, string* p_str_noextname )
 {
@@ -91,105 +106,262 @@ bool load_pepmap_config()
     return true;
 }
 
-int bumblebee_mode()
+int load_cameraunit_list( vector<string>* p_addrCameraUnit )
 {
+    ifstream ifs;
 
-	CameraUnit cameraunit;
-    string strSerial;
+    ifs.open( "cameraunit_list.txt" );
 
-	cameraunit.connect( "192.168.1.100" );
+    if( !ifs.is_open() ) {
+        return false;
+    }
 
-	char buf[ SIZE_BUFFER ];
-	for( ; ; ) {
-		cameraunit.readline( buf, SIZE_BUFFER );
-		//cout << buf << endl;
+    string str;
+    while( !ifs.eof() ) {
+        ifs >> str;
+        p_addrCameraUnit->push_back( str );
+    }
 
-		string str( buf );
-		if( str.find( "<Initialized>" ) != str.npos ) {
-            cout << str << endl;
-            cameraunit.readline( buf, SIZE_BUFFER );
-            strSerial = string( buf );
-            cout << strSerial << endl;
-        } else if( str.find( "<Camera Parameters Changed>" ) != str.npos ) {
-            cout << str << endl;
-		} else if( str.find( "<Stereo Parameters Changed>" ) != str.npos ) {
-            cout << str << endl;
-            break;
-		}
-	}
+    return true;
+}
 
-	cout << endl << "Camera " << strSerial << " is ready." << endl;
-    cout << "Request to send PEPMaps in two seconds." << endl;
+DWORD WINAPI GetPEPMapThread( LPVOID p_cameraunit )
+{
+    CameraUnit* pCameraUnit = (CameraUnit*)p_cameraunit;
 
-	Sleep( 2000 );
+    pCameraUnit->send( "run\n", 4 );
 
-    Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
-    Mat img_occupancy( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
-    Mat img_display2( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8U );
-    unsigned long long timeStamp;
-    unsigned int serialNumber;
-    cameraunit.send( "run\n", 4 );
-    int cnt = 0;
-	do {
-		cameraunit.readline( buf, SIZE_BUFFER );
+    PEPMapInfo pepmap;
+    char buf[ SIZE_BUFFER ];
+	while( flgRunGetPEPMapThread ) {
+		pCameraUnit->readline( buf, SIZE_BUFFER );
 
 		string str( buf );
 		if( str.find( "<PEPMap>" ) != str.npos ) {
-			cout << "Detected a PEP-map." << endl;
+			//cout << "Detected a PEP-map." << endl;
             {
-                cameraunit.readline( buf, SIZE_BUFFER );
+                pCameraUnit->readline( buf, SIZE_BUFFER );
                 string strtmp( buf );
                 istringstream iss( strtmp );
-                iss >> serialNumber;
+                iss >> pepmap.serialNumber;
             }
             {
-                cameraunit.readline( buf, SIZE_BUFFER );
+                pCameraUnit->readline( buf, SIZE_BUFFER );
                 string strtmp( buf );
                 istringstream iss( strtmp );
-                iss >> timeStamp;
+                iss >> pepmap.timeStamp;
             }            
-            //cout << "Serial #: " << serialNumber << ", time: " << timeStamp;
-            time_t _sec = timeStamp / 1000000ULL;
-            cout << "Serial #: " << serialNumber << ", time: " << timeStamp << "(" << ctime( &_sec ) << ")";
-            cameraunit.readline( buf, SIZE_BUFFER );
+            cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp;
+            time_t _sec = pepmap.timeStamp / 1000000ULL;
+            cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << ctime( &_sec ) << ")";
+            pCameraUnit->readline( buf, SIZE_BUFFER );
             int size = atoi( buf );
             cout << " size = " << size << "...";
-            cameraunit.read( buf, size * 2 );
-            str = string( buf );
-            char a[ 3 ]; a[ 2 ] = '\0';
-            for( int j = 0; j < size; ++j ) {
-                a[ 0 ] = str[ j * 2 ];
-                a[ 1 ] = str[ j * 2 + 1 ];
-                buf[ j ] = strtol( a, NULL, 16 );
-            }
+            pCameraUnit->read( buf, size * 2 );
+            buf[ size * 2 ] = '\0';
+            pepmap.data = string( buf );
             cout << "Data Received." << endl;
-            ++cnt;
 
-            uLongf len_uncompressed = (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) * 2;
-            uncompress( occupancy.data
-            , &len_uncompressed
-            , (const Bytef*)buf
-            , size );
-
-            occupancy.convertTo( img_occupancy, CV_8U );
-            resize( img_occupancy, img_display2, img_display2.size() );
-            imshow( "Occupancy Map", img_display2 );
-            (void)cvWaitKey( 1 );
-
-            // Tracking
-            track( occupancy, timeStamp );
+            EnterCriticalSection( &cs );
+            bufPEPMap.push_back( pepmap );
+            LeaveCriticalSection( &cs );
 		}
-	} while( cnt < 100 );
-    //buf[ 0 ] = 27; buf[ 1 ] = '\n';
+	}
+
     buf[ 0 ] = 'q'; buf[ 1 ] = '\n';
-    cameraunit.send( buf, 2 );
+    pCameraUnit->send( buf, 2 );
 
     // skip all the unread PEP-maps.
-    while( cameraunit.hasData() ) {
-        cameraunit.ClearBuffer();
+    while( pCameraUnit->hasData() ) {
+        pCameraUnit->ClearBuffer();
         cout << "buffer clear." << endl;
       	Sleep( 100 );
     }
+
+    return 1;
+}
+
+int bumblebee_mode()
+{
+
+	CameraUnit* cameraunit;
+    string strSerial;
+
+    //
+    // Load camera unit list
+    vector<string> addrCameraUnit;
+    load_cameraunit_list( &addrCameraUnit );
+    const int nCameraUnit = addrCameraUnit.size();
+    cameraunit = new CameraUnit[ nCameraUnit ];
+
+
+    //
+    // Initialize the camera units
+    for( size_t i = 0; i < nCameraUnit; ++i ) {
+	    cameraunit[ i ].connect( addrCameraUnit[ i ] );
+
+	    char buf[ SIZE_BUFFER ];
+	    for( ; ; ) {
+		    cameraunit[ i ].readline( buf, SIZE_BUFFER );
+		    //cout << buf << endl;
+
+		    string str( buf );
+		    if( str.find( "<Initialized>" ) != str.npos ) {
+                cout << str << endl;
+                cameraunit[ i ].readline( buf, SIZE_BUFFER );
+                strSerial = string( buf );
+                cout << strSerial << endl;
+            } else if( str.find( "<Camera Parameters Changed>" ) != str.npos ) {
+                cout << str << endl;
+		    } else if( str.find( "<Stereo Parameters Changed>" ) != str.npos ) {
+                cout << str << endl;
+                break;
+		    }
+	    }
+
+	    cout << endl << "Camera " << strSerial << " is ready." << endl;
+    }
+
+
+    cout << "Request to send PEPMaps in two seconds." << endl;
+	Sleep( 2000 );
+
+
+    //
+    // Craete threader for each cameraunit
+    flgRunGetPEPMapThread = true;
+    InitializeCriticalSection( &cs );
+    HANDLE* hThread = new HANDLE[ nCameraUnit ];
+    DWORD* ThreadID = new DWORD[ nCameraUnit ];
+    for( int i = 0; i < nCameraUnit; ++i ) {
+        hThread[ i ] = CreateThread( NULL
+                                    , 0
+                                    , GetPEPMapThread
+                                    , (LPVOID)&cameraunit[ i ]
+                                    ,0
+                                    ,&ThreadID[ i ] );
+    }
+
+
+    //
+    // Tracking
+    Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+    Mat img_occupancy( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
+    Mat img_display2( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8U );
+    //unsigned long long timeStamp;
+    //unsigned int serialNumber;
+    char buf[ SIZE_BUFFER ];
+    //cameraunit.send( "run\n", 4 );
+    int cnt = 0;
+    PEPMapInfo pepmap;
+	do {
+        EnterCriticalSection( &cs );
+        if( !bufPEPMap.empty() ) {
+            pepmap = bufPEPMap.front();
+            bufPEPMap.pop_front();
+        } else {
+            LeaveCriticalSection( &cs );
+            continue;
+        }
+        LeaveCriticalSection( &cs );
+
+        const int size = pepmap.data.size() / 2;
+
+        char a[ 3 ]; a[ 2 ] = '\0';
+        for( int j = 0; j < size; ++j ) {
+            a[ 0 ] = pepmap.data[ j * 2 ];
+            a[ 1 ] = pepmap.data[ j * 2 + 1 ];
+            buf[ j ] = strtol( a, NULL, 16 );
+        }
+        cout << "Data Received." << endl;
+        ++cnt;
+
+        uLongf len_uncompressed = (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) * 2;
+        uncompress( occupancy.data
+        , &len_uncompressed
+        , (const Bytef*)buf
+        , size );
+
+        occupancy.convertTo( img_occupancy, CV_8U );
+        resize( img_occupancy, img_display2, img_display2.size() );
+        imshow( "Occupancy Map", img_display2 );
+        (void)cvWaitKey( 1 );
+
+        // Tracking
+        track( occupancy, pepmap.timeStamp );
+
+		//cameraunit.readline( buf, SIZE_BUFFER );
+
+		//string str( buf );
+		//if( str.find( "<PEPMap>" ) != str.npos ) {
+		//	cout << "Detected a PEP-map." << endl;
+  //          {
+  //              cameraunit.readline( buf, SIZE_BUFFER );
+  //              string strtmp( buf );
+  //              istringstream iss( strtmp );
+  //              iss >> serialNumber;
+  //          }
+  //          {
+  //              cameraunit.readline( buf, SIZE_BUFFER );
+  //              string strtmp( buf );
+  //              istringstream iss( strtmp );
+  //              iss >> timeStamp;
+  //          }            
+  //          //cout << "Serial #: " << serialNumber << ", time: " << timeStamp;
+  //          time_t _sec = timeStamp / 1000000ULL;
+  //          cout << "Serial #: " << serialNumber << ", time: " << timeStamp << "(" << ctime( &_sec ) << ")";
+  //          cameraunit.readline( buf, SIZE_BUFFER );
+  //          int size = atoi( buf );
+  //          cout << " size = " << size << "...";
+  //          cameraunit.read( buf, size * 2 );
+  //          str = string( buf );
+  //          char a[ 3 ]; a[ 2 ] = '\0';
+  //          for( int j = 0; j < size; ++j ) {
+  //              a[ 0 ] = str[ j * 2 ];
+  //              a[ 1 ] = str[ j * 2 + 1 ];
+  //              buf[ j ] = strtol( a, NULL, 16 );
+  //          }
+  //          cout << "Data Received." << endl;
+  //          ++cnt;
+
+  //          uLongf len_uncompressed = (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) * 2;
+  //          uncompress( occupancy.data
+  //          , &len_uncompressed
+  //          , (const Bytef*)buf
+  //          , size );
+
+  //          occupancy.convertTo( img_occupancy, CV_8U );
+  //          resize( img_occupancy, img_display2, img_display2.size() );
+  //          imshow( "Occupancy Map", img_display2 );
+  //          (void)cvWaitKey( 1 );
+
+  //          // Tracking
+  //          track( occupancy, timeStamp );
+		//}
+	} while( cnt < 100 );
+
+
+    //
+    // Exit all the threads
+    flgRunGetPEPMapThread = false;
+    WaitForMultipleObjects( nCameraUnit, hThread, true, INFINITE );
+    
+    delete [] hThread;
+    delete [] ThreadID;
+    
+    hThread = NULL;
+    ThreadID = NULL;
+
+    ////buf[ 0 ] = 27; buf[ 1 ] = '\n';
+    //buf[ 0 ] = 'q'; buf[ 1 ] = '\n';
+    //cameraunit.send( buf, 2 );
+
+    //// skip all the unread PEP-maps.
+    //while( cameraunit.hasData() ) {
+    //    cameraunit.ClearBuffer();
+    //    cout << "buffer clear." << endl;
+    //  	Sleep( 100 );
+    //}
 
 	//cameraunit.send( "hoge\n", 5 );
 	//for( ; ; ) {
@@ -204,7 +376,16 @@ int bumblebee_mode()
 
 	//Sleep( 2000 );
 
-	cameraunit.disconnect();
+    // 
+    // Disconnect all the camera unit.
+    for( size_t i = 0; i < nCameraUnit; ++i ) {
+	    cameraunit[ i ].disconnect();
+    }
+
+    delete [] cameraunit;
+    cameraunit = NULL;
+
+    DeleteCriticalSection( &cs );
 
 	return 0;
 /*
