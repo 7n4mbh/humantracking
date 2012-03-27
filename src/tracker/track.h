@@ -67,6 +67,7 @@ typedef struct {
     double rangeRight; ///< 計算過程をGNUPLOTに表示するときの範囲（右端[m]）
     double rangeTop; ///< 計算過程をGNUPLOTに表示するときの範囲（上端[m]）
     double rangeBottom; ///< 計算過程をGNUPLOTに表示するときの範囲（下端[m]）
+    double kSample; ///< 抽出するサンプル数を決めるための比例係数
 } PARAM_PLOT;
 
 bool load_track_parameters( std::string strPath );

@@ -97,7 +97,7 @@ int bumblebee_mode()
 	CameraUnit cameraunit;
     string strSerial;
 
-	cameraunit.connect();
+	cameraunit.connect( "192.168.1.100" );
 
 	char buf[ SIZE_BUFFER ];
 	for( ; ; ) {
@@ -135,16 +135,18 @@ int bumblebee_mode()
 
 		string str( buf );
 		if( str.find( "<PEPMap>" ) != str.npos ) {
-			cout << "Detect a PEP-map.";
+			cout << "Detected a PEP-map." << endl;
             {
                 cameraunit.readline( buf, SIZE_BUFFER );
-                istringstream iss( string( buf ) );
-                //iss >> serialNumber;
+                string strtmp( buf );
+                istringstream iss( strtmp );
+                iss >> serialNumber;
             }
             {
                 cameraunit.readline( buf, SIZE_BUFFER );
-                istringstream iss( string( buf ) );
-                //iss >> timeStamp;
+                string strtmp( buf );
+                istringstream iss( strtmp );
+                iss >> timeStamp;
             }            
             //cout << "Serial #: " << serialNumber << ", time: " << timeStamp;
             time_t _sec = timeStamp / 1000000ULL;
@@ -294,13 +296,13 @@ int pepmapfile_mode( string strVideoFile )
 
 		//string str( buf );
 		if( str.find( "<PEPMap>" ) != str.npos ) {
-			cout << "Detect a PEP-map.";
+			cout << "Detected a PEP-map." << endl;
             //ifs.getline( buf, SIZE_BUFFER );
             ifs >> serialNumber >> timeStamp >> size;
             //timeStamp /= 10;
             //int size = atoi( buf );
             time_t _sec = timeStamp / 1000000ULL;
-            cout << "Serial #: " << serialNumber << ", time: " << timeStamp << "(" << ctime( _sec ) << ")";
+            cout << "Serial #: " << serialNumber << ", time: " << timeStamp << ", " << ctime( &_sec );
             //cout << ", size = " << size << "...";
             //ifs.read( buf, size * 2 );
             //str = string( buf );

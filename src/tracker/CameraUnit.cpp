@@ -1,6 +1,9 @@
 #include "CameraUnit.h"
 
+#include <sstream>
 #include <tchar.h>
+
+using namespace std;
 
 CameraUnit::CameraUnit()
 {
@@ -10,13 +13,15 @@ CameraUnit::CameraUnit()
     hThread = NULL;
 }
 
-void CameraUnit::connect()
+void CameraUnit::connect( const std::string& addr )
 {
       HANDLE hOutputReadTmp,hOutputWrite;
       HANDLE hInputWriteTmp,hInputRead;
       HANDLE hErrorWrite;
 
       SECURITY_ATTRIBUTES sa;
+
+      strAddr = addr;
 
 	  InitializeCriticalSection( &cs );
 
@@ -110,9 +115,9 @@ void CameraUnit::disconnect()
       if (!CloseHandle(hStdIn)) DisplayError("CloseHandle");
 
 
-	  const char* strCmd = "quit\r\n";
-	  send( strCmd, 6 ); // Send exit command to the camera unit process
-	  send( strCmd, 6 ); // Send exit command to the camera unit process
+	  const char* strCmd = "quit\n";
+	  send( strCmd, 5 ); // Send exit command to the camera unit process
+	  send( strCmd, 5 ); // Send exit command to the camera unit process
 	  WaitForSingleObject( hChildProcess, INFINITE ); // Wait until the camera unit process ends
 
       // Tell the thread to exit and wait for thread to die.
@@ -264,8 +269,10 @@ void CameraUnit::PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
     // Child.exe). Make sure Child.exe is in the same directory as
     // redirect.c launch redirect from a command line to prevent location
     // confusion.
+    ostringstream oss;
+    oss << "C:\\Windows\\SUA\\bin\\rsh " << strAddr << " -l kumalab /home/kumalab/project/HumanTracking/bin/cameraunit --nowindow";
     if (!CreateProcess( NULL
-                      , "C:\\Windows\\SUA\\bin\\rsh 192.168.1.16 -l kumalab /home/kumalab/project/HumanTracking/bin/cameraunit --nowindow"
+                      , (LPSTR)oss.str().c_str()//"C:\\Windows\\SUA\\bin\\rsh 192.168.1.100 -l kumalab /home/kumalab/project/HumanTracking/bin/cameraunit --nowindow"
                       , NULL
                       , NULL
                       , TRUE

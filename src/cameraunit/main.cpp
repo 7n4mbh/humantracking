@@ -646,7 +646,6 @@ void execute( int start_frame = 0 )
         ofs.open( oss.str().c_str() );
     }
 
-    // debug code
     if( flgVideoFile ) {
         video.set( CV_CAP_PROP_POS_FRAMES, start_frame );
     }
@@ -695,10 +694,10 @@ void execute( int start_frame = 0 )
         if( !flgVideoFile ) {
 	        grab_from_bumblebee( &image, &timeStamp );
         } else {
-            int frame = video.get( CV_CAP_PROP_POS_FRAMES );
             if( !grab_from_video( &image ) ) {
                 break;
             }
+            int frame = video.get( CV_CAP_PROP_POS_FRAMES );
             timeStamp = frame_to_timestamp[ frame ];
             if( flgCompatible ) {
                 // The old version of capturing program stores time stamp using GetSystemTimeAsFileTime().

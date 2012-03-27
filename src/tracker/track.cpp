@@ -19,6 +19,9 @@ PARAM_PLOT plotParam; // 計算過程プロットパラメータ
 
 bool flgFirst;
 
+extern float roi_width, roi_height;
+extern float roi_x, roi_y;
+
 bool load_track_parameters( std::string strPath )
 {
     commonParam.termTracking = 10000000;//8500000;//10000000;
@@ -30,15 +33,15 @@ bool load_track_parameters( std::string strPath )
     extractlumParam.maxPEPMapValue = 70.0;//1500.0;
     extractlumParam.minDiffTime = 600000;
     extractlumParam.maxSpeed = 8.0;//10.44;
-    extractlumParam.kLUM = 3.5e-1;//3.0e-2;
-    extractlumParam.kVerifySample = 3.5e-1;//6.0e-2;
+    extractlumParam.kLUM = 6.0e-1;//3.5e-1;//3.0e-2;
+    extractlumParam.kVerifySample = 3.0e-1;//3.5e-1;//6.0e-2;
     extractlumParam.distVerifySample = 0.15;
     extractlumParam.thMean = 0.05;
     extractlumParam.thVariance = 0.4;
     extractlumParam.intervalVerify = 100000;
     extractlumParam.rangeVerifySample = 100000;
     extractlumParam.stDeviation = 0.05;
-    mktrajectoryParam.distanceImpact = 0.07;;
+    mktrajectoryParam.distanceImpact = 0.07;
     mktrajectoryParam.densityOrigin = 60.0;
     clusteringParam.thConnect = 0.19;//0.18;//0.2;
     clusteringParam.thDistance = 0.7;
@@ -53,10 +56,15 @@ bool load_track_parameters( std::string strPath )
     rnvtrjParam.territory = 0.12;//0.12;//0.07;
     rnvtrjParam.territoryVeryNear = 0.01;//0.07;//min( 0.1, rnvtrjParam.territory );;
     rnvtrjParam.termConnect = 3000000;
-    plotParam.rangeLeft = -2.0;
-    plotParam.rangeRight = 2.0;
-    plotParam.rangeTop = 8.0;
-    plotParam.rangeBottom = 1.0;
+    //plotParam.rangeLeft = -2.0;
+    //plotParam.rangeRight = 2.0;
+    //plotParam.rangeTop = 2.0;//8.0;
+    //plotParam.rangeBottom = -2.0;//1.0;
+    plotParam.rangeLeft = roi_x - roi_width / 2.0;
+    plotParam.rangeRight = roi_x + roi_width / 2.0;
+    plotParam.rangeBottom = roi_y - roi_height / 2.0;
+    plotParam.rangeTop = roi_y + roi_height / 2.0;
+    plotParam.kSample = 1.0e-3;
 
     return true;
 }
@@ -211,7 +219,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
 
         // 計算過程をプロット
         double sumValue = std::accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-        unsigned int nSample = (unsigned int)( 3.0e-3/*1.04e-4*/ * sumValue );
+        unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
         OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
                         , timeTracking//tableLUMSlice.rbegin()->first
                         , timeEarliestPEPMap
@@ -221,7 +229,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                         , NULL//pipeGnuplot_Trajectory
                         , extractlumParam.stDeviation
                         , &plotParam );
-        cerr << "完了" << endl;
+        cerr << "完了(nSample=" << nSample << ")" << endl;
 
 
         //
@@ -399,7 +407,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                 ostringstream oss;
                 oss << cnt_loop;
                 double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-                unsigned int nSample = (unsigned int)( 1.04e-4 * sumValue );
+                unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
                 OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
                                 , timeTracking//tableLUMSlice.rbegin()->first
                                 , timeEarliestPEPMap
@@ -621,7 +629,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
         //if( myRank == 0 ) {
         {
             double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-            unsigned int nSample = (unsigned int)( 1.04e-4 * sumValue );
+            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
             OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
                          , timeTracking//tableLUMSlice.rbegin()->first
                          , timeEarliestPEPMap
