@@ -151,16 +151,16 @@ DWORD WINAPI GetPEPMapThread( LPVOID p_cameraunit )
                 istringstream iss( strtmp );
                 iss >> pepmap.timeStamp;
             }            
-            cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp;
+            //cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp;
             time_t _sec = pepmap.timeStamp / 1000000ULL;
-            cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << ctime( &_sec ) << ")";
+            //cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << ctime( &_sec ) << ")";
             pCameraUnit->readline( buf, SIZE_BUFFER );
             int size = atoi( buf );
-            cout << " size = " << size << "...";
+            //cout << " size = " << size << "...";
             pCameraUnit->read( buf, size * 2 );
             buf[ size * 2 ] = '\0';
             pepmap.data = string( buf );
-            cout << "Data Received." << endl;
+            //cout << "Data Received." << endl;
 
             EnterCriticalSection( &cs );
             bufPEPMap.push_back( pepmap );
@@ -257,6 +257,9 @@ int bumblebee_mode()
 	do {
         EnterCriticalSection( &cs );
         if( !bufPEPMap.empty() ) {
+            //if( bufPEPMap.empty() ) {
+            //    int a = 0;
+            //}
             pepmap = bufPEPMap.front();
             bufPEPMap.pop_front();
         } else {
@@ -273,7 +276,9 @@ int bumblebee_mode()
             a[ 1 ] = pepmap.data[ j * 2 + 1 ];
             buf[ j ] = strtol( a, NULL, 16 );
         }
-        cout << "Data Received." << endl;
+        //cout << "Data Received." << endl;
+        time_t _sec = pepmap.timeStamp / 1000000ULL;
+        cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << ctime( &_sec ) << ")";
         ++cnt;
 
         uLongf len_uncompressed = (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) * 2;
@@ -288,7 +293,7 @@ int bumblebee_mode()
         (void)cvWaitKey( 1 );
 
         // Tracking
-        track( occupancy, pepmap.timeStamp );
+        //track( occupancy, pepmap.timeStamp );
 
 		//cameraunit.readline( buf, SIZE_BUFFER );
 
