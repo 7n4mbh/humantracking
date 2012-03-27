@@ -69,6 +69,8 @@ bool flgStdOutPEPMap = true;
 bool flgCompatible = false;
 bool flgNullPEPMap = false;
 
+int deinterlace_mode = 0;
+
 int iMaxCols = 1280, iMaxRows = 960;
 int stereo_width = 512, stereo_height = 384;
 //int stereo_width = 640, stereo_height = 480;
@@ -571,18 +573,19 @@ void grab_from_bumblebee( Mat* pDst, unsigned long long* p_time_stamp = NULL )
     for( int x = 0; x < iMaxCols; ++x ) {
         for( int y = 0; y < iMaxRows; ++y ) {
             const unsigned char* data = rawImage.GetData();
-	    /*
-            // left
-            buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
-            // right
-            buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
-*/
+	    if( deinterlace_mode == 0 ) {
+	      
+	      // left
+	      buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
+	      // right
+	      buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
+	    } else {
 
-            // left
-            buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
-            // right
-            buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
-
+              // left
+              buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
+              // right
+              buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
+	    }
         }
     }
 }
@@ -1417,6 +1420,21 @@ int main( int argc, char *argv[] )
     if( !load_pepmap_config() ) {
         cout << "Failed in loading the PEP-map config file." << endl;
         exit( 1 );
+    }
+
+    {
+      ostringstream oss;
+#ifdef LINUX_OS
+      oss << "/home/kumalab/project/HumanTracking/bin/";
+#endif
+      oss << "deinterlace1";
+
+      ifstream ifs;
+      ifs.open( oss.str().c_str() );
+      if( ifs.is_open() ) {
+	deinterlace_mode = 1;
+      }
+      cout << "Deinterlace mode " << deinterlace_mode << endl;    
     }
 
     if( !flgVideoFile ) {
