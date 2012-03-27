@@ -571,18 +571,18 @@ void grab_from_bumblebee( Mat* pDst, unsigned long long* p_time_stamp = NULL )
     for( int x = 0; x < iMaxCols; ++x ) {
         for( int y = 0; y < iMaxRows; ++y ) {
             const unsigned char* data = rawImage.GetData();
-
+	    /*
             // left
             buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
             // right
             buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
+*/
 
-/*
             // left
             buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
             // right
             buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
-*/
+
         }
     }
 }
