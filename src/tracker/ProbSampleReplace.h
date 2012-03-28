@@ -18,7 +18,7 @@ using namespace std;
 namespace Vier {
 
 template <class DataType>
-class CProbSampleReplace : public vector< pair< DataType, unsigned long > > {
+class CProbSampleReplace : public std::vector< pair< DataType, unsigned long > > {
 public:
     /**
      * サンプリング
@@ -28,30 +28,30 @@ public:
      */
     int Execute( DataType* pDst, int nSamples ) {
         int* ans = new int[ nSamples ];
-        double* p = new double[ size() ];
+        double* p = new double[ this->size() ];
         unsigned long Z = 0;
         size_t i;
-        vector< pair< DataType, unsigned long > >::iterator it;
+        typename vector< pair< DataType, unsigned long > >::iterator it;
 
         if( nSamples < 0 )
             return 0;
 
         // 正規化係数（各データの重みの和）
-        for( it = begin(); it != end(); it++ ) {
+        for( it = this->begin(); it != this->end(); it++ ) {
             Z += it->second;
         }
 
         // 各データの確率（重み／正規化係数）の計算
-        for( it = begin(), i = 0; it != end(); it++, i++ ) {
+        for( it = this->begin(), i = 0; it != this->end(); it++, i++ ) {
             p[ i ] = (double)( it->second ) / (double)Z;
         }
 
         // サンプリングの実行
-        ProbSampleReplace( (int)size(), p, NULL, nSamples, ans );
+        ProbSampleReplace( (int)this->size(), p, NULL, nSamples, ans );
 
         // 結果の保存
         for( i = 0; i < (size_t)nSamples; i++ ) {
-            pDst[ i ] = at( ans[ i ] - 1 ).first;
+            pDst[ i ] = this->at( ans[ i ] - 1 ).first;
         }
 
         delete [] ans;

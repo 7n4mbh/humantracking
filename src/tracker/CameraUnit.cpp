@@ -1,20 +1,30 @@
 #include "CameraUnit.h"
 
 #include <sstream>
+#ifdef WINDOWS_OS
 #include <tchar.h>
+#endif
 
 using namespace std;
 
+#define SIZE_BUFFER ( 1000 )
+
 CameraUnit::CameraUnit()
 {
+#ifdef WINDOWS_OS
    hChildProcess = NULL;
    hStdIn = NULL; // Handle to parents std input.
    bRunThread = TRUE;
     hThread = NULL;
+#endif
+#ifdef LINUX_OS
+    bRunThread = false;
+#endif
 }
 
 void CameraUnit::connect( const std::string& addr )
 {
+#ifdef WINDOWS_OS
       HANDLE hOutputReadTmp,hOutputWrite;
       HANDLE hInputWriteTmp,hInputRead;
       HANDLE hErrorWrite;
@@ -23,7 +33,7 @@ void CameraUnit::connect( const std::string& addr )
 
       strAddr = addr;
 
-	  InitializeCriticalSection( &cs );
+      InitializeCriticalSection( &cs );
 
       // Set up the security attributes struct.
       sa.nLength= sizeof(SECURITY_ATTRIBUTES);
@@ -104,13 +114,21 @@ void CameraUnit::connect( const std::string& addr )
       // Read the child's output.
       //ReadAndHandleOutput(hOutputRead);
       // Redirection is complete
+#endif
+#ifdef LINUX_OS
+      pthread_mutex_init( &mutex, NULL );
 
-
-
+      // Launch the thread that gets the input and sends it to the child.
+      pthread_create( &thread
+                    , NULL
+                    , CameraUnit::ReadFromCameraUnitThread
+                    , (void*)this );
+#endif
 }
 
 void CameraUnit::disconnect()
 {
+#ifdef WINDOWS_OS
       // Force the read on the input to return by closing the stdin handle.
       if (!CloseHandle(hStdIn)) DisplayError("CloseHandle");
 
@@ -129,25 +147,53 @@ void CameraUnit::disconnect()
       if (!CloseHandle(hOutputRead)) DisplayError("CloseHandle");
       if (!CloseHandle(hInputWrite)) DisplayError("CloseHandle");
 
-	  DeleteCriticalSection( &cs );
+      DeleteCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+      const char* strCmd = "quit\n";
+      send( strCmd, 5 ); // Send exit command to the camera unit process
+      send( strCmd, 5 ); // Send exit command to the camera unit process
+      //WaitForSingleObject( hChildProcess, INFINITE ); // Wait until the camera unit process ends
+
+      bRunThread = false;
+      void* thread_result;
+      pthread_join( thread, &thread_result );
+
+      pthread_mutex_destroy( &mutex );
+#endif
 }
 
 void CameraUnit::read( char* buf, size_t size )
 {
 	int i = 0;
 	for( ; ; ) {
+#ifdef WINDOWS_OS
 		EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+		pthread_mutex_lock( &mutex );
+#endif
 		if( !buffer.empty() ) {
 			buf[ i ] = buffer[ 0 ];
 			buffer.pop_front();
 
 			++i;
 			if( i >= size ) {
-				LeaveCriticalSection( &cs );
+#ifdef WINDOWS_OS
+		            LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+                            pthread_mutex_unlock( &mutex );
+#endif
 				break;
 			}
         }
-		LeaveCriticalSection( &cs );
+#ifdef WINDOWS_OS
+            LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+            pthread_mutex_unlock( &mutex );
+#endif
 	}
 }
 
@@ -155,32 +201,53 @@ void CameraUnit::readline( char* buf, size_t size )
 {
 	int i = 0;
 	for( ; ; ) {
+#ifdef WINDOWS_OS
 		EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+		pthread_mutex_lock( &mutex );
+#endif
 		if( !buffer.empty() ) {
             if( buffer[ 0 ] != '\r' ) {
 			    buf[ i ] = buffer[ 0 ];
 			    buffer.pop_front();
 			    if( buf[ i ] == '\n' ) {
 				    buf[ i ] = '\0';
-				    LeaveCriticalSection( &cs );
+#ifdef WINDOWS_OS
+                                    LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+                                    pthread_mutex_unlock( &mutex );
+#endif
 				    break;
 			    }
 
 			    ++i;
 			    if( i >= size ) {
-				    LeaveCriticalSection( &cs );
+#ifdef WINDOWS_OS
+                                LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+                                pthread_mutex_unlock( &mutex );
+#endif
 				    break;
 			    }
             } else {
                 buffer.pop_front();
             }
 		}
-		LeaveCriticalSection( &cs );
+#ifdef WINDOWS_OS
+            LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+            pthread_mutex_unlock( &mutex );
+#endif
 	}
 }
 
 void CameraUnit::send( const char* buf, size_t size )
 {
+#ifdef WINDOWS_OS
 	DWORD nBytesWrote;
 	if (!WriteFile(hInputWrite,buf,size,&nBytesWrote,NULL))
     {
@@ -189,31 +256,53 @@ void CameraUnit::send( const char* buf, size_t size )
     else
     DisplayError("WriteFile");
     }
+#endif
 }
 
 bool CameraUnit::hasData()
 { 
     bool ret;
+#ifdef WINDOWS_OS
     EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_lock( &mutex );
+#endif
     ret = !buffer.empty();
+#ifdef WINDOWS_OS
     LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_unlock( &mutex );
+#endif
     return ret; 
 }
 
 void CameraUnit::ClearBuffer()
 { 
     bool ret;
+#ifdef WINDOWS_OS
     EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_lock( &mutex );
+#endif
     buffer.clear();
+#ifdef WINDOWS_OS
     LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_unlock( &mutex );
+#endif
 }
 
+#ifdef WINDOWS_OS
 DWORD WINAPI CameraUnit::ReadFromCameraUnitThread( LPVOID p_cameraunit )
 {
       CHAR lpBuffer[256];
       DWORD nBytesRead;
       DWORD nCharsWritten;
-	  CameraUnit* pCameraUnit = (CameraUnit*)p_cameraunit;
+      CameraUnit* pCameraUnit = (CameraUnit*)p_cameraunit;
 
       // Get input from our console and send it to child through the pipe.
       while (pCameraUnit->bRunThread)
@@ -240,7 +329,16 @@ DWORD WINAPI CameraUnit::ReadFromCameraUnitThread( LPVOID p_cameraunit )
 
       return 1;
 }
+#endif
+#ifdef LINUX_OS
+void* CameraUnit::ReadFromCameraUnitThread( void* p_cameraunit )
+{
+    return NULL;
+}
+#endif
 
+
+#ifdef WINDOWS_OS
 /////////////////////////////////////////////////////////////////////// 
 // PrepAndLaunchRedirectedChild
 // Sets up STARTUPINFO structure, and launches redirected child.
@@ -295,7 +393,9 @@ void CameraUnit::PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
     // Close any unnecessary handles.
     if (!CloseHandle(pi.hThread)) DisplayError("CloseHandle");
 } 
+#endif
 
+#ifdef WINDOWS_OS
 /////////////////////////////////////////////////////////////////////// 
 // DisplayError
 // Displays the error number and corresponding message.
@@ -322,3 +422,4 @@ void CameraUnit::DisplayError(char *pszAPI)
     LocalFree(lpvMessageBuffer);
     ExitProcess(GetLastError());
 }
+#endif

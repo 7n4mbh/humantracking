@@ -16,40 +16,53 @@
 #include <windows.h>
 #endif
 
-#define SIZE_BUFFER 1000
-
 class CameraUnit{
 public:
 
 private:
+#ifdef WINDOWS_OS
     HANDLE hChildProcess;
     HANDLE hStdIn; // Handle to parents std input.
     BOOL bRunThread;
     HANDLE hOutputRead, hInputWrite;
     HANDLE hThread;
     DWORD ThreadId;
-	std::deque<char> buffer;
-	CRITICAL_SECTION cs;
+    CRITICAL_SECTION cs;
+#endif
+#ifdef LINUX_OS
+    bool bRunThread;
+    pthread_t thread;
+    pthread_mutex_t mutex;
+#endif
+    std::deque<char> buffer;
     std::string strAddr;
 
 public:
-	CameraUnit();
+    CameraUnit();
 
-	void connect( const std::string& addr );
-	void disconnect();
+    void connect( const std::string& addr );
+    void disconnect();
     void read( char* buf, size_t size );
-	void readline( char* buf, size_t size );
-	void send( const char* buf, size_t size );
+    void readline( char* buf, size_t size );
+    void send( const char* buf, size_t size );
     bool hasData();
     void ClearBuffer();
 
 private:
+#ifdef WINDOWS_OS
    static void DisplayError(char *pszAPI);
    void PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
                                      HANDLE hChildStdIn,
                                      HANDLE hChildStdErr);
+#endif
+#ifdef WINDOWS_OS
    friend DWORD WINAPI ReadFromCameraUnitThread( LPVOID p_cameraunit );
    static DWORD WINAPI ReadFromCameraUnitThread( LPVOID p_cameraunit );
+#endif
+#ifdef LINUX_OS
+   friend void* ReadFromCameraUnitThread( void* p_cameraunit );
+   static void* ReadFromCameraUnitThread( void* p_cameraunit );
+#endif
 
 };
 

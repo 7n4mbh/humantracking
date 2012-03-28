@@ -47,7 +47,13 @@ typedef struct {
     string data;
 } PEPMapInfo;
 
+#ifdef WINDOWS_OS
 CRITICAL_SECTION cs;
+#endif
+#ifdef LINUX_OS
+pthread_mutex_t mutex;
+#endif
+
 deque<PEPMapInfo> bufPEPMap;
 
 void getfilename( const string src, string* p_str_path, string* p_str_name, string* p_str_noextname )
@@ -125,7 +131,12 @@ int load_cameraunit_list( vector<string>* p_addrCameraUnit )
     return true;
 }
 
+#ifdef WINDOWS_OS
 DWORD WINAPI GetPEPMapThread( LPVOID p_cameraunit )
+#endif
+#ifdef LINUX_OS
+void* GetPEPMapThread( void* p_cameraunit )
+#endif
 {
     CameraUnit* pCameraUnit = (CameraUnit*)p_cameraunit;
 
@@ -162,9 +173,19 @@ DWORD WINAPI GetPEPMapThread( LPVOID p_cameraunit )
             pepmap.data = string( buf );
             //cout << "Data Received." << endl;
 
+#ifdef WINDOWS_OS
             EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+	    pthread_mutex_lock( &mutex );
+#endif
             bufPEPMap.push_back( pepmap );
+#ifdef WINDOWS_OS
             LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+	    pthread_mutex_unlock( &mutex );
+#endif
 		}
 	}
 
@@ -175,10 +196,20 @@ DWORD WINAPI GetPEPMapThread( LPVOID p_cameraunit )
     while( pCameraUnit->hasData() ) {
         pCameraUnit->ClearBuffer();
         cout << "buffer clear." << endl;
+#ifdef WINDOWS_OS
       	Sleep( 100 );
+#endif
+#ifdef LINUX_OS
+	usleep( 100000 );
+#endif
     }
 
+#ifdef WINDOWS_OS
     return 1;
+#endif
+#ifdef LINUX_OS
+    return NULL;
+#endif
 }
 
 int bumblebee_mode()
@@ -224,12 +255,18 @@ int bumblebee_mode()
 
 
     cout << "Request to send PEPMaps in two seconds." << endl;
+#ifdef WINDOWS_OS
 	Sleep( 2000 );
+#endif
+#ifdef LINUX_OS
+	sleep( 2 );
+#endif
 
 
     //
     // Craete threader for each cameraunit
     flgRunGetPEPMapThread = true;
+#ifdef WINDOWS_OS
     InitializeCriticalSection( &cs );
     HANDLE* hThread = new HANDLE[ nCameraUnit ];
     DWORD* ThreadID = new DWORD[ nCameraUnit ];
@@ -241,6 +278,17 @@ int bumblebee_mode()
                                     ,0
                                     ,&ThreadID[ i ] );
     }
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_init( &mutex, NULL );
+    pthread_t* thread = new pthread_t[ nCameraUnit ];
+    for( int i = 0; i < nCameraUnit; ++i ) {
+      pthread_create( &thread[ i ]
+		      , NULL
+                      , GetPEPMapThread
+                      , (void*)&cameraunit[ i ] );
+    }
+#endif
 
 
     //
@@ -255,7 +303,12 @@ int bumblebee_mode()
     int cnt = 0;
     PEPMapInfo pepmap;
 	do {
+#ifdef WINDOWS_OS
         EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+	pthread_mutex_lock( &mutex );
+#endif
         if( !bufPEPMap.empty() ) {
             //if( bufPEPMap.empty() ) {
             //    int a = 0;
@@ -263,10 +316,20 @@ int bumblebee_mode()
             pepmap = bufPEPMap.front();
             bufPEPMap.pop_front();
         } else {
+#ifdef WINDOWS_OS
             LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+            pthread_mutex_unlock( &mutex );
+#endif
             continue;
         }
+#ifdef WINDOWS_OS
         LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+	pthread_mutex_unlock( &mutex );
+#endif
 
         const int size = pepmap.data.size() / 2;
 
@@ -349,6 +412,7 @@ int bumblebee_mode()
     //
     // Exit all the threads
     flgRunGetPEPMapThread = false;
+#ifdef WINDOWS_OS
     WaitForMultipleObjects( nCameraUnit, hThread, true, INFINITE );
     
     delete [] hThread;
@@ -356,7 +420,16 @@ int bumblebee_mode()
     
     hThread = NULL;
     ThreadID = NULL;
+#endif
+#ifdef LINUX_OS
+    void* thread_result;
+    for( int i = 0; i < nCameraUnit; ++i ) {
+      pthread_join( thread[ i ], &thread_result  );
+    }    
 
+    delete [] thread;
+    thread = NULL;
+#endif
     ////buf[ 0 ] = 27; buf[ 1 ] = '\n';
     //buf[ 0 ] = 'q'; buf[ 1 ] = '\n';
     //cameraunit.send( buf, 2 );
@@ -390,7 +463,12 @@ int bumblebee_mode()
     delete [] cameraunit;
     cameraunit = NULL;
 
+#ifdef WINDOWS_OS
     DeleteCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_destroy( &mutex );
+#endif
 
 	return 0;
 /*
@@ -461,7 +539,7 @@ int bumblebee_mode()
 
 int pepmapfile_mode( string strVideoFile )
 {
-    ifstream ifs( strVideoFile );
+  ifstream ifs( strVideoFile.c_str() );
 
     if( !ifs.is_open() ) {
         cout << "Error occured in opening the PEP-map file.";
