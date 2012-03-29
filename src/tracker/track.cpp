@@ -1,4 +1,4 @@
-﻿#include <numeric>
+#include <numeric>
 
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
