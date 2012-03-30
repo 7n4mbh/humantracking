@@ -9,13 +9,13 @@
 using namespace std;
 using namespace cv;
 
-PARAM_COMMON commonParam; // 共通パラメータ
-PARAM_EXTRACTLUM extractlumParam; // 等速直線運動抽出パラメータ
-PARAM_MKTRAJECTORY mktrajectoryParam; // 軌跡作成パラメータ
-PARAM_CLUSTERING clusteringParam; // クラスタリングパラメータ
-//PARAM_MAKERESULT makeresultParam; // 追跡結果作成パラメータ
-PARAM_RENOVATE_TRAJECTORY rnvtrjParam; // 軌跡修復パラメータ
-PARAM_PLOT plotParam; // 計算過程プロットパラメータ
+PARAM_COMMON commonParam; // $B6&DL%Q%i%a!<%?(B
+PARAM_EXTRACTLUM extractlumParam; // $BEyB.D>@~1?F0Cj=P%Q%i%a!<%?(B
+PARAM_MKTRAJECTORY mktrajectoryParam; // $B50@W:n@.%Q%i%a!<%?(B
+PARAM_CLUSTERING clusteringParam; // $B%/%i%9%?%j%s%0%Q%i%a!<%?(B
+//PARAM_MAKERESULT makeresultParam; // $BDI@W7k2L:n@.%Q%i%a!<%?(B
+PARAM_RENOVATE_TRAJECTORY rnvtrjParam; // $B50@W=$I|%Q%i%a!<%?(B
+PARAM_PLOT plotParam; // $B7W;;2aDx%W%m%C%H%Q%i%a!<%?(B
 
 bool flgFirst;
 
@@ -76,31 +76,31 @@ void initialize_tracker()
 
 bool track( const Mat& occupancy, unsigned long long time_stamp )
 {
-    static TIME_MICRO_SEC timeTracking; // 追跡時刻[usec]
-                                 // [timeTracking - commonParam.termTracking, timeTrackig) の範囲で追跡処理を行う事を意味する
+    static TIME_MICRO_SEC timeTracking; // $BDI@W;~9o(B[usec]
+                                 // [timeTracking - commonParam.termTracking, timeTrackig) $B$NHO0O$GDI@W=hM}$r9T$&;v$r0UL#$9$k(B
 
-    static SamplerPosXYTVID sampler; // 特徴量サンプラ
+    static SamplerPosXYTVID sampler; // $BFCD'NL%5%s%W%i(B
 
     // storageLUM
-    // 時刻tk（キー）に対応するLUM集合へのマップ
-    // 時刻tkに対応する等速直線運動集合とは、[tk - extractlumParam.term, tk)のPEPMapから作成した等速直線運動集合のことである。
+    // $B;~9o(Btk$B!J%-!<!K$KBP1~$9$k(BLUM$B=89g$X$N%^%C%W(B
+    // $B;~9o(Btk$B$KBP1~$9$kEyB.D>@~1?F0=89g$H$O!"(B[tk - extractlumParam.term, tk)$B$N(BPEPMap$B$+$i:n@.$7$?EyB.D>@~1?F0=89g$N$3$H$G$"$k!#(B
     static LUMStorage storageLUM;
 
     // tableLUMSlice
-    // LUMスライステーブル
-    // 時刻tk（キー）におけるLUMスライスの配列へのマップ
+    // LUM$B%9%i%$%9%F!<%V%k(B
+    // $B;~9o(Btk$B!J%-!<!K$K$*$1$k(BLUM$B%9%i%$%9$NG[Ns$X$N%^%C%W(B
     static LUMSliceTable tableLUMSlice;
 
     // storageTrajectory
-    // 作成中の軌跡要素
+    // $B:n@.Cf$N50@WMWAG(B
     static vector<TrajectoryElement> storageTrajectoryElement;
 
     // resultTrajectory
-    // 追跡結果（IDと軌跡のマップ）
+    // $BDI@W7k2L!J(BID$B$H50@W$N%^%C%W!K(B
     static map<int,CTrajectory> resultTrajectory;
 
     // idNext
-    // 次に割り振るべきID番号
+    // $B<!$K3d$j?6$k$Y$-(BID$BHV9f(B
     static int idNext;
 
     static TIME_MICRO_SEC timeEarliestPEPMap;
@@ -121,7 +121,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
     // debug code
     //time_stamp = time_stamp - timeEarliestPEPMap + 1000000000;
     
-    // PEPMapをサンプラに追加する
+    // PEPMap$B$r%5%s%W%i$KDI2C$9$k(B
     AddPEPMapToSampler( occupancy
                       , time_stamp
                         , &sampler
@@ -129,11 +129,11 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                         , extractlumParam.maxPEPMapValue );
 
     //
-    // LUM抽出
+    // LUM$BCj=P(B
     vector<TIME_MICRO_SEC> addedTime;
     for( TIME_MICRO_SEC tk = timeTracking - commonParam.termTracking; tk <= time_stamp; tk += extractlumParam.interval ) {
         if( storageLUM.find( tk ) == storageLUM.end() ) {
-            // 時刻tkのLUMを抽出
+            // $B;~9o(Btk$B$N(BLUM$B$rCj=P(B
             ExtractLUM( &sampler
                         , tk
                         , &storageLUM[ tk ]
@@ -146,28 +146,28 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
     }
 
     //
-    // LUMスライステーブル作成
+    // LUM$B%9%i%$%9%F!<%V%k:n@.(B
     if( !storageLUM.empty() ) {
         TIME_MICRO_SEC timeLatestLUM = storageLUM.rbegin()->first;
         addedTime.clear();
-        // timeLatestLUMまでのLUMが得られているとき，LUMスライステーブルが作成できるのは
-        // (timeLatestLUM - extractlumParam.term)まで。この範囲でLUMスライステーブルを作成する。
+        // timeLatestLUM$B$^$G$N(BLUM$B$,F@$i$l$F$$$k$H$-!$(BLUM$B%9%i%$%9%F!<%V%k$,:n@.$G$-$k$N$O(B
+        // (timeLatestLUM - extractlumParam.term)$B$^$G!#$3$NHO0O$G(BLUM$B%9%i%$%9%F!<%V%k$r:n@.$9$k!#(B
         for( TIME_MICRO_SEC tk = timeTracking - commonParam.termTracking
             ; tk <= timeLatestLUM - extractlumParam.term
             ; tk += commonParam.intervalTrajectory ) {
             if( tableLUMSlice.find( tk ) == tableLUMSlice.end() ) {
-                // 時刻tkのLUMスライス作成
-                //cerr << "LUMスライス追加: ";
+                // $B;~9o(Btk$B$N(BLUM$B%9%i%$%9:n@.(B
+                //cerr << "LUM$B%9%i%$%9DI2C(B: ";
                 MakeLUMSlice( tk, &storageLUM, &tableLUMSlice[ tk ], &extractlumParam );
                 addedTime.push_back( tk );
             }
         }
     }
 
-    // tableLUMSliceに追加された各時刻に始点を定める。
+    // tableLUMSlice$B$KDI2C$5$l$?3F;~9o$K;OE@$rDj$a$k!#(B
     set<PosXYT,PosXYT_XYT_Less> originPos;
-    const double intersticeOrigin = 1.0 / sqrt( mktrajectoryParam.densityOrigin ); // 軌跡の始点同士の間隔
-    const double rangeOrigin = mktrajectoryParam.distanceImpact * 2.0; // 軌跡の情報X,Y座標の周りrangeOrigin四方の範囲に始点の候補を作成する
+    const double intersticeOrigin = 1.0 / sqrt( mktrajectoryParam.densityOrigin ); // $B50@W$N;OE@F1;N$N4V3V(B
+    const double rangeOrigin = mktrajectoryParam.distanceImpact * 2.0; // $B50@W$N>pJs(BX,Y$B:BI8$N<~$j(BrangeOrigin$B;MJ}$NHO0O$K;OE@$N8uJd$r:n@.$9$k(B
     int nOrigin = 0;
     for( vector<TIME_MICRO_SEC>::iterator iTk = addedTime.begin(); iTk != addedTime.end(); ++iTk ) {
         TIME_MICRO_SEC tk = *iTk;
@@ -184,13 +184,13 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
         nOrigin = originPos.size();
     }
 
-    // MPIにより始点を各プロセスに割り振る
-    // 以下，仮記述
+    // MPI$B$K$h$j;OE@$r3F%W%m%;%9$K3d$j?6$k(B
+    // $B0J2<!$2>5-=R(B
     vector<PosXYT> originPosPerProcess;
     originPosPerProcess.assign( originPos.begin(), originPos.end() );
 
     //
-    // 受け取った始点を基に新たな軌跡を生成する
+    // $B<u$1<h$C$?;OE@$r4p$K?7$?$J50@W$r@8@.$9$k(B
     int nNewTrj = 0;
     vector<PosXYT>::iterator itOrigin = originPosPerProcess.begin();
     for( int i = 0; itOrigin != originPosPerProcess.end(); ++itOrigin, ++i ) {
@@ -201,7 +201,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
     }
 
     //
-    // tableLUMSliceに追加された各時刻について軌跡を延長する
+    // tableLUMSlice$B$KDI2C$5$l$?3F;~9o$K$D$$$F50@W$r1dD9$9$k(B
     for( vector<TIME_MICRO_SEC>::iterator iTk = addedTime.begin(); iTk != addedTime.end(); ++iTk ) {
         TIME_MICRO_SEC tk = *iTk;
         if( tableLUMSlice.begin()->first != tk ) {
@@ -217,7 +217,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
     if( !tableLUMSlice.empty() && tableLUMSlice.rbegin()->first >= timeTracking ) {
         cout << "Done with making trajectories." << endl;
 
-        // 計算過程をプロット
+        // $B7W;;2aDx$r%W%m%C%H(B
         double sumValue = std::accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
         unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
         OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
@@ -229,16 +229,16 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                         , NULL//pipeGnuplot_Trajectory
                         , extractlumParam.stDeviation
                         , &plotParam );
-        cerr << "完了(nSample=" << nSample << ")" << endl;
+        cerr << "$B40N;(B(nSample=" << nSample << ")" << endl;
 
 
         //
-        // 軌跡のクラスタリング
+        // $B50@W$N%/%i%9%?%j%s%0(B
         //
-        cerr << "軌跡間の距離テーブル計算中..." << endl;
+        cerr << "$B50@W4V$N5wN%%F!<%V%k7W;;Cf(B..." << endl;
 
         //
-        // クラスタリングに用いる軌跡（長さがclusterigParam.minLength以上）を取り出す
+        // $B%/%i%9%?%j%s%0$KMQ$$$k50@W!JD9$5$,(BclusterigParam.minLength$B0J>e!K$r<h$j=P$9(B
         vector<TrajectoryElement> trajectoryElementOfMyProc;
         vector<TrajectoryElement>::iterator it = storageTrajectoryElement.begin();
         for( ; it != storageTrajectoryElement.end(); ++it ) {
@@ -247,7 +247,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
             }
         }
 
-        size_t nAllTrj; // 総軌跡数
+        size_t nAllTrj; // $BAm50@W?t(B
         nAllTrj = trajectoryElementOfMyProc.size();
         map<int,CTrajectory> trajectoryForClustering;
         int iTrj = 0;
@@ -258,13 +258,13 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
         }
 
 
-        // 距離テーブルを作成
+        // $B5wN%%F!<%V%k$r:n@.(B
         double* distTable = new double[ nAllTrj * nAllTrj ];
         for( size_t i = 0; i < nAllTrj * nAllTrj; ++i ) {
             distTable[ i ] = -2.0;
         }
         CTrajectory_Distance distanceTrajectory( clusteringParam.distanceLimit, clusteringParam.nLimit, clusteringParam.minCommonTimeRange );
-        vector<size_t> iTrjToCol( nAllTrj ); // 自プロセスの距離テーブルにおいて軌跡番号と列番号の対応を示したもの
+        vector<size_t> iTrjToCol( nAllTrj ); // $B<+%W%m%;%9$N5wN%%F!<%V%k$K$*$$$F50@WHV9f$HNsHV9f$NBP1~$r<($7$?$b$N(B
         for( size_t i = 0; i < nAllTrj; ++i ) {
             iTrjToCol[ i ] = i;
         }
@@ -277,10 +277,10 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                               , distanceTrajectory );
 
 
-        // クラスタリング
+        // $B%/%i%9%?%j%s%0(B
         vector<CTrajectory> trajectoriesClustered;
 
-        // 初期クラスタの情報を，受信した軌跡一つずつから成るクラスタが生成されるよう準備する。
+        // $B=i4|%/%i%9%?$N>pJs$r!$<u?.$7$?50@W0l$D$:$D$+$i@.$k%/%i%9%?$,@8@.$5$l$k$h$&=`Hw$9$k!#(B
         vector< vector<int> > indexCluster;
         vector<int> classID( nAllTrj, -1 );
         for( int i = 0; i < (int)nAllTrj; ++i ) {
@@ -312,12 +312,12 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                 }
             }
 
-            // 距離テーブル配置
+            // $B5wN%%F!<%V%kG[CV(B
             nCluster = trajectoriesClustered.size();
             dist = new double[ nCluster * nCluster ];
 
-            //cerr << "再クラスタリング（現在のクラスタ：" << nCluster << "[個], 利用軌跡：" << usetrj.size() << "[本]）...";
-            cerr << cnt_loop << "回目...";
+            //cerr << "$B:F%/%i%9%?%j%s%0!J8=:_$N%/%i%9%?!'(B" << nCluster << "[$B8D(B], $BMxMQ50@W!'(B" << usetrj.size() << "[$BK\(B]$B!K(B...";
+            cerr << cnt_loop << "$B2sL\(B...";
 
             vector<CTrajectory> tmpTrajectoriesClustered( trajectoriesClustered.size() );
             vector<CTrajectory>::iterator itTmpTrj = tmpTrajectoriesClustered.begin();
@@ -334,10 +334,10 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                     size_t index1 = idx1 * nCluster + idx2;
                     size_t index2 = idx2 * nCluster + idx1;
                     //cerr << "nCluster = " << nCluster << endl;
-                    //cerr << "idx1 = " << idx1 << ", 要素数 = " << tmpTrajectoriesClustered[ idx1 ].size() << endl;
-                    //cerr << "idx2 = " << idx2 << ", 要素数 = " << tmpTrajectoriesClustered[ idx2 ].size() << endl;
+                    //cerr << "idx1 = " << idx1 << ", $BMWAG?t(B = " << tmpTrajectoriesClustered[ idx1 ].size() << endl;
+                    //cerr << "idx2 = " << idx2 << ", $BMWAG?t(B = " << tmpTrajectoriesClustered[ idx2 ].size() << endl;
                     if( false/*cnt_loop == 0*/ ) {
-                        // 最初のクラスタリングのときは先に求めた距離テーブルを使用する。
+                        // $B:G=i$N%/%i%9%?%j%s%0$N$H$-$O@h$K5a$a$?5wN%%F!<%V%k$r;HMQ$9$k!#(B
                         dist[ index1 ] = dist[ index2 ] = distTable[ idx1 * nAllTrj + idx2 ];
                     } else {
                         dist[ index1 ] = dist[ index2 ] = distanceTrajectory( tmpTrajectoriesClustered[ idx1 ]
@@ -345,7 +345,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                     }
                     //TrajectoryElement_Distance distanceTrajectoryElement( clusteringParam.distanceLimit, clusteringParam.nLimit, clusteringParam.minCommonTimeRange );
                     //cerr << "idx1:" << tmpTrajectoriesClustered[ idx1 ].front().size() << ", idx2:" << tmpTrajectoriesClustered[ idx2 ].front().size() << ", ";
-                    //cerr << "距離 = ";
+                    //cerr << "$B5wN%(B = ";
                     //dist[ index1 ] = dist[ index2 ] = distanceTrajectoryElement( tmpTrajectoriesClustered[ idx1 ].front()
                     //                                                           , tmpTrajectoriesClustered[ idx2 ].front() );
                     //cerr << dist[ index1 ] << endl;
@@ -354,15 +354,15 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
 
 #if 1
 
-            // クラスタを間引く
-            cerr << "利用クラスタの選定...";
+            // $B%/%i%9%?$r4V0z$/(B
+            cerr << "$BMxMQ%/%i%9%?$NA*Dj(B...";
             vector<double> frequency( tmpTrajectoriesClustered.size(), 0.0 );
             CalcFrequency( (double*)&(frequency[ 0 ]), dist, tmpTrajectoriesClustered.size(), 0.1, clusteringParam.thDistance );
             vector<int> idxClusterUse;
             ReduceTrajectory( &idxClusterUse, (double*)&(frequency[0]), frequency.size(), 55.0/*80.0*/ );
-            cerr << "完了（" << idxClusterUse.size() << "[個]）...";
+            cerr << "$B40N;!J(B" << idxClusterUse.size() << "[$B8D(B]$B!K(B...";
 
-            // 距離テーブル再配置
+            // $B5wN%%F!<%V%k:FG[CV(B
             double* dist2 = new double[ idxClusterUse.size() * idxClusterUse.size() ];
             for( vector<int>::iterator itIdxCluster = idxClusterUse.begin(); itIdxCluster != idxClusterUse.end(); ++itIdxCluster ) {
                 for( vector<int>::iterator it = idxClusterUse.begin(); it != idxClusterUse.end(); ++it ) {
@@ -397,11 +397,11 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
 
             prevNumOfCluster = nCluster;//idxClusterUse.size();// nCluster;
             nCluster = indexCluster.size();
-            cerr << "終了（クラスタ：" << nCluster << "[個], trajectoriesClustered.size()=" << trajectoriesClustered.size() << "）";
+            cerr << "$B=*N;!J%/%i%9%?!'(B" << nCluster << "[$B8D(B], trajectoriesClustered.size()=" << trajectoriesClustered.size() << "$B!K(B";
             cerr << endl;
 
             //
-            // 計算結果の出力
+            // $B7W;;7k2L$N=PNO(B
             ++cnt_loop;
             if( trajectoriesClustered.size() < 30 ) {
                 ostringstream oss;
@@ -427,14 +427,14 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
 
 
         //
-        // 軌跡の修復
+        // $B50@W$N=$I|(B
         TrajectoriesInfo infoTrj;
         infoTrj.section.resize( 1 );
 
-        cerr << "軌跡の修復開始: [ " << timeTracking - commonParam.termTracking - timeEarliestPEPMap
+        cerr << "$B50@W$N=$I|3+;O(B: [ " << timeTracking - commonParam.termTracking - timeEarliestPEPMap
                 << ", " <<  timeTracking - timeEarliestPEPMap << " )" << endl;
 
-        // クラスタリングした軌跡を平均してinfoTrjに格納する
+        // $B%/%i%9%?%j%s%0$7$?50@W$rJ?6Q$7$F(BinfoTrj$B$K3JG<$9$k(B
         infoTrj.trjElement.resize( trajectoriesClustered.size() );
         for( int i = 0; i < (int)trajectoriesClustered.size(); ++i ) {
             CTrajectory trj;
@@ -443,13 +443,13 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
         }
 
 //        if( myRank == 0 ) {
-//            cout << "　クラスタリングした軌跡を追加: 総計" << infoTrj.trjElement.size() << "[個]" << endl;
+//            cout << "$B!!%/%i%9%?%j%s%0$7$?50@W$rDI2C(B: $BAm7W(B" << infoTrj.trjElement.size() << "[$B8D(B]" << endl;
 //        }
 
-        // 前回の追跡結果(resultTrajectory)を[ timeTracking - commonParam.termTracking, timeTracking )で
-        // クリップしてinfoTrjに格納する
+        // $BA02s$NDI@W7k2L(B(resultTrajectory)$B$r(B[ timeTracking - commonParam.termTracking, timeTracking )$B$G(B
+        // $B%/%j%C%W$7$F(BinfoTrj$B$K3JG<$9$k(B
         int idx = (int)trajectoriesClustered.size();
-        map<int,int> reserve; // 軌跡番号と既存のIDの組み合わせ
+        map<int,int> reserve; // $B50@WHV9f$H4{B8$N(BID$B$NAH$_9g$o$;(B
         for( map<int,CTrajectory>::iterator itResult = resultTrajectory.begin(); itResult != resultTrajectory.end(); ++itResult ) {
             CTrajectory trj;
             trj = itResult->second;
@@ -462,11 +462,11 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
         }
 
 //        if( myRank == 0 ) {
-//            cout << "　前回の追跡結果を追加: 総計" << infoTrj.trjElement.size() << "[個]" << endl;
+//            cout << "$B!!A02s$NDI@W7k2L$rDI2C(B: $BAm7W(B" << infoTrj.trjElement.size() << "[$B8D(B]" << endl;
 //        }
 
         //
-        // 軌跡の出力
+        // $B50@W$N=PNO(B
 //            if( myRank == 0 ) {
 //                vector<CTrajectory> vectrj;
 //                for( vector<TrajectoryElement>::iterator it = infoTrj.trjElement.begin(); it != infoTrj.trjElement.end(); ++it ) {
@@ -488,23 +488,23 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
 //                             , &plotParam );
 //            }
 
-        // セクション分割
+        // $B%;%/%7%g%sJ,3d(B
         DivideIntoSections( &infoTrj, rnvtrjParam );
 
-        // 各セクションでセットを作成
+        // $B3F%;%/%7%g%s$G%;%C%H$r:n@.(B
         for( int i = 0; i < (int)infoTrj.section.size(); ++i ) {
             MakeSet( i, &infoTrj, &reserve );
-//            cout << "　　セクション" << i << ": " << infoTrj.section[ i ].trjSet.size() << "[個]" << endl;
+//            cout << "$B!!!!%;%/%7%g%s(B" << i << ": " << infoTrj.section[ i ].trjSet.size() << "[$B8D(B]" << endl;
         }
 
 //        start_d = MPI_Wtime();
 //        cout << "Optimize()...";
-        // 最適解の探索
+        // $B:GE,2r$NC5:w(B
         vector<TrajectoryElement> opt;
         vector<int> idOpt;
         double min = -1.0;
         //if( myRank == 0 ) {
-            cerr << "　最適解探索: セクション数" << (int)infoTrj.section.size() << endl;
+            cerr << "$B!!:GE,2rC5:w(B: $B%;%/%7%g%s?t(B" << (int)infoTrj.section.size() << endl;
         //}
         for( int idxSec = 0; idxSec < (int)infoTrj.section.size(); ++idxSec ) {
             min = -1.0;
@@ -523,8 +523,8 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                     min = e;
                 }
             }
-            cerr << "　最適化結果: セット" << idxMinSet << endl;
-            cerr << "　　軌跡数: " << optOfSec.size() << "[個]" << endl;
+            cerr << "$B!!:GE,2=7k2L(B: $B%;%C%H(B" << idxMinSet << endl;
+            cerr << "$B!!!!50@W?t(B: " << optOfSec.size() << "[$B8D(B]" << endl;
 
             opt.insert( opt.end(), optOfSec.begin(), optOfSec.end() );
             idOpt.insert( idOpt.end(), idOptOfSec.begin(), idOptOfSec.end() );
@@ -533,15 +533,15 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
 #define RE_RENOVATE
 #ifdef RE_RENOVATE
         //
-        // 再修復を行う
+        // $B:F=$I|$r9T$&(B
         //if( myRank == 0 ) {
-            cerr << "　最修復開始...";
+            cerr << "$B!!:G=$I|3+;O(B...";
         //}
 
-        // 求めた最適解をセット
+        // $B5a$a$?:GE,2r$r%;%C%H(B
         infoTrj.trjElement = opt;
 
-        // 予約軌跡を求める
+        // $BM=Ls50@W$r5a$a$k(B
         reserve.clear();
         for( int idx = 0; idx < (int)idOpt.size(); ++idx ) {
             if( idOpt[ idx ] != -1 ) {
@@ -549,15 +549,15 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
             }
         }
 
-        // セクション分割
+        // $B%;%/%7%g%sJ,3d(B
         DivideIntoSections( &infoTrj, rnvtrjParam );
 
-        // 各セクションでセットを作成
+        // $B3F%;%/%7%g%s$G%;%C%H$r:n@.(B
         for( int i = 0; i < (int)infoTrj.section.size(); ++i ) {
             MakeSet( i, &infoTrj, &reserve );
         }
 
-        // 最適解の探索
+        // $B:GE,2r$NC5:w(B
         opt.clear();
         idOpt.clear();
         min = -1.0;
@@ -584,11 +584,11 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
         }
 
         //if( myRank == 0 ) {
-            cerr << "　完了..." << endl;
+            cerr << "$B!!40N;(B..." << endl;
         //}
 #endif
 
-        // ID未割り当ての軌跡に新しいIDを振る
+        // ID$BL$3d$jEv$F$N50@W$K?7$7$$(BID$B$r?6$k(B
         for( vector<int>::iterator itID = idOpt.begin(); itID != idOpt.end(); ++itID ) {
             if( *itID == -1 ) {
                 *itID = idNext;
@@ -596,7 +596,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
             }
         }
 
-        // 軌跡の補間を行う
+        // $B50@W$NJd4V$r9T$&(B
         for( vector<TrajectoryElement>::iterator itTrj = opt.begin(); itTrj != opt.end(); ++itTrj ) {
             TrajectoryElement::iterator it = itTrj->begin();
             TrajectoryElement::iterator itNext = it;
@@ -614,7 +614,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
             }
         }
 
-        // 結果の保存
+        // $B7k2L$NJ]B8(B
         resultTrajectory.clear();
         vector<int>::iterator itID = idOpt.begin();
         for( vector<TrajectoryElement>::iterator itTrj = opt.begin(); itTrj != opt.end(); ++itTrj, ++itID ) {
@@ -625,7 +625,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
         }
 
         //
-        // 計算結果の出力
+        // $B7W;;7k2L$N=PNO(B
         //if( myRank == 0 ) {
         {
             double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
@@ -664,7 +664,7 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
 
         //
         // storageTrajectoryElement
-        // [timeTracking - commonParam.termTracking, timeTracking]にクリッピング
+        // [timeTracking - commonParam.termTracking, timeTracking]$B$K%/%j%C%T%s%0(B
         CTrajectory newStorageTrajectoryElement;
         newStorageTrajectoryElement.assign( storageTrajectoryElement.begin(), storageTrajectoryElement.end() );
         newStorageTrajectoryElement.Clip( timeTracking - ( commonParam.termTracking - commonParam.intervalTracking ), timeTracking );

@@ -21,7 +21,7 @@ CameraUnit::CameraUnit()
 {
 #ifdef WINDOWS_OS
    hChildProcess = NULL;
-   hStdIn = NULL; // Handle to parents std input.
+   //hStdIn = NULL; // Handle to parents std input.
    bRunThread = TRUE;
     hThread = NULL;
 #endif
@@ -95,9 +95,9 @@ void CameraUnit::connect( const std::string& addr )
 
       // Get std input handle so you can close it and force the ReadFile to
       // fail when you want the input thread to exit.
-      if ( (hStdIn = GetStdHandle(STD_INPUT_HANDLE)) ==
-                                                INVALID_HANDLE_VALUE )
-         DisplayError("GetStdHandle");
+      //if ( (hStdIn = GetStdHandle(STD_INPUT_HANDLE)) ==
+      //                                          INVALID_HANDLE_VALUE )
+      //   DisplayError("GetStdHandle");
 
       PrepAndLaunchRedirectedChild(hOutputWrite,hInputRead,hErrorWrite);
 
@@ -193,7 +193,7 @@ void CameraUnit::disconnect()
 {
 #ifdef WINDOWS_OS
       // Force the read on the input to return by closing the stdin handle.
-      if (!CloseHandle(hStdIn)) DisplayError("CloseHandle");
+      //if (!CloseHandle(hStdIn)) DisplayError("CloseHandle");
 
 
 	  const char* strCmd = "quit\n";

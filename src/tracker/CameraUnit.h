@@ -22,7 +22,7 @@ public:
 private:
 #ifdef WINDOWS_OS
     HANDLE hChildProcess;
-    HANDLE hStdIn; // Handle to parents std input.
+    //HANDLE hStdIn; // Handle to parents std input.
     BOOL bRunThread;
     HANDLE hOutputRead, hInputWrite;
     HANDLE hThread;
