@@ -309,6 +309,11 @@ int bumblebee_mode()
     //cameraunit.send( "run\n", 4 );
     int cnt = 0;
     PEPMapInfo pepmap;
+    unsigned long long tmp_timestamp = 0;
+    map<unsigned long long,PEPMapInfo> sort_buffer;
+#ifdef WINDOWS_OS    
+    ofstream ofs_pepmap( "received_pepmaps.log" );
+#endif
 	do {
 #ifdef WINDOWS_OS
         EnterCriticalSection( &cs );
@@ -335,84 +340,61 @@ int bumblebee_mode()
         LeaveCriticalSection( &cs );
 #endif
 #ifdef LINUX_OS
-	pthread_mutex_unlock( &mutex );
+        pthread_mutex_unlock( &mutex );
 #endif
 
-        const int size = pepmap.data.size() / 2;
+        sort_buffer[ pepmap.timeStamp ] = pepmap;
 
-        char a[ 3 ]; a[ 2 ] = '\0';
-        for( int j = 0; j < size; ++j ) {
-            a[ 0 ] = pepmap.data[ j * 2 ];
-            a[ 1 ] = pepmap.data[ j * 2 + 1 ];
-            buf[ j ] = strtol( a, NULL, 16 );
+        for( ; ; ) {
+            if( sort_buffer.size() < 2 ) {
+                break;
+            }
+
+            unsigned long long diff = sort_buffer.rbegin()->first - sort_buffer.begin()->first;
+            if( diff < 1000000 ) {
+                break;
+            }
+            
+            pepmap = sort_buffer.begin()->second;
+            sort_buffer.erase( sort_buffer.begin() );
+
+            const int size = pepmap.data.size() / 2;
+
+            char a[ 3 ]; a[ 2 ] = '\0';
+            for( int j = 0; j < size; ++j ) {
+                a[ 0 ] = pepmap.data[ j * 2 ];
+                a[ 1 ] = pepmap.data[ j * 2 + 1 ];
+                buf[ j ] = strtol( a, NULL, 16 );
+            }
+            //cout << "Data Received." << endl;
+            time_t _sec = pepmap.timeStamp / 1000000ULL;
+            string strTime( ctime( &_sec ) );
+            strTime.erase( strTime.size() - 1 );
+            cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
+#ifdef WINDOWS_OS
+            ofs_pepmap << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
+#endif
+            ++cnt;
+            if( pepmap.timeStamp < tmp_timestamp ) {
+                cout << "## Illegal Time Stamp! ## This pepmap will be rejected. To avoid this, have more size of sort_buffer." << endl;
+                continue;
+            }
+            tmp_timestamp = pepmap.timeStamp;
+
+            uLongf len_uncompressed = (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) * 2;
+            uncompress( occupancy.data
+            , &len_uncompressed
+            , (const Bytef*)buf
+            , size );
+
+            occupancy.convertTo( img_occupancy, CV_8U );
+            resize( img_occupancy, img_display2, img_display2.size() );
+            imshow( "Occupancy Map", img_display2 );
+            (void)cvWaitKey( 1 );
+
+            // Tracking
+            //track( occupancy, pepmap.timeStamp );
         }
-        //cout << "Data Received." << endl;
-        time_t _sec = pepmap.timeStamp / 1000000ULL;
-        cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << ctime( &_sec ) << ")";
-        ++cnt;
-
-        uLongf len_uncompressed = (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) * 2;
-        uncompress( occupancy.data
-        , &len_uncompressed
-        , (const Bytef*)buf
-        , size );
-
-        occupancy.convertTo( img_occupancy, CV_8U );
-        resize( img_occupancy, img_display2, img_display2.size() );
-        imshow( "Occupancy Map", img_display2 );
-        (void)cvWaitKey( 1 );
-
-        // Tracking
-        //track( occupancy, pepmap.timeStamp );
-
-		//cameraunit.readline( buf, SIZE_BUFFER );
-
-		//string str( buf );
-		//if( str.find( "<PEPMap>" ) != str.npos ) {
-		//	cout << "Detected a PEP-map." << endl;
-  //          {
-  //              cameraunit.readline( buf, SIZE_BUFFER );
-  //              string strtmp( buf );
-  //              istringstream iss( strtmp );
-  //              iss >> serialNumber;
-  //          }
-  //          {
-  //              cameraunit.readline( buf, SIZE_BUFFER );
-  //              string strtmp( buf );
-  //              istringstream iss( strtmp );
-  //              iss >> timeStamp;
-  //          }            
-  //          //cout << "Serial #: " << serialNumber << ", time: " << timeStamp;
-  //          time_t _sec = timeStamp / 1000000ULL;
-  //          cout << "Serial #: " << serialNumber << ", time: " << timeStamp << "(" << ctime( &_sec ) << ")";
-  //          cameraunit.readline( buf, SIZE_BUFFER );
-  //          int size = atoi( buf );
-  //          cout << " size = " << size << "...";
-  //          cameraunit.read( buf, size * 2 );
-  //          str = string( buf );
-  //          char a[ 3 ]; a[ 2 ] = '\0';
-  //          for( int j = 0; j < size; ++j ) {
-  //              a[ 0 ] = str[ j * 2 ];
-  //              a[ 1 ] = str[ j * 2 + 1 ];
-  //              buf[ j ] = strtol( a, NULL, 16 );
-  //          }
-  //          cout << "Data Received." << endl;
-  //          ++cnt;
-
-  //          uLongf len_uncompressed = (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) * 2;
-  //          uncompress( occupancy.data
-  //          , &len_uncompressed
-  //          , (const Bytef*)buf
-  //          , size );
-
-  //          occupancy.convertTo( img_occupancy, CV_8U );
-  //          resize( img_occupancy, img_display2, img_display2.size() );
-  //          imshow( "Occupancy Map", img_display2 );
-  //          (void)cvWaitKey( 1 );
-
-  //          // Tracking
-  //          track( occupancy, timeStamp );
-		//}
 	} while( cnt < 100 );
 
 
