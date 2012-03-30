@@ -30,6 +30,8 @@ private:
     CRITICAL_SECTION cs;
 #endif
 #ifdef LINUX_OS
+    int pipe_c2p[2]; // Pipe: Parent(pipe_c2p[R]) <- Child(pipe_c2p[W])
+    int pipe_p2c[2]; // Pipe: Parent(pipe_p2c[W]) -> Child(pip2_p2c[R])
     bool bRunThread;
     pthread_t thread;
     pthread_mutex_t mutex;

@@ -1,13 +1,21 @@
 #include "CameraUnit.h"
 
+#include <iostream>
 #include <sstream>
 #ifdef WINDOWS_OS
 #include <tchar.h>
+#endif
+#ifdef LINUX_OS
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #endif
 
 using namespace std;
 
 #define SIZE_BUFFER ( 1000 )
+#define R (0)
+#define W (1)
 
 CameraUnit::CameraUnit()
 {
@@ -18,7 +26,7 @@ CameraUnit::CameraUnit()
     hThread = NULL;
 #endif
 #ifdef LINUX_OS
-    bRunThread = false;
+    bRunThread = true;
 #endif
 }
 
@@ -116,13 +124,68 @@ void CameraUnit::connect( const std::string& addr )
       // Redirection is complete
 #endif
 #ifdef LINUX_OS
+      strAddr = addr;
+
       pthread_mutex_init( &mutex, NULL );
+
+      int pid;
+
+      // Create two pipes.
+      if( pipe( pipe_c2p ) < 0 ) {
+	perror( "popen2" );
+	return;// -1;
+      }
+
+      if( pipe( pipe_p2c ) < 0 ) {
+	perror( "popen2" );
+	close( pipe_c2p[R] );
+	close( pipe_c2p[W] );
+	return;// -1;
+      }
+
+      // Launch the child process
+      if( ( pid = fork() ) < 0 ) {
+          perror( "fork" );
+	  close( pipe_c2p[R] );
+	  close( pipe_c2p[W] );
+	  close( pipe_p2c[R] );
+	  close( pipe_p2c[W] );
+      }
+
+      if( pid == 0 ) {
+	  // When child process
+	//cout << "Child proness successfully launched." << endl;
+	close( pipe_p2c[W] );
+	close( pipe_c2p[R] );
+	dup2( pipe_p2c[R], 0 );
+	dup2( pipe_c2p[W], 1 );
+	close( pipe_p2c[R] );
+	close( pipe_c2p[W] );
+	int ret;
+        if( strAddr == "192.168.1.100" ) {
+	  ret = execlp( "rsh", "rsh", strAddr.c_str(), "-l", "kumalab", "/home/kumalab/project/HumanTracking/bin/cameraunit", "--nowindow", NULL );
+	} else {
+	  ret = execlp( "rsh", "rsh", strAddr.c_str(), "-l", "kumalab", "/home/kumalab/project/HumanTracking/bin/cameraunit", "--nowindow", "--null-pepmap", NULL ); // debug code
+	}
+	if( ret < 0 ) {
+	//if( execlp( "./child", "child", NULL ) < 0 ) {
+  	    perror( "execlp" );
+	    close( pipe_p2c[R] );
+	    close( pipe_c2p[W] );
+	    exit( 1 );
+	}
+      }
+
+      // When parent process
+      close( pipe_p2c[R] );
+      close( pipe_c2p[W] );
 
       // Launch the thread that gets the input and sends it to the child.
       pthread_create( &thread
                     , NULL
                     , CameraUnit::ReadFromCameraUnitThread
                     , (void*)this );
+
 #endif
 }
 
@@ -158,6 +221,9 @@ void CameraUnit::disconnect()
       bRunThread = false;
       void* thread_result;
       pthread_join( thread, &thread_result );
+
+      close( pipe_p2c[W] );
+      close( pipe_c2p[R] );
 
       pthread_mutex_destroy( &mutex );
 #endif
@@ -257,6 +323,14 @@ void CameraUnit::send( const char* buf, size_t size )
     DisplayError("WriteFile");
     }
 #endif
+#ifdef LINUX_OS
+    size_t nBytesWrote;
+
+    nBytesWrote = write( pipe_p2c[W], (void*)buf, size );
+    if( nBytesWrote != size ) {
+      cerr << "fwrite() failed." << endl;
+    }
+#endif
 }
 
 bool CameraUnit::hasData()
@@ -333,6 +407,39 @@ DWORD WINAPI CameraUnit::ReadFromCameraUnitThread( LPVOID p_cameraunit )
 #ifdef LINUX_OS
 void* CameraUnit::ReadFromCameraUnitThread( void* p_cameraunit )
 {
+    char buffer[256];
+    int nBytesRead;
+    CameraUnit* pCameraUnit = (CameraUnit*)p_cameraunit;
+    
+    //cout << "ReadFromCameraUnitThread() is running..." << endl;
+
+    while( pCameraUnit->bRunThread ) {
+        pthread_mutex_lock( &pCameraUnit->mutex );
+        ssize_t bufSize = pCameraUnit->buffer.size();
+        pthread_mutex_unlock( &pCameraUnit->mutex );
+
+	//cout << "bufSize=" << bufSize << endl;
+
+	if( bufSize < SIZE_BUFFER ) {
+	  //cout << "waiting for data from child process..." << pCameraUnit->pipe_c2p[R];
+	  nBytesRead = ::read( pCameraUnit->pipe_c2p[R], buffer, 1 );
+	  if( nBytesRead == 0 /*feof( pCameraUnit->pipe_c2p[R]*/ ) {
+	      break;
+	  } else if( nBytesRead == -1 ) {
+	    perror( "pipetest" );
+	    break;
+	  }
+	  //cout << "data received" << endl;
+          pthread_mutex_lock( &pCameraUnit->mutex );
+          for( int i = 0; i < nBytesRead; ++i ) {
+              pCameraUnit->buffer.push_back( buffer[ i ] );
+	  }
+          pthread_mutex_unlock( &pCameraUnit->mutex );
+	}	    
+    }
+    
+    //cout << "ReadFromCameraUnitThrad is exitting..." << endl;
+
     return NULL;
 }
 #endif

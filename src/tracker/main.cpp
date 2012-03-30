@@ -122,11 +122,17 @@ int load_cameraunit_list( vector<string>* p_addrCameraUnit )
         return false;
     }
 
+    p_addrCameraUnit->clear();
     string str;
     while( !ifs.eof() ) {
         ifs >> str;
+	cout << "CameraUnit to be connected:" << str << endl;
         p_addrCameraUnit->push_back( str );
     }
+
+    sort( p_addrCameraUnit->begin(), p_addrCameraUnit->end() );
+    p_addrCameraUnit->erase( unique( p_addrCameraUnit->begin(), p_addrCameraUnit->end() )
+			     , p_addrCameraUnit->end() );
 
     return true;
 }
@@ -208,6 +214,7 @@ void* GetPEPMapThread( void* p_cameraunit )
     return 1;
 #endif
 #ifdef LINUX_OS
+    //cout << "(from thread)exitting..." << endl;
     return NULL;
 #endif
 }
@@ -423,9 +430,11 @@ int bumblebee_mode()
 #endif
 #ifdef LINUX_OS
     void* thread_result;
+    //cout << "Waiting for all threads to quit...(nCameraUnit=" << nCameraUnit << ")";
     for( int i = 0; i < nCameraUnit; ++i ) {
-      pthread_join( thread[ i ], &thread_result  );
+      pthread_join( thread[ i ], NULL  );
     }    
+    //cout << "done." << endl;
 
     delete [] thread;
     thread = NULL;
@@ -456,9 +465,11 @@ int bumblebee_mode()
 
     // 
     // Disconnect all the camera unit.
+    //cout << "Disconnecting camera units...";
     for( size_t i = 0; i < nCameraUnit; ++i ) {
 	    cameraunit[ i ].disconnect();
     }
+    //cout << endl;
 
     delete [] cameraunit;
     cameraunit = NULL;
@@ -469,6 +480,8 @@ int bumblebee_mode()
 #ifdef LINUX_OS
     pthread_mutex_destroy( &mutex );
 #endif
+
+    cout << "Succeeded." << endl;
 
 	return 0;
 /*
