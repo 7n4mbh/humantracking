@@ -795,6 +795,9 @@ void execute( int start_frame = 0 )
         // Create an occupancy map with foreground data
         // （ベクトル計算で高速化の余地あり）
         Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+        Mat occupancy_2 = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+        Mat occupancy_3 = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+        int row, col;
         if( !flgNullPEPMap ) {
             //vector<Point3f> point_foreground;
             Mat xvec( 4, 1, CV_32F );
@@ -811,9 +814,18 @@ void execute( int start_frame = 0 )
                             point_planview =  H * xvec ;
                             //point_foreground.push_back( Point3f( point_planview.at<float>( 0, 0 ), point_planview.at<float>( 1, 0 ), point_planview.at<float>( 2, 0 ) ) );
                             float pv_x = point_planview.at<float>( 0, 0 ), pv_y = point_planview.at<float>( 1, 0 ), pv_z = point_planview.at<float>( 2, 0 );
-                            int row = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) ), col = (int)( scale_m2px * ( ( pv_y - roi_y ) + roi_width / 2.0f ) );
+                            row = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) );
+                            col = (int)( scale_m2px * ( ( pv_y - roi_y ) + roi_width / 2.0f ) );
                             if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
                                 occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
+                            }
+                            row = (int)( occupancy_2.rows - scale_m2px * pv_z );
+                            if( row >= 0 && row < occupancy_2.rows && col >= 0 && col < occupancy_2.cols ) {
+                                occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
+                            }
+                            col = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) );
+                            if( row >= 0 && row < occupancy_3.rows && col >= 0 && col < occupancy_3.cols ) {
+                                occupancy_3.at<unsigned short>( row, col ) = occupancy_3.at<unsigned short>( row, col ) + 1;
                             }
                         }                    
                     }
@@ -881,6 +893,14 @@ void execute( int start_frame = 0 )
             occupancy.convertTo( img_occupancy, CV_8U );
             resize( img_occupancy, img_display2, img_display2.size() );
             imshow( "Occupancy Map", img_display2 );
+
+            occupancy_2.convertTo( img_occupancy, CV_8U );
+            resize( img_occupancy, img_display2, img_display2.size() );
+            imshow( "Occupancy Map 2", img_display2 );
+
+            occupancy_3.convertTo( img_occupancy, CV_8U );
+            resize( img_occupancy, img_display2, img_display2.size() );
+            imshow( "Occupancy Map 3", img_display2 );
         }
 
         //{
@@ -927,7 +947,8 @@ void execute( int start_frame = 0 )
 
     destroyWindow( "Disparity" );
     destroyWindow( "Occupancy Map" );
-
+    destroyWindow( "Occupancy Map 2" );
+    destroyWindow( "Occupancy Map 3" );
 #ifdef WINDOWS_OS
     WaitForSingleObject( hThread, INFINITE );
 #else
