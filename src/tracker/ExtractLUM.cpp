@@ -257,12 +257,12 @@ void AddPEPMapToSampler( const cv::Mat& occupancy
                 // 仮
                 // 四隅のノイズを除去する
                 bool flgOutOfROI = false;
-                if( ( pos.x < 0.5 && pos.y > 6.7 ) || ( pos.x < 0.5 && pos.y < 3.5 ) ) {
-                    flgOutOfROI = true;
-                }
-                if( ( pos.x > 1.1 && pos.y > 6.7 ) || ( pos.x > 1.1 && pos.y < 3.5 ) ) {
-                    flgOutOfROI = true;
-                }
+                //if( ( pos.x < 0.5 && pos.y > 6.7 ) || ( pos.x < 0.5 && pos.y < 3.5 ) ) {
+                //    flgOutOfROI = true;
+                //}
+                //if( ( pos.x > 1.1 && pos.y > 6.7 ) || ( pos.x > 1.1 && pos.y < 3.5 ) ) {
+                //    flgOutOfROI = true;
+                //}
 
                 if( !flgOutOfROI ) {
                     // 復元抽出時の重みweightをvalueから計算する

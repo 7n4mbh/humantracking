@@ -159,10 +159,12 @@
     <ClCompile Include="PlotCalculationProcess.cpp" />
     <ClCompile Include="RenovateTrajectory.cpp" />
     <ClCompile Include="track.cpp" />
+    <ClCompile Include="TrackingResultResources.cpp" />
     <ClCompile Include="Trajectory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraUnit.h" />
+    <ClInclude Include="humantracking.h" />
     <ClInclude Include="LinearUniformMotion.h" />
     <ClInclude Include="PersonTrackingCommon.h" />
     <ClInclude Include="PosXYT.h" />
@@ -170,6 +172,7 @@
     <ClInclude Include="pttype.h" />
     <ClInclude Include="RenovateTrajectory.h" />
     <ClInclude Include="track.h" />
+    <ClInclude Include="TrackingResultResources.h" />
     <ClInclude Include="Trajectory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

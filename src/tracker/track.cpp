@@ -33,8 +33,8 @@ bool load_track_parameters( std::string strPath )
     extractlumParam.maxPEPMapValue = 70.0;//1500.0;
     extractlumParam.minDiffTime = 600000;
     extractlumParam.maxSpeed = 8.0;//10.44;
-    extractlumParam.kLUM = 6.0e-1;//3.5e-1;//3.0e-2;
-    extractlumParam.kVerifySample = 3.0e-1;//3.5e-1;//6.0e-2;
+    extractlumParam.kLUM = 0.9e-1;//4.0e-1;//6.0e-1;//3.5e-1;//3.0e-2;
+    extractlumParam.kVerifySample = 1.5e-1;//2.4e-1;//3.0e-1;//3.5e-1;//6.0e-2;
     extractlumParam.distVerifySample = 0.15;
     extractlumParam.thMean = 0.05;
     extractlumParam.thVariance = 0.4;
@@ -64,7 +64,7 @@ bool load_track_parameters( std::string strPath )
     plotParam.rangeRight = roi_x + roi_width / 2.0;
     plotParam.rangeBottom = roi_y - roi_height / 2.0;
     plotParam.rangeTop = roi_y + roi_height / 2.0;
-    plotParam.kSample = 1.0e-3;
+    plotParam.kSample = 1.0e-2;//1.0e-3;
 
     return true;
 }
@@ -74,7 +74,7 @@ void initialize_tracker()
     flgFirst = true;
 }
 
-bool track( const Mat& occupancy, unsigned long long time_stamp )
+bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result, const Mat& occupancy, unsigned long long time_stamp )
 {
     static TIME_MICRO_SEC timeTracking; // 追跡時刻[usec]
                                  // [timeTracking - commonParam.termTracking, timeTrackig) の範囲で追跡処理を行う事を意味する
@@ -104,6 +104,8 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
     static int idNext;
 
     static TIME_MICRO_SEC timeEarliestPEPMap;
+
+    bool ret = false;
 
     if( flgFirst ) {
         sampler.clear();
@@ -230,6 +232,11 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
                         , extractlumParam.stDeviation
                         , &plotParam );
         cerr << "完了(nSample=" << nSample << ")" << endl;
+
+        // debug code
+        if( nSample <= 3 ) {
+            cerr << "nSample is no more than 3." << endl;
+        }
 
 
         //
@@ -615,14 +622,38 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
         }
 
         // 結果の保存
+        p_result->clear();
         resultTrajectory.clear();
         vector<int>::iterator itID = idOpt.begin();
         for( vector<TrajectoryElement>::iterator itTrj = opt.begin(); itTrj != opt.end(); ++itTrj, ++itID ) {
             int id = ( *itID == -1 ) ? idNext++ : *itID;
             CTrajectory trj;
             trj.push_back( *itTrj );
-            resultTrajectory[ id ] = trj;
+            resultTrajectory[ id ] = trj; // resultTrajectoryは次回の追跡にも使うので少し長い
+            //trj.Clip( 0, timeTracking - ( commonParam.termTracking - commonParam.intervalTracking ) );
+            //(*p_result)[ id ] = trj; // 表示用
         }
+
+        for( unsigned long long time = max( timeTracking - commonParam.termTracking, timeEarliestPEPMap )
+                ; time < timeTracking - ( commonParam.termTracking - commonParam.intervalTracking )
+                ; time += commonParam.intervalTrajectory ) {
+
+            (*p_result)[ time ];
+
+            map<int,CTrajectory>::const_iterator itResult = resultTrajectory.begin();
+            for( ; itResult != resultTrajectory.end(); ++itResult ) {
+                const CTrajectory& trajectory = itResult->second;
+                if( trajectory.size() > 0 ) {
+                    TrajectoryElement::iterator itPos = trajectory[ 0 ].begin();
+                    for( ; itPos != trajectory[ 0 ].end(); ++itPos ) {
+                        if( itPos->t == time ) {
+                            (*p_result)[ time ][ itPos->ID ] = Point2d( itPos->x, itPos->y );
+                        }
+                    }
+                }
+            }
+        }
+
 
         //
         // 計算結果の出力
@@ -671,7 +702,9 @@ bool track( const Mat& occupancy, unsigned long long time_stamp )
         storageTrajectoryElement.assign( newStorageTrajectoryElement.begin(), newStorageTrajectoryElement.end() );
 
         timeTracking += commonParam.intervalTracking;
+
+        ret = true;
     }
 
-    return true;
+    return ret;
 }

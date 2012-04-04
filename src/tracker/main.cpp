@@ -13,14 +13,11 @@
 //
 //#include "GL/glui.h"
 
+#include "humantracking.h"
+
 #include "CameraUnit.h"
 #include "track.h"
-
-#if defined(WINDOWS) || defined(_WIN32)
-#define WINDOWS_OS
-#elif defined(linux) || defined(__linux__)
-#define LINUX_OS
-#endif
+#include "TrackingResultResources.h"
 
 //#ifdef WINDOWS_OS
 //#include <conio.h>
@@ -28,8 +25,6 @@
 
 using namespace std;
 using namespace cv;
-
-#define SIZE_BUFFER ( 10000 )
 
 bool flgPEPMapFile = false;
 string strPEPMapFile;
@@ -41,11 +36,7 @@ float scale_m2px;
 map<unsigned int,string> cameraName;
 volatile bool flgRunGetPEPMapThread;
 
-typedef struct {
-    unsigned int serialNumber;
-    unsigned long long timeStamp;
-    string data;
-} PEPMapInfo;
+TrackingResultResources resTracking;
 
 #ifdef WINDOWS_OS
 CRITICAL_SECTION cs;
@@ -186,6 +177,7 @@ void* GetPEPMapThread( void* p_cameraunit )
 	    pthread_mutex_lock( &mutex );
 #endif
             bufPEPMap.push_back( pepmap );
+            resTracking.UpdateView();
 #ifdef WINDOWS_OS
             LeaveCriticalSection( &cs );
 #endif
@@ -303,6 +295,8 @@ int bumblebee_mode()
     Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
     Mat img_occupancy( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
     Mat img_display2( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8U );
+    resTracking.clear();
+    resTracking.EnableViewWindow();
     //unsigned long long timeStamp;
     //unsigned int serialNumber;
     char buf[ SIZE_BUFFER ];
@@ -393,10 +387,17 @@ int bumblebee_mode()
             (void)cvWaitKey( 1 );
 
             // Tracking
-            //track( occupancy, pepmap.timeStamp );
+            //map<int,CTrajectory> result;
+            map< unsigned long long, map<int,Point2d> > result;
+            if( track( &result, occupancy, pepmap.timeStamp ) ) {
+                // Store result view resources
+                resTracking.AddResultTrajectories( result );
+            }
+            resTracking.AddPEPMapInfo( pepmap );
         }
-	} while( cnt < 100 );
+	} while( cnt < 2000 );
 
+    resTracking.TerminateViewWindow();
 
     //
     // Exit all the threads
@@ -593,7 +594,12 @@ int pepmapfile_mode( string strVideoFile )
             (void)cvWaitKey( 1 );
             
             // Tracking
-            track( occupancy, timeStamp );
+            //track( occupancy, timeStamp );
+            //map<int,CTrajectory> result;
+            //if( track( &result, occupancy, timeStamp ) ) {
+                // Show tracking result
+
+            //}
         }
 
     }

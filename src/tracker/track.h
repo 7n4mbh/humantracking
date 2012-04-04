@@ -72,7 +72,7 @@ typedef struct {
 
 bool load_track_parameters( std::string strPath );
 void initialize_tracker();
-bool track( const cv::Mat& occupancy, unsigned long long time_stamp );
+bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result, const cv::Mat& occupancy, unsigned long long time_stamp );
 
 void Gaussian( std::vector<PosXYTVID>* pPosVec, float stdev );
 
