@@ -26,7 +26,6 @@ private:
     CRITICAL_SECTION cs;
 #endif
 #ifdef LINUX_OS
-    bool bRunThread;
     pthread_t thread;
     pthread_mutex_t mutex;
 #endif

@@ -17,7 +17,9 @@ TrackingResultResources::TrackingResultResources()
 {
     bRunThread = false;
     nUpdateViewRequest = 0;
+#ifdef WINDOWS_OS
     hThread = NULL;
+#endif
 }
 
 void TrackingResultResources::clear()
@@ -41,7 +43,7 @@ void TrackingResultResources::AddPEPMapInfo( PEPMapInfo& pepmap )
     EnterCriticalSection( &cs );
 #endif
 #ifdef LINUX_OS
-    pthread_mutex_lock( &pCameraUnit->mutex );
+    pthread_mutex_lock( &mutex );
 #endif
 
     bufPEPMap.push_back( pepmap );
@@ -50,15 +52,17 @@ void TrackingResultResources::AddPEPMapInfo( PEPMapInfo& pepmap )
     LeaveCriticalSection( &cs );
 #endif
 #ifdef LINUX_OS
-    pthread_mutex_unlock( &pCameraUnit->mutex );
+    pthread_mutex_unlock( &mutex );
 #endif
 }
 
 bool TrackingResultResources::EnableViewWindow()
 {
+#ifdef WINDOWS_OS
     if( hThread != NULL ) {
         return false;
     }
+#endif
 
     nUpdateViewRequest = 0;
     bRunThread = true;
@@ -85,19 +89,21 @@ bool TrackingResultResources::EnableViewWindow()
 
 bool TrackingResultResources::TerminateViewWindow()
 {
+#ifdef WINDOWS_OS
     if( hThread == NULL ) {
         return false;
     }
+#endif
 
     bRunThread = false;
-    WaitForSingleObject( hThread, 0 );
-
-    hThread = NULL;
 
 #ifdef WINDOWS_OS
+    WaitForSingleObject( hThread, 0 );
+    hThread = NULL;
     DeleteCriticalSection( &cs );
 #endif
 #ifdef LINUX_OS
+    pthread_join( thread, NULL );
     pthread_mutex_destroy( &mutex );
 #endif
     
@@ -130,14 +136,14 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 #endif
 #ifdef LINUX_OS
             usleep( 50000 );
-            pthread_mutex_lock( &pCameraUnit->mutex );
+            pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
             bool data_available = !pTrackingResultResources->bufPEPMap.empty() && !pTrackingResultResources->trackingResult.empty();
 #ifdef WINDOWS_OS
             LeaveCriticalSection( &pTrackingResultResources->cs );
 #endif
 #ifdef LINUX_OS 
-            pthread_mutex_unlock( &pCameraUnit->mutex );
+            pthread_mutex_unlock( &pTrackingResultResources->mutex );
 #endif
         if( data_available /*&& pTrackingResultResources->nUpdateViewRequest*/ ) {
             PEPMapInfo pepmap = pTrackingResultResources->bufPEPMap.front();
@@ -149,7 +155,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 EnterCriticalSection( &pTrackingResultResources->cs );
 #endif
 #ifdef LINUX_OS
-                pthread_mutex_lock( &pCameraUnit->mutex );
+                pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
 
                 pTrackingResultResources->bufPEPMap.pop_front();
@@ -157,7 +163,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 LeaveCriticalSection( &pTrackingResultResources->cs );
 #endif
 #ifdef LINUX_OS     
-                pthread_mutex_unlock( &pCameraUnit->mutex );
+                pthread_mutex_unlock( &pTrackingResultResources->mutex );
 #endif
                 const int size = pepmap.data.size() / 2;
 
@@ -203,14 +209,14 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 EnterCriticalSection( &pTrackingResultResources->cs );
 #endif
 #ifdef LINUX_OS
-                pthread_mutex_lock( &pCameraUnit->mutex );
+                pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
                 pTrackingResultResources->trackingResult.erase( pTrackingResultResources->trackingResult.begin() );
 #ifdef WINDOWS_OS
                 LeaveCriticalSection( &pTrackingResultResources->cs );
 #endif
 #ifdef LINUX_OS     
-                pthread_mutex_unlock( &pCameraUnit->mutex );
+                pthread_mutex_unlock( &pTrackingResultResources->mutex );
 #endif
             }
         }

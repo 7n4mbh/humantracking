@@ -4,7 +4,7 @@ CC = icc
 CXX = icpc
 
 EXENAME = ../../bin/tracker
-SRC = main.cpp track.cpp CameraUnit.cpp ExtractLUM.cpp MakeLUMSlice.cpp Trajectory.cpp ExtendTrajectories.cpp ClusterTrajectories.cpp RenovateTrajectory.cpp PlotCalculationProcess.cpp
+SRC = main.cpp track.cpp CameraUnit.cpp ExtractLUM.cpp MakeLUMSlice.cpp Trajectory.cpp ExtendTrajectories.cpp ClusterTrajectories.cpp RenovateTrajectory.cpp PlotCalculationProcess.cpp TrackingResultResources.cpp
 OBJ = $(SRC:%.cpp=%.o)
 INCLUDEDIR = -I/usr/include/i386-linux-gnu `pkg-config opencv --cflags-only-I`
 LIBDIR = `pkg-config opencv --libs-only-L` -L/usr/lib -L/opt/intel/Compiler/11.1/064/ipp/ia32/sharedlib
@@ -80,9 +80,43 @@ main.o: /usr/include/zconf.h /usr/include/zlibdefs.h /usr/include/unistd.h
 main.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
 main.o: /usr/include/i386-linux-gnu/bits/environments.h
 main.o: /usr/include/i386-linux-gnu/bits/confname.h /usr/include/getopt.h
-main.o: CameraUnit.h track.h PersonTrackingCommon.h pttype.h PosXYT.h
-main.o: LinearUniformMotion.h ProbSampleReplace.h Trajectory.h
-main.o: RenovateTrajectory.h
+main.o: humantracking.h CameraUnit.h track.h PersonTrackingCommon.h pttype.h
+main.o: PosXYT.h LinearUniformMotion.h /usr/include/boost/shared_ptr.hpp
+main.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
+main.o: /usr/include/boost/config.hpp /usr/include/boost/config/user.hpp
+main.o: /usr/include/boost/config/select_compiler_config.hpp
+main.o: /usr/include/boost/config/compiler/gcc.hpp
+main.o: /usr/include/boost/config/select_stdlib_config.hpp
+main.o: /usr/include/boost/config/no_tr1/utility.hpp
+main.o: /usr/include/boost/config/select_platform_config.hpp
+main.o: /usr/include/boost/config/platform/linux.hpp
+main.o: /usr/include/boost/config/posix_features.hpp
+main.o: /usr/include/boost/config/suffix.hpp
+main.o: /usr/include/boost/config/no_tr1/memory.hpp
+main.o: /usr/include/boost/assert.hpp /usr/include/boost/current_function.hpp
+main.o: /usr/include/boost/checked_delete.hpp
+main.o: /usr/include/boost/throw_exception.hpp
+main.o: /usr/include/boost/exception/detail/attribute_noreturn.hpp
+main.o: /usr/include/boost/detail/workaround.hpp
+main.o: /usr/include/boost/config.hpp
+main.o: /usr/include/boost/smart_ptr/detail/shared_count.hpp
+main.o: /usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+main.o: /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp
+main.o: /usr/include/boost/smart_ptr/detail/sp_has_sync.hpp
+main.o: /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_x86.hpp
+main.o: /usr/include/boost/detail/sp_typeinfo.hpp
+main.o: /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp
+main.o: /usr/include/boost/smart_ptr/detail/sp_convertible.hpp
+main.o: /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp
+main.o: /usr/include/boost/smart_ptr/detail/spinlock.hpp
+main.o: /usr/include/boost/smart_ptr/detail/spinlock_pt.hpp
+main.o: /usr/include/pthread.h /usr/include/sched.h
+main.o: /usr/include/i386-linux-gnu/bits/sched.h
+main.o: /usr/include/i386-linux-gnu/bits/setjmp.h
+main.o: /usr/include/boost/memory_order.hpp
+main.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
+main.o: ProbSampleReplace.h Trajectory.h RenovateTrajectory.h
+main.o: TrackingResultResources.h
 track.o: /usr/local/include/opencv/cv.h
 track.o: /usr/local/include/opencv2/core/core_c.h
 track.o: /usr/local/include/opencv2/core/types_c.h /usr/include/assert.h
@@ -135,6 +169,44 @@ track.o: /usr/local/include/opencv/highgui.h
 track.o: /usr/local/include/opencv2/highgui/highgui_c.h
 track.o: /usr/local/include/opencv2/highgui/highgui.hpp track.h
 track.o: PersonTrackingCommon.h pttype.h PosXYT.h LinearUniformMotion.h
+track.o: /usr/include/boost/shared_ptr.hpp
+track.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
+track.o: /usr/include/boost/config.hpp /usr/include/boost/config/user.hpp
+track.o: /usr/include/boost/config/select_compiler_config.hpp
+track.o: /usr/include/boost/config/compiler/gcc.hpp
+track.o: /usr/include/boost/config/select_stdlib_config.hpp
+track.o: /usr/include/boost/config/no_tr1/utility.hpp
+track.o: /usr/include/boost/config/select_platform_config.hpp
+track.o: /usr/include/boost/config/platform/linux.hpp
+track.o: /usr/include/boost/config/posix_features.hpp /usr/include/unistd.h
+track.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
+track.o: /usr/include/i386-linux-gnu/bits/environments.h
+track.o: /usr/include/i386-linux-gnu/bits/confname.h /usr/include/getopt.h
+track.o: /usr/include/boost/config/suffix.hpp
+track.o: /usr/include/boost/config/no_tr1/memory.hpp
+track.o: /usr/include/boost/assert.hpp
+track.o: /usr/include/boost/current_function.hpp
+track.o: /usr/include/boost/checked_delete.hpp
+track.o: /usr/include/boost/throw_exception.hpp
+track.o: /usr/include/boost/exception/detail/attribute_noreturn.hpp
+track.o: /usr/include/boost/detail/workaround.hpp
+track.o: /usr/include/boost/config.hpp
+track.o: /usr/include/boost/smart_ptr/detail/shared_count.hpp
+track.o: /usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+track.o: /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp
+track.o: /usr/include/boost/smart_ptr/detail/sp_has_sync.hpp
+track.o: /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_x86.hpp
+track.o: /usr/include/boost/detail/sp_typeinfo.hpp
+track.o: /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp
+track.o: /usr/include/boost/smart_ptr/detail/sp_convertible.hpp
+track.o: /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp
+track.o: /usr/include/boost/smart_ptr/detail/spinlock.hpp
+track.o: /usr/include/boost/smart_ptr/detail/spinlock_pt.hpp
+track.o: /usr/include/pthread.h /usr/include/sched.h
+track.o: /usr/include/i386-linux-gnu/bits/sched.h
+track.o: /usr/include/i386-linux-gnu/bits/setjmp.h
+track.o: /usr/include/boost/memory_order.hpp
+track.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
 track.o: ProbSampleReplace.h Trajectory.h RenovateTrajectory.h
 CameraUnit.o: CameraUnit.h
 ExtractLUM.o: /usr/local/include/opencv/cv.h
@@ -193,6 +265,46 @@ ExtractLUM.o: /usr/local/include/opencv/highgui.h
 ExtractLUM.o: /usr/local/include/opencv2/highgui/highgui_c.h
 ExtractLUM.o: /usr/local/include/opencv2/highgui/highgui.hpp track.h
 ExtractLUM.o: PersonTrackingCommon.h pttype.h PosXYT.h LinearUniformMotion.h
+ExtractLUM.o: /usr/include/boost/shared_ptr.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
+ExtractLUM.o: /usr/include/boost/config.hpp
+ExtractLUM.o: /usr/include/boost/config/user.hpp
+ExtractLUM.o: /usr/include/boost/config/select_compiler_config.hpp
+ExtractLUM.o: /usr/include/boost/config/compiler/gcc.hpp
+ExtractLUM.o: /usr/include/boost/config/select_stdlib_config.hpp
+ExtractLUM.o: /usr/include/boost/config/no_tr1/utility.hpp
+ExtractLUM.o: /usr/include/boost/config/select_platform_config.hpp
+ExtractLUM.o: /usr/include/boost/config/platform/linux.hpp
+ExtractLUM.o: /usr/include/boost/config/posix_features.hpp
+ExtractLUM.o: /usr/include/unistd.h
+ExtractLUM.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
+ExtractLUM.o: /usr/include/i386-linux-gnu/bits/environments.h
+ExtractLUM.o: /usr/include/i386-linux-gnu/bits/confname.h
+ExtractLUM.o: /usr/include/getopt.h /usr/include/boost/config/suffix.hpp
+ExtractLUM.o: /usr/include/boost/config/no_tr1/memory.hpp
+ExtractLUM.o: /usr/include/boost/assert.hpp
+ExtractLUM.o: /usr/include/boost/current_function.hpp
+ExtractLUM.o: /usr/include/boost/checked_delete.hpp
+ExtractLUM.o: /usr/include/boost/throw_exception.hpp
+ExtractLUM.o: /usr/include/boost/exception/detail/attribute_noreturn.hpp
+ExtractLUM.o: /usr/include/boost/detail/workaround.hpp
+ExtractLUM.o: /usr/include/boost/config.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/detail/shared_count.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/detail/sp_has_sync.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_x86.hpp
+ExtractLUM.o: /usr/include/boost/detail/sp_typeinfo.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/detail/sp_convertible.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/detail/spinlock.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/detail/spinlock_pt.hpp
+ExtractLUM.o: /usr/include/pthread.h /usr/include/sched.h
+ExtractLUM.o: /usr/include/i386-linux-gnu/bits/sched.h
+ExtractLUM.o: /usr/include/i386-linux-gnu/bits/setjmp.h
+ExtractLUM.o: /usr/include/boost/memory_order.hpp
+ExtractLUM.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
 ExtractLUM.o: ProbSampleReplace.h Trajectory.h RenovateTrajectory.h
 MakeLUMSlice.o: track.h /usr/local/include/opencv/cv.h
 MakeLUMSlice.o: /usr/local/include/opencv2/core/core_c.h
@@ -251,8 +363,47 @@ MakeLUMSlice.o: /usr/local/include/opencv/highgui.h
 MakeLUMSlice.o: /usr/local/include/opencv2/highgui/highgui_c.h
 MakeLUMSlice.o: /usr/local/include/opencv2/highgui/highgui.hpp
 MakeLUMSlice.o: PersonTrackingCommon.h pttype.h PosXYT.h
-MakeLUMSlice.o: LinearUniformMotion.h ProbSampleReplace.h Trajectory.h
-MakeLUMSlice.o: RenovateTrajectory.h
+MakeLUMSlice.o: LinearUniformMotion.h /usr/include/boost/shared_ptr.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
+MakeLUMSlice.o: /usr/include/boost/config.hpp
+MakeLUMSlice.o: /usr/include/boost/config/user.hpp
+MakeLUMSlice.o: /usr/include/boost/config/select_compiler_config.hpp
+MakeLUMSlice.o: /usr/include/boost/config/compiler/gcc.hpp
+MakeLUMSlice.o: /usr/include/boost/config/select_stdlib_config.hpp
+MakeLUMSlice.o: /usr/include/boost/config/no_tr1/utility.hpp
+MakeLUMSlice.o: /usr/include/boost/config/select_platform_config.hpp
+MakeLUMSlice.o: /usr/include/boost/config/platform/linux.hpp
+MakeLUMSlice.o: /usr/include/boost/config/posix_features.hpp
+MakeLUMSlice.o: /usr/include/unistd.h
+MakeLUMSlice.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
+MakeLUMSlice.o: /usr/include/i386-linux-gnu/bits/environments.h
+MakeLUMSlice.o: /usr/include/i386-linux-gnu/bits/confname.h
+MakeLUMSlice.o: /usr/include/getopt.h /usr/include/boost/config/suffix.hpp
+MakeLUMSlice.o: /usr/include/boost/config/no_tr1/memory.hpp
+MakeLUMSlice.o: /usr/include/boost/assert.hpp
+MakeLUMSlice.o: /usr/include/boost/current_function.hpp
+MakeLUMSlice.o: /usr/include/boost/checked_delete.hpp
+MakeLUMSlice.o: /usr/include/boost/throw_exception.hpp
+MakeLUMSlice.o: /usr/include/boost/exception/detail/attribute_noreturn.hpp
+MakeLUMSlice.o: /usr/include/boost/detail/workaround.hpp
+MakeLUMSlice.o: /usr/include/boost/config.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/detail/shared_count.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/detail/sp_has_sync.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_x86.hpp
+MakeLUMSlice.o: /usr/include/boost/detail/sp_typeinfo.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/detail/sp_convertible.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/detail/spinlock.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/detail/spinlock_pt.hpp
+MakeLUMSlice.o: /usr/include/pthread.h /usr/include/sched.h
+MakeLUMSlice.o: /usr/include/i386-linux-gnu/bits/sched.h
+MakeLUMSlice.o: /usr/include/i386-linux-gnu/bits/setjmp.h
+MakeLUMSlice.o: /usr/include/boost/memory_order.hpp
+MakeLUMSlice.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
+MakeLUMSlice.o: ProbSampleReplace.h Trajectory.h RenovateTrajectory.h
 Trajectory.o: Trajectory.h PersonTrackingCommon.h pttype.h
 Trajectory.o: /usr/include/stdint.h /usr/include/features.h
 Trajectory.o: /usr/include/i386-linux-gnu/bits/predefs.h
@@ -268,7 +419,52 @@ Trajectory.o: /usr/include/i386-linux-gnu/bits/inf.h
 Trajectory.o: /usr/include/i386-linux-gnu/bits/nan.h
 Trajectory.o: /usr/include/i386-linux-gnu/bits/mathdef.h
 Trajectory.o: /usr/include/i386-linux-gnu/bits/mathcalls.h
-Trajectory.o: LinearUniformMotion.h
+Trajectory.o: LinearUniformMotion.h /usr/include/boost/shared_ptr.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
+Trajectory.o: /usr/include/boost/config.hpp
+Trajectory.o: /usr/include/boost/config/user.hpp
+Trajectory.o: /usr/include/boost/config/select_compiler_config.hpp
+Trajectory.o: /usr/include/boost/config/compiler/gcc.hpp
+Trajectory.o: /usr/include/boost/config/select_stdlib_config.hpp
+Trajectory.o: /usr/include/boost/config/no_tr1/utility.hpp
+Trajectory.o: /usr/include/boost/config/select_platform_config.hpp
+Trajectory.o: /usr/include/boost/config/platform/linux.hpp
+Trajectory.o: /usr/include/boost/config/posix_features.hpp
+Trajectory.o: /usr/include/unistd.h
+Trajectory.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
+Trajectory.o: /usr/include/i386-linux-gnu/bits/environments.h
+Trajectory.o: /usr/include/i386-linux-gnu/bits/types.h
+Trajectory.o: /usr/include/i386-linux-gnu/bits/typesizes.h
+Trajectory.o: /usr/include/i386-linux-gnu/bits/confname.h
+Trajectory.o: /usr/include/getopt.h /usr/include/boost/config/suffix.hpp
+Trajectory.o: /usr/include/boost/config/no_tr1/memory.hpp
+Trajectory.o: /usr/include/boost/assert.hpp /usr/include/assert.h
+Trajectory.o: /usr/include/boost/current_function.hpp
+Trajectory.o: /usr/include/boost/checked_delete.hpp
+Trajectory.o: /usr/include/boost/throw_exception.hpp
+Trajectory.o: /usr/include/boost/exception/detail/attribute_noreturn.hpp
+Trajectory.o: /usr/include/boost/detail/workaround.hpp
+Trajectory.o: /usr/include/boost/config.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/detail/shared_count.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/detail/sp_has_sync.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_x86.hpp
+Trajectory.o: /usr/include/boost/detail/sp_typeinfo.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/detail/sp_convertible.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/detail/spinlock.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/detail/spinlock_pt.hpp
+Trajectory.o: /usr/include/pthread.h /usr/include/endian.h
+Trajectory.o: /usr/include/i386-linux-gnu/bits/endian.h
+Trajectory.o: /usr/include/i386-linux-gnu/bits/byteswap.h
+Trajectory.o: /usr/include/sched.h /usr/include/time.h
+Trajectory.o: /usr/include/i386-linux-gnu/bits/sched.h
+Trajectory.o: /usr/include/i386-linux-gnu/bits/pthreadtypes.h
+Trajectory.o: /usr/include/i386-linux-gnu/bits/setjmp.h
+Trajectory.o: /usr/include/boost/memory_order.hpp
+Trajectory.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
 ExtendTrajectories.o: /usr/include/stdlib.h /usr/include/features.h
 ExtendTrajectories.o: /usr/include/i386-linux-gnu/bits/predefs.h
 ExtendTrajectories.o: /usr/include/i386-linux-gnu/sys/cdefs.h
@@ -328,8 +524,48 @@ ExtendTrajectories.o: /usr/local/include/opencv/highgui.h
 ExtendTrajectories.o: /usr/local/include/opencv2/highgui/highgui_c.h
 ExtendTrajectories.o: /usr/local/include/opencv2/highgui/highgui.hpp
 ExtendTrajectories.o: PersonTrackingCommon.h pttype.h PosXYT.h
-ExtendTrajectories.o: LinearUniformMotion.h ProbSampleReplace.h Trajectory.h
-ExtendTrajectories.o: RenovateTrajectory.h
+ExtendTrajectories.o: LinearUniformMotion.h /usr/include/boost/shared_ptr.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
+ExtendTrajectories.o: /usr/include/boost/config.hpp
+ExtendTrajectories.o: /usr/include/boost/config/user.hpp
+ExtendTrajectories.o: /usr/include/boost/config/select_compiler_config.hpp
+ExtendTrajectories.o: /usr/include/boost/config/compiler/gcc.hpp
+ExtendTrajectories.o: /usr/include/boost/config/select_stdlib_config.hpp
+ExtendTrajectories.o: /usr/include/boost/config/no_tr1/utility.hpp
+ExtendTrajectories.o: /usr/include/boost/config/select_platform_config.hpp
+ExtendTrajectories.o: /usr/include/boost/config/platform/linux.hpp
+ExtendTrajectories.o: /usr/include/boost/config/posix_features.hpp
+ExtendTrajectories.o: /usr/include/unistd.h
+ExtendTrajectories.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
+ExtendTrajectories.o: /usr/include/i386-linux-gnu/bits/environments.h
+ExtendTrajectories.o: /usr/include/i386-linux-gnu/bits/confname.h
+ExtendTrajectories.o: /usr/include/getopt.h
+ExtendTrajectories.o: /usr/include/boost/config/suffix.hpp
+ExtendTrajectories.o: /usr/include/boost/config/no_tr1/memory.hpp
+ExtendTrajectories.o: /usr/include/boost/assert.hpp
+ExtendTrajectories.o: /usr/include/boost/current_function.hpp
+ExtendTrajectories.o: /usr/include/boost/checked_delete.hpp
+ExtendTrajectories.o: /usr/include/boost/throw_exception.hpp
+ExtendTrajectories.o: /usr/include/boost/exception/detail/attribute_noreturn.hpp
+ExtendTrajectories.o: /usr/include/boost/detail/workaround.hpp
+ExtendTrajectories.o: /usr/include/boost/config.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/detail/shared_count.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/detail/sp_has_sync.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_x86.hpp
+ExtendTrajectories.o: /usr/include/boost/detail/sp_typeinfo.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/detail/sp_convertible.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/detail/spinlock.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/detail/spinlock_pt.hpp
+ExtendTrajectories.o: /usr/include/pthread.h /usr/include/sched.h
+ExtendTrajectories.o: /usr/include/i386-linux-gnu/bits/sched.h
+ExtendTrajectories.o: /usr/include/i386-linux-gnu/bits/setjmp.h
+ExtendTrajectories.o: /usr/include/boost/memory_order.hpp
+ExtendTrajectories.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
+ExtendTrajectories.o: ProbSampleReplace.h Trajectory.h RenovateTrajectory.h
 ClusterTrajectories.o: /usr/include/stdlib.h /usr/include/features.h
 ClusterTrajectories.o: /usr/include/i386-linux-gnu/bits/predefs.h
 ClusterTrajectories.o: /usr/include/i386-linux-gnu/sys/cdefs.h
@@ -388,8 +624,49 @@ ClusterTrajectories.o: /usr/local/include/opencv/highgui.h
 ClusterTrajectories.o: /usr/local/include/opencv2/highgui/highgui_c.h
 ClusterTrajectories.o: /usr/local/include/opencv2/highgui/highgui.hpp
 ClusterTrajectories.o: PersonTrackingCommon.h pttype.h PosXYT.h
-ClusterTrajectories.o: LinearUniformMotion.h ProbSampleReplace.h Trajectory.h
-ClusterTrajectories.o: RenovateTrajectory.h
+ClusterTrajectories.o: LinearUniformMotion.h
+ClusterTrajectories.o: /usr/include/boost/shared_ptr.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
+ClusterTrajectories.o: /usr/include/boost/config.hpp
+ClusterTrajectories.o: /usr/include/boost/config/user.hpp
+ClusterTrajectories.o: /usr/include/boost/config/select_compiler_config.hpp
+ClusterTrajectories.o: /usr/include/boost/config/compiler/gcc.hpp
+ClusterTrajectories.o: /usr/include/boost/config/select_stdlib_config.hpp
+ClusterTrajectories.o: /usr/include/boost/config/no_tr1/utility.hpp
+ClusterTrajectories.o: /usr/include/boost/config/select_platform_config.hpp
+ClusterTrajectories.o: /usr/include/boost/config/platform/linux.hpp
+ClusterTrajectories.o: /usr/include/boost/config/posix_features.hpp
+ClusterTrajectories.o: /usr/include/unistd.h
+ClusterTrajectories.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
+ClusterTrajectories.o: /usr/include/i386-linux-gnu/bits/environments.h
+ClusterTrajectories.o: /usr/include/i386-linux-gnu/bits/confname.h
+ClusterTrajectories.o: /usr/include/getopt.h
+ClusterTrajectories.o: /usr/include/boost/config/suffix.hpp
+ClusterTrajectories.o: /usr/include/boost/config/no_tr1/memory.hpp
+ClusterTrajectories.o: /usr/include/boost/assert.hpp
+ClusterTrajectories.o: /usr/include/boost/current_function.hpp
+ClusterTrajectories.o: /usr/include/boost/checked_delete.hpp
+ClusterTrajectories.o: /usr/include/boost/throw_exception.hpp
+ClusterTrajectories.o: /usr/include/boost/exception/detail/attribute_noreturn.hpp
+ClusterTrajectories.o: /usr/include/boost/detail/workaround.hpp
+ClusterTrajectories.o: /usr/include/boost/config.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/detail/shared_count.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/detail/sp_has_sync.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_x86.hpp
+ClusterTrajectories.o: /usr/include/boost/detail/sp_typeinfo.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/detail/sp_convertible.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/detail/spinlock.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/detail/spinlock_pt.hpp
+ClusterTrajectories.o: /usr/include/pthread.h /usr/include/sched.h
+ClusterTrajectories.o: /usr/include/i386-linux-gnu/bits/sched.h
+ClusterTrajectories.o: /usr/include/i386-linux-gnu/bits/setjmp.h
+ClusterTrajectories.o: /usr/include/boost/memory_order.hpp
+ClusterTrajectories.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
+ClusterTrajectories.o: ProbSampleReplace.h Trajectory.h RenovateTrajectory.h
 RenovateTrajectory.o: track.h /usr/local/include/opencv/cv.h
 RenovateTrajectory.o: /usr/local/include/opencv2/core/core_c.h
 RenovateTrajectory.o: /usr/local/include/opencv2/core/types_c.h
@@ -449,8 +726,48 @@ RenovateTrajectory.o: /usr/local/include/opencv/highgui.h
 RenovateTrajectory.o: /usr/local/include/opencv2/highgui/highgui_c.h
 RenovateTrajectory.o: /usr/local/include/opencv2/highgui/highgui.hpp
 RenovateTrajectory.o: PersonTrackingCommon.h pttype.h PosXYT.h
-RenovateTrajectory.o: LinearUniformMotion.h ProbSampleReplace.h Trajectory.h
-RenovateTrajectory.o: RenovateTrajectory.h
+RenovateTrajectory.o: LinearUniformMotion.h /usr/include/boost/shared_ptr.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
+RenovateTrajectory.o: /usr/include/boost/config.hpp
+RenovateTrajectory.o: /usr/include/boost/config/user.hpp
+RenovateTrajectory.o: /usr/include/boost/config/select_compiler_config.hpp
+RenovateTrajectory.o: /usr/include/boost/config/compiler/gcc.hpp
+RenovateTrajectory.o: /usr/include/boost/config/select_stdlib_config.hpp
+RenovateTrajectory.o: /usr/include/boost/config/no_tr1/utility.hpp
+RenovateTrajectory.o: /usr/include/boost/config/select_platform_config.hpp
+RenovateTrajectory.o: /usr/include/boost/config/platform/linux.hpp
+RenovateTrajectory.o: /usr/include/boost/config/posix_features.hpp
+RenovateTrajectory.o: /usr/include/unistd.h
+RenovateTrajectory.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
+RenovateTrajectory.o: /usr/include/i386-linux-gnu/bits/environments.h
+RenovateTrajectory.o: /usr/include/i386-linux-gnu/bits/confname.h
+RenovateTrajectory.o: /usr/include/getopt.h
+RenovateTrajectory.o: /usr/include/boost/config/suffix.hpp
+RenovateTrajectory.o: /usr/include/boost/config/no_tr1/memory.hpp
+RenovateTrajectory.o: /usr/include/boost/assert.hpp
+RenovateTrajectory.o: /usr/include/boost/current_function.hpp
+RenovateTrajectory.o: /usr/include/boost/checked_delete.hpp
+RenovateTrajectory.o: /usr/include/boost/throw_exception.hpp
+RenovateTrajectory.o: /usr/include/boost/exception/detail/attribute_noreturn.hpp
+RenovateTrajectory.o: /usr/include/boost/detail/workaround.hpp
+RenovateTrajectory.o: /usr/include/boost/config.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/shared_count.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/sp_has_sync.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_x86.hpp
+RenovateTrajectory.o: /usr/include/boost/detail/sp_typeinfo.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/sp_convertible.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/spinlock.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/spinlock_pt.hpp
+RenovateTrajectory.o: /usr/include/pthread.h /usr/include/sched.h
+RenovateTrajectory.o: /usr/include/i386-linux-gnu/bits/sched.h
+RenovateTrajectory.o: /usr/include/i386-linux-gnu/bits/setjmp.h
+RenovateTrajectory.o: /usr/include/boost/memory_order.hpp
+RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
+RenovateTrajectory.o: ProbSampleReplace.h Trajectory.h RenovateTrajectory.h
 PlotCalculationProcess.o: track.h /usr/local/include/opencv/cv.h
 PlotCalculationProcess.o: /usr/local/include/opencv2/core/core_c.h
 PlotCalculationProcess.o: /usr/local/include/opencv2/core/types_c.h
@@ -510,5 +827,151 @@ PlotCalculationProcess.o: /usr/local/include/opencv/highgui.h
 PlotCalculationProcess.o: /usr/local/include/opencv2/highgui/highgui_c.h
 PlotCalculationProcess.o: /usr/local/include/opencv2/highgui/highgui.hpp
 PlotCalculationProcess.o: PersonTrackingCommon.h pttype.h PosXYT.h
-PlotCalculationProcess.o: LinearUniformMotion.h ProbSampleReplace.h
-PlotCalculationProcess.o: Trajectory.h RenovateTrajectory.h
+PlotCalculationProcess.o: LinearUniformMotion.h
+PlotCalculationProcess.o: /usr/include/boost/shared_ptr.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
+PlotCalculationProcess.o: /usr/include/boost/config.hpp
+PlotCalculationProcess.o: /usr/include/boost/config/user.hpp
+PlotCalculationProcess.o: /usr/include/boost/config/select_compiler_config.hpp
+PlotCalculationProcess.o: /usr/include/boost/config/compiler/gcc.hpp
+PlotCalculationProcess.o: /usr/include/boost/config/select_stdlib_config.hpp
+PlotCalculationProcess.o: /usr/include/boost/config/no_tr1/utility.hpp
+PlotCalculationProcess.o: /usr/include/boost/config/select_platform_config.hpp
+PlotCalculationProcess.o: /usr/include/boost/config/platform/linux.hpp
+PlotCalculationProcess.o: /usr/include/boost/config/posix_features.hpp
+PlotCalculationProcess.o: /usr/include/unistd.h
+PlotCalculationProcess.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
+PlotCalculationProcess.o: /usr/include/i386-linux-gnu/bits/environments.h
+PlotCalculationProcess.o: /usr/include/i386-linux-gnu/bits/confname.h
+PlotCalculationProcess.o: /usr/include/getopt.h
+PlotCalculationProcess.o: /usr/include/boost/config/suffix.hpp
+PlotCalculationProcess.o: /usr/include/boost/config/no_tr1/memory.hpp
+PlotCalculationProcess.o: /usr/include/boost/assert.hpp
+PlotCalculationProcess.o: /usr/include/boost/current_function.hpp
+PlotCalculationProcess.o: /usr/include/boost/checked_delete.hpp
+PlotCalculationProcess.o: /usr/include/boost/throw_exception.hpp
+PlotCalculationProcess.o: /usr/include/boost/exception/detail/attribute_noreturn.hpp
+PlotCalculationProcess.o: /usr/include/boost/detail/workaround.hpp
+PlotCalculationProcess.o: /usr/include/boost/config.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/shared_count.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/sp_has_sync.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_x86.hpp
+PlotCalculationProcess.o: /usr/include/boost/detail/sp_typeinfo.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/sp_convertible.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/spinlock.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/spinlock_pt.hpp
+PlotCalculationProcess.o: /usr/include/pthread.h /usr/include/sched.h
+PlotCalculationProcess.o: /usr/include/i386-linux-gnu/bits/sched.h
+PlotCalculationProcess.o: /usr/include/i386-linux-gnu/bits/setjmp.h
+PlotCalculationProcess.o: /usr/include/boost/memory_order.hpp
+PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
+PlotCalculationProcess.o: ProbSampleReplace.h Trajectory.h
+PlotCalculationProcess.o: RenovateTrajectory.h
+TrackingResultResources.o: humantracking.h TrackingResultResources.h
+TrackingResultResources.o: /usr/local/include/opencv/cv.h
+TrackingResultResources.o: /usr/local/include/opencv2/core/core_c.h
+TrackingResultResources.o: /usr/local/include/opencv2/core/types_c.h
+TrackingResultResources.o: /usr/include/assert.h /usr/include/features.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/predefs.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/sys/cdefs.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/wordsize.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/gnu/stubs.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/gnu/stubs-32.h
+TrackingResultResources.o: /usr/include/stdlib.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/waitflags.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/waitstatus.h
+TrackingResultResources.o: /usr/include/endian.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/endian.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/byteswap.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/sys/types.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/types.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/typesizes.h
+TrackingResultResources.o: /usr/include/time.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/sys/select.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/select.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/sigset.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/time.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/sys/sysmacros.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/pthreadtypes.h
+TrackingResultResources.o: /usr/include/alloca.h /usr/include/string.h
+TrackingResultResources.o: /usr/include/xlocale.h /usr/include/stdint.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/wchar.h
+TrackingResultResources.o: /usr/include/math.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/huge_val.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/huge_valf.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/huge_vall.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/inf.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/nan.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/mathdef.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/mathcalls.h
+TrackingResultResources.o: /usr/local/include/opencv2/core/core.hpp
+TrackingResultResources.o: /usr/local/include/opencv2/core/version.hpp
+TrackingResultResources.o: /usr/local/include/opencv2/core/operations.hpp
+TrackingResultResources.o: /usr/include/limits.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/posix1_lim.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/local_lim.h
+TrackingResultResources.o: /usr/include/linux/limits.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/posix2_lim.h
+TrackingResultResources.o: /usr/local/include/opencv2/core/mat.hpp
+TrackingResultResources.o: /usr/local/include/opencv2/imgproc/imgproc_c.h
+TrackingResultResources.o: /usr/local/include/opencv2/imgproc/types_c.h
+TrackingResultResources.o: /usr/local/include/opencv2/imgproc/imgproc.hpp
+TrackingResultResources.o: /usr/local/include/opencv2/video/tracking.hpp
+TrackingResultResources.o: /usr/local/include/opencv2/features2d/features2d.hpp
+TrackingResultResources.o: /usr/local/include/opencv2/flann/miniflann.hpp
+TrackingResultResources.o: /usr/local/include/opencv2/flann/flann.hpp
+TrackingResultResources.o: /usr/local/include/opencv2/calib3d/calib3d.hpp
+TrackingResultResources.o: /usr/local/include/opencv2/objdetect/objdetect.hpp
+TrackingResultResources.o: /usr/local/include/opencv2/legacy/compat.hpp
+TrackingResultResources.o: Trajectory.h PersonTrackingCommon.h pttype.h
+TrackingResultResources.o: PosXYT.h LinearUniformMotion.h
+TrackingResultResources.o: /usr/include/boost/shared_ptr.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
+TrackingResultResources.o: /usr/include/boost/config.hpp
+TrackingResultResources.o: /usr/include/boost/config/user.hpp
+TrackingResultResources.o: /usr/include/boost/config/select_compiler_config.hpp
+TrackingResultResources.o: /usr/include/boost/config/compiler/gcc.hpp
+TrackingResultResources.o: /usr/include/boost/config/select_stdlib_config.hpp
+TrackingResultResources.o: /usr/include/boost/config/no_tr1/utility.hpp
+TrackingResultResources.o: /usr/include/boost/config/select_platform_config.hpp
+TrackingResultResources.o: /usr/include/boost/config/platform/linux.hpp
+TrackingResultResources.o: /usr/include/boost/config/posix_features.hpp
+TrackingResultResources.o: /usr/include/unistd.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/environments.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/confname.h
+TrackingResultResources.o: /usr/include/getopt.h
+TrackingResultResources.o: /usr/include/boost/config/suffix.hpp
+TrackingResultResources.o: /usr/include/boost/config/no_tr1/memory.hpp
+TrackingResultResources.o: /usr/include/boost/assert.hpp
+TrackingResultResources.o: /usr/include/boost/current_function.hpp
+TrackingResultResources.o: /usr/include/boost/checked_delete.hpp
+TrackingResultResources.o: /usr/include/boost/throw_exception.hpp
+TrackingResultResources.o: /usr/include/boost/exception/detail/attribute_noreturn.hpp
+TrackingResultResources.o: /usr/include/boost/detail/workaround.hpp
+TrackingResultResources.o: /usr/include/boost/config.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/detail/shared_count.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/detail/sp_counted_base.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/detail/sp_has_sync.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/detail/sp_counted_base_gcc_x86.hpp
+TrackingResultResources.o: /usr/include/boost/detail/sp_typeinfo.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/detail/sp_counted_impl.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/detail/sp_convertible.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/detail/spinlock_pool.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/detail/spinlock.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/detail/spinlock_pt.hpp
+TrackingResultResources.o: /usr/include/pthread.h /usr/include/sched.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/sched.h
+TrackingResultResources.o: /usr/include/i386-linux-gnu/bits/setjmp.h
+TrackingResultResources.o: /usr/include/boost/memory_order.hpp
+TrackingResultResources.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
+TrackingResultResources.o: /usr/local/include/opencv/highgui.h
+TrackingResultResources.o: /usr/local/include/opencv2/highgui/highgui_c.h
+TrackingResultResources.o: /usr/local/include/opencv2/highgui/highgui.hpp
+TrackingResultResources.o: /usr/include/zlib.h /usr/include/zconf.h
+TrackingResultResources.o: /usr/include/zlibdefs.h
