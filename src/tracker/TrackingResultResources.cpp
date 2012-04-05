@@ -19,6 +19,20 @@ TrackingResultResources::TrackingResultResources()
     nUpdateViewRequest = 0;
 #ifdef WINDOWS_OS
     hThread = NULL;
+    InitializeCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_init( &mutex, NULL );
+#endif
+}
+
+TrackingResultResources::~TrackingResultResources()
+{
+#ifdef WINDOWS_OS
+    DeleteCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_destroy( &mutex );
 #endif
 }
 
@@ -31,10 +45,24 @@ void TrackingResultResources::clear()
 
 void TrackingResultResources::AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result )
 {
+#ifdef WINDOWS_OS
+    EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_lock( &mutex );
+#endif
+    cout << endl << "Received New Results!" << endl;
+
     map< unsigned long long, map<int,Point2d> >::const_iterator it = result.begin();
     for( ; it != result.end(); ++it ) {
         trackingResult[ it->first ].insert( it->second.begin(), it->second.end() );
     }
+#ifdef WINDOWS_OS
+    LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_unlock( &mutex );
+#endif
 }
 
 void TrackingResultResources::AddPEPMapInfo( PEPMapInfo& pepmap )
@@ -68,15 +96,12 @@ bool TrackingResultResources::EnableViewWindow()
     bRunThread = true;
 
 #ifdef WINDOWS_OS
-    InitializeCriticalSection( &cs );
-
     hThread = CreateThread( NULL, 0, TrackingResultResources::ViewThread, (LPVOID)this, 0, &ThreadId );
     if (hThread == NULL) {
         exit( 1 );
     }
 #endif
 #ifdef LINUX_OS
-    pthread_mutex_init( &mutex, NULL );
     // Launch the thread that gets the input and sends it to the child.
     pthread_create( &thread
                 , NULL
@@ -100,11 +125,9 @@ bool TrackingResultResources::TerminateViewWindow()
 #ifdef WINDOWS_OS
     WaitForSingleObject( hThread, 0 );
     hThread = NULL;
-    DeleteCriticalSection( &cs );
 #endif
 #ifdef LINUX_OS
     pthread_join( thread, NULL );
-    pthread_mutex_destroy( &mutex );
 #endif
     
     return true;
@@ -146,9 +169,21 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
             pthread_mutex_unlock( &pTrackingResultResources->mutex );
 #endif
         if( data_available /*&& pTrackingResultResources->nUpdateViewRequest*/ ) {
+#ifdef WINDOWS_OS
+            EnterCriticalSection( &pTrackingResultResources->cs );
+#endif
+#ifdef LINUX_OS
+            pthread_mutex_lock( &pTrackingResultResources->mutex );
+#endif
             PEPMapInfo pepmap = pTrackingResultResources->bufPEPMap.front();
             unsigned long long timeStamp = pTrackingResultResources->trackingResult.begin()->first;
             map<int,Point2d> posHuman = pTrackingResultResources->trackingResult.begin()->second;
+#ifdef WINDOWS_OS
+            LeaveCriticalSection( &pTrackingResultResources->cs );
+#endif
+#ifdef LINUX_OS
+            pthread_mutex_unlock( &pTrackingResultResources->mutex );
+#endif
             if( pepmap.timeStamp <= timeStamp ) {
                 --pTrackingResultResources->nUpdateViewRequest;
 #ifdef WINDOWS_OS
@@ -212,6 +247,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
                 pTrackingResultResources->trackingResult.erase( pTrackingResultResources->trackingResult.begin() );
+		//cout << "erase()";
 #ifdef WINDOWS_OS
                 LeaveCriticalSection( &pTrackingResultResources->cs );
 #endif
@@ -227,6 +263,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
     return 1;
 #endif
 #ifdef LINUX_OS
+    cout << endl << "Exiting Thread..." << endl;
     return NULL;
 #endif
 }

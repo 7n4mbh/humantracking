@@ -32,6 +32,7 @@ private:
 
 public:
     TrackingResultResources();
+    virtual ~TrackingResultResources();
     void AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result );
     void AddPEPMapInfo( PEPMapInfo& pepmap );
     bool EnableViewWindow();

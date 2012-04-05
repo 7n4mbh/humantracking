@@ -167,9 +167,9 @@ track.o: /usr/local/include/opencv2/objdetect/objdetect.hpp
 track.o: /usr/local/include/opencv2/legacy/compat.hpp
 track.o: /usr/local/include/opencv/highgui.h
 track.o: /usr/local/include/opencv2/highgui/highgui_c.h
-track.o: /usr/local/include/opencv2/highgui/highgui.hpp track.h
-track.o: PersonTrackingCommon.h pttype.h PosXYT.h LinearUniformMotion.h
-track.o: /usr/include/boost/shared_ptr.hpp
+track.o: /usr/local/include/opencv2/highgui/highgui.hpp humantracking.h
+track.o: track.h PersonTrackingCommon.h pttype.h PosXYT.h
+track.o: LinearUniformMotion.h /usr/include/boost/shared_ptr.hpp
 track.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
 track.o: /usr/include/boost/config.hpp /usr/include/boost/config/user.hpp
 track.o: /usr/include/boost/config/select_compiler_config.hpp
@@ -768,7 +768,8 @@ RenovateTrajectory.o: /usr/include/i386-linux-gnu/bits/setjmp.h
 RenovateTrajectory.o: /usr/include/boost/memory_order.hpp
 RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
 RenovateTrajectory.o: ProbSampleReplace.h Trajectory.h RenovateTrajectory.h
-PlotCalculationProcess.o: track.h /usr/local/include/opencv/cv.h
+PlotCalculationProcess.o: humantracking.h track.h
+PlotCalculationProcess.o: /usr/local/include/opencv/cv.h
 PlotCalculationProcess.o: /usr/local/include/opencv2/core/core_c.h
 PlotCalculationProcess.o: /usr/local/include/opencv2/core/types_c.h
 PlotCalculationProcess.o: /usr/include/assert.h /usr/include/features.h

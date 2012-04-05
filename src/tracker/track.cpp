@@ -3,6 +3,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
+#include "humantracking.h"
 #include "track.h"
 
 
@@ -421,7 +422,12 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                                 , &sampler
                                 , nSample
                                 , &trajectoriesClustered
-                                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+#ifdef WINDOWS_OS
+			        , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+#endif
+#ifdef LINUX_OS
+			        , "/home/kumalab/project/HumanTracking/bin/tmp_trajectories/"
+#endif
                                 , oss.str()
                                 , NULL
                                 , &plotParam );
