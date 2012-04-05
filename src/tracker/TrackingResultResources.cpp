@@ -135,7 +135,21 @@ bool TrackingResultResources::TerminateViewWindow()
 
 void TrackingResultResources::UpdateView()
 {
+#ifdef WINDOWS_OS
+    EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_lock( &mutex );
+#endif
+
     ++nUpdateViewRequest;
+
+#ifdef WINDOWS_OS
+    LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_unlock( &mutex );
+#endif
 }
 
 #ifdef WINDOWS_OS
@@ -154,11 +168,11 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
     
     while( pTrackingResultResources->bRunThread ) {
 #ifdef WINDOWS_OS
-            Sleep( 50 );
+      //Sleep( 50 );
             EnterCriticalSection( &pTrackingResultResources->cs );
 #endif
 #ifdef LINUX_OS
-            usleep( 50000 );
+	    //    usleep( 50000 );
             pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
             bool data_available = !pTrackingResultResources->bufPEPMap.empty() && !pTrackingResultResources->trackingResult.empty();
@@ -168,7 +182,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 #ifdef LINUX_OS 
             pthread_mutex_unlock( &pTrackingResultResources->mutex );
 #endif
-        if( data_available /*&& pTrackingResultResources->nUpdateViewRequest*/ ) {
+        if( data_available && pTrackingResultResources->nUpdateViewRequest ) {
 #ifdef WINDOWS_OS
             EnterCriticalSection( &pTrackingResultResources->cs );
 #endif
@@ -184,14 +198,17 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 #ifdef LINUX_OS
             pthread_mutex_unlock( &pTrackingResultResources->mutex );
 #endif
+	    //cout << "pepmap.timeStamp=" << pepmap.timeStamp << ", timeStamp=" << timeStamp;
             if( pepmap.timeStamp <= timeStamp ) {
-                --pTrackingResultResources->nUpdateViewRequest;
+	      //cout << " -> show" << endl;
 #ifdef WINDOWS_OS
                 EnterCriticalSection( &pTrackingResultResources->cs );
 #endif
 #ifdef LINUX_OS
                 pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
+	        //--pTrackingResultResources->nUpdateViewRequest;
+  	        pTrackingResultResources->nUpdateViewRequest = 0;
 
                 pTrackingResultResources->bufPEPMap.pop_front();
 #ifdef WINDOWS_OS
@@ -212,7 +229,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 time_t _sec = pepmap.timeStamp / 1000000ULL;
                 string strTime( ctime( &_sec ) );
                 strTime.erase( strTime.size() - 1 );
-    //            cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
+                cout << "Tracking Result: Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
 //#ifdef WINDOWS_OS
     //            ofs_pepmap << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
 //#endif
@@ -239,6 +256,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 }
 
                 imshow( "Tracking Result", img_display );
+		//(void)cvWaitKey( 100 );
+		(void)cvWaitKey( 1 );
             } else {
 #ifdef WINDOWS_OS
                 EnterCriticalSection( &pTrackingResultResources->cs );
@@ -247,7 +266,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
                 pTrackingResultResources->trackingResult.erase( pTrackingResultResources->trackingResult.begin() );
-		//cout << "erase()";
+		//cout << " -> erase()" << endl;
 #ifdef WINDOWS_OS
                 LeaveCriticalSection( &pTrackingResultResources->cs );
 #endif

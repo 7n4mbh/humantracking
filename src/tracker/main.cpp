@@ -364,7 +364,7 @@ int bumblebee_mode()
             time_t _sec = pepmap.timeStamp / 1000000ULL;
             string strTime( ctime( &_sec ) );
             strTime.erase( strTime.size() - 1 );
-            cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
+            //cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
 #ifdef WINDOWS_OS
             ofs_pepmap << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
 #endif
@@ -383,8 +383,8 @@ int bumblebee_mode()
 
             occupancy.convertTo( img_occupancy, CV_8U );
             resize( img_occupancy, img_display2, img_display2.size() );
-            imshow( "Occupancy Map", img_display2 );
-            (void)cvWaitKey( 1 );
+            //imshow( "Occupancy Map", img_display2 );
+            //(void)cvWaitKey( 10 );
 
             // Tracking
             //map<int,CTrajectory> result;
@@ -393,7 +393,9 @@ int bumblebee_mode()
                 // Store result view resources
                 resTracking.AddResultTrajectories( result );
             }
+	    //cout << "Adding PEP-map info...";
             resTracking.AddPEPMapInfo( pepmap );
+	    //cout << "Done." << endl;
         }
 	} while( cnt < 2000 );
 
