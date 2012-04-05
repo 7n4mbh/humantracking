@@ -34,8 +34,8 @@ bool load_track_parameters( std::string strPath )
     extractlumParam.maxPEPMapValue = 70.0;//1500.0;
     extractlumParam.minDiffTime = 600000;
     extractlumParam.maxSpeed = 8.0;//10.44;
-    extractlumParam.kLUM = 0.9e-1;//4.0e-1;//6.0e-1;//3.5e-1;//3.0e-2;
-    extractlumParam.kVerifySample = 1.5e-1;//2.4e-1;//3.0e-1;//3.5e-1;//6.0e-2;
+    extractlumParam.kLUM = 1.2e-1;//4.0e-1;//6.0e-1;//3.5e-1;//3.0e-2;
+    extractlumParam.kVerifySample = 2.4e-1;//3.0e-1;//3.5e-1;//6.0e-2;
     extractlumParam.distVerifySample = 0.15;
     extractlumParam.thMean = 0.05;
     extractlumParam.thVariance = 0.4;
