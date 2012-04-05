@@ -17,6 +17,7 @@ TrackingResultResources::TrackingResultResources()
 {
     bRunThread = false;
     nUpdateViewRequest = 0;
+    delayUpdate = 0;
 #ifdef WINDOWS_OS
     hThread = NULL;
     InitializeCriticalSection( &cs );
@@ -152,6 +153,16 @@ void TrackingResultResources::UpdateView()
 #endif
 }
 
+void TrackingResultResources::SetDelayUpdate( int delay_update )
+{
+    delayUpdate = delay_update;
+}
+
+int TrackingResultResources::GetDelayUpdate()
+{
+    return delayUpdate;
+}
+
 #ifdef WINDOWS_OS
 DWORD WINAPI TrackingResultResources::ViewThread( LPVOID p_tracking_result_resources )
 #endif
@@ -182,7 +193,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 #ifdef LINUX_OS 
             pthread_mutex_unlock( &pTrackingResultResources->mutex );
 #endif
-        if( data_available && pTrackingResultResources->nUpdateViewRequest ) {
+        if( data_available && ( pTrackingResultResources->GetDelayUpdate() > 0 || pTrackingResultResources->nUpdateViewRequest ) ) {
 #ifdef WINDOWS_OS
             EnterCriticalSection( &pTrackingResultResources->cs );
 #endif
@@ -207,8 +218,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 #ifdef LINUX_OS
                 pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
-	        //--pTrackingResultResources->nUpdateViewRequest;
-  	        pTrackingResultResources->nUpdateViewRequest = 0;
+	            //--pTrackingResultResources->nUpdateViewRequest;
+  	            pTrackingResultResources->nUpdateViewRequest = 0;
 
                 pTrackingResultResources->bufPEPMap.pop_front();
 #ifdef WINDOWS_OS
@@ -256,8 +267,11 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 }
 
                 imshow( "Tracking Result", img_display );
-		//(void)cvWaitKey( 100 );
-		(void)cvWaitKey( 1 );
+                if(  pTrackingResultResources->GetDelayUpdate() ) {
+		            (void)cvWaitKey( 100 );
+                } else {
+		            (void)cvWaitKey( 1 );
+                }
             } else {
 #ifdef WINDOWS_OS
                 EnterCriticalSection( &pTrackingResultResources->cs );

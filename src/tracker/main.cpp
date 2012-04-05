@@ -217,6 +217,8 @@ int bumblebee_mode()
 	CameraUnit* cameraunit;
     string strSerial;
 
+    resTracking.SetDelayUpdate( 0 );
+
     //
     // Load camera unit list
     vector<string> addrCameraUnit;
@@ -263,7 +265,7 @@ int bumblebee_mode()
 
 
     //
-    // Craete threader for each cameraunit
+    // Craete thread for each cameraunit
     flgRunGetPEPMapThread = true;
 #ifdef WINDOWS_OS
     InitializeCriticalSection( &cs );
@@ -537,12 +539,14 @@ int bumblebee_mode()
 
 int pepmapfile_mode( string strVideoFile )
 {
-  ifstream ifs( strVideoFile.c_str() );
+    ifstream ifs( strVideoFile.c_str() );
 
     if( !ifs.is_open() ) {
         cout << "Error occured in opening the PEP-map file.";
         return false;
     }
+
+    resTracking.SetDelayUpdate( 100 );
 
 	char buf[ SIZE_BUFFER ];
     string str;

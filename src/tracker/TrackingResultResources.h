@@ -18,6 +18,7 @@ class TrackingResultResources {
 private:
     bool bRunThread;
     int nUpdateViewRequest;
+    int delayUpdate;
     std::deque<PEPMapInfo> bufPEPMap;
     std::map<unsigned long long, std::map<int,cv::Point2d> > trackingResult;
 #ifdef WINDOWS_OS
@@ -39,6 +40,8 @@ public:
     bool TerminateViewWindow();
     void UpdateView();
     void clear();
+    void SetDelayUpdate( int delay_update );
+    int GetDelayUpdate();
 
 private:
 #ifdef WINDOWS_OS
