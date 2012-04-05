@@ -267,8 +267,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 }
 
                 imshow( "Tracking Result", img_display );
-                if(  pTrackingResultResources->GetDelayUpdate() ) {
-		            (void)cvWaitKey( 100 );
+                if( pTrackingResultResources->GetDelayUpdate() ) {
+		            (void)cvWaitKey( pTrackingResultResources->GetDelayUpdate() );
                 } else {
 		            (void)cvWaitKey( 1 );
                 }

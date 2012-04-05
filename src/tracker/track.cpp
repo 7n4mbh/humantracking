@@ -67,6 +67,46 @@ bool load_track_parameters( std::string strPath )
     plotParam.rangeTop = roi_y + roi_height / 2.0;
     plotParam.kSample = 1.0e-2;//1.0e-3;
 
+
+    ifstream ifs;
+
+    ostringstream oss;
+    oss << strPath << "tracking.cfg";
+    ifs.open( oss.str().c_str() );
+
+    if( !ifs.is_open() ) {
+        return false;
+    }
+
+    string str;
+    vector<string> strEq;
+    while( !ifs.eof() ) {
+        getline( ifs, str );
+        
+        char* cstrcmd = new char[ str.size() + 1 ];
+        strcpy( cstrcmd, str.c_str() );
+        
+        strEq.clear();
+        char* tp = strtok( cstrcmd, "=" );
+        strEq.push_back( string( tp ) );
+        while ( tp != NULL ) {
+            tp = strtok( NULL, " " );
+            if ( tp != NULL ) {
+                strEq.push_back( string( tp ) );
+            }
+        }
+
+        delete [] cstrcmd;
+
+        if( strEq.size() == 2 ) {
+            if( strEq[ 0 ] == "PARAM_EXTRACTLUM.kLUM" ) {
+                extractlumParam.kLUM = atof( strEq[ 1 ].c_str() );
+            } else if( strEq[ 0 ] == "PARAM_EXTRACTLUM.kVerifySample" ) {
+                extractlumParam.kVerifySample = atof( strEq[ 1 ].c_str() );
+            }
+        }
+    }
+
     return true;
 }
 

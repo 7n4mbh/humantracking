@@ -383,8 +383,8 @@ int bumblebee_mode()
             , (const Bytef*)buf
             , size );
 
-            occupancy.convertTo( img_occupancy, CV_8U );
-            resize( img_occupancy, img_display2, img_display2.size() );
+            //occupancy.convertTo( img_occupancy, CV_8U );
+            //resize( img_occupancy, img_display2, img_display2.size() );
             //imshow( "Occupancy Map", img_display2 );
             //(void)cvWaitKey( 10 );
 
@@ -546,15 +546,18 @@ int pepmapfile_mode( string strVideoFile )
         return false;
     }
 
-    resTracking.SetDelayUpdate( 100 );
+    resTracking.SetDelayUpdate( 25 );
 
 	char buf[ SIZE_BUFFER ];
     string str;
     Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
     Mat img_occupancy( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
     Mat img_display2( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8U );
-    unsigned long long timeStamp;
-    unsigned int serialNumber;
+    resTracking.clear();
+    resTracking.EnableViewWindow();
+    PEPMapInfo pepmap;
+    //unsigned long long timeStamp;
+    //unsigned int serialNumber;
     int size;
     while( !ifs.eof() ) {
         //ifs.getline( buf, SIZE_BUFFER );
@@ -564,19 +567,19 @@ int pepmapfile_mode( string strVideoFile )
 		if( str.find( "<PEPMap>" ) != str.npos ) {
 			cout << "Detected a PEP-map." << endl;
             //ifs.getline( buf, SIZE_BUFFER );
-            ifs >> serialNumber >> timeStamp >> size;
+            ifs >> pepmap.serialNumber >> pepmap.timeStamp >> size;
             //timeStamp /= 10;
             //int size = atoi( buf );
-            time_t _sec = timeStamp / 1000000ULL;
-            cout << "Serial #: " << serialNumber << ", time: " << timeStamp << ", " << ctime( &_sec );
+            time_t _sec = pepmap.timeStamp / 1000000ULL;
+            cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << ", " << ctime( &_sec );
             //cout << ", size = " << size << "...";
             //ifs.read( buf, size * 2 );
             //str = string( buf );
-            ifs >> str;
+            ifs >> pepmap.data;
             char a[ 3 ]; a[ 2 ] = '\0';
             for( int j = 0; j < size; ++j ) {
-                a[ 0 ] = str[ j * 2 ];
-                a[ 1 ] = str[ j * 2 + 1 ];
+                a[ 0 ] = pepmap.data[ j * 2 ];
+                a[ 1 ] = pepmap.data[ j * 2 + 1 ];
                 buf[ j ] = strtol( a, NULL, 16 );
             }
             cout << "Data Received." << endl;
@@ -594,18 +597,18 @@ int pepmapfile_mode( string strVideoFile )
                     }
                 }
             }
-            occupancy.convertTo( img_occupancy, CV_8U );
-            resize( img_occupancy, img_display2, img_display2.size() );
-            imshow( "Occupancy Map", img_display2 );
-            (void)cvWaitKey( 1 );
+            //occupancy.convertTo( img_occupancy, CV_8U );
+            //resize( img_occupancy, img_display2, img_display2.size() );
+            //imshow( "Occupancy Map", img_display2 );
+            //(void)cvWaitKey( 1 );
             
             // Tracking
-            //track( occupancy, timeStamp );
-            //map<int,CTrajectory> result;
-            //if( track( &result, occupancy, timeStamp ) ) {
-                // Show tracking result
-
-            //}
+            map< unsigned long long, map<int,Point2d> > result;
+            if( track( &result, occupancy, pepmap.timeStamp ) ) {
+                // Store result view resources
+                resTracking.AddResultTrajectories( result );
+            }
+            resTracking.AddPEPMapInfo( pepmap );
         }
 
     }
