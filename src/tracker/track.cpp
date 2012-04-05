@@ -693,7 +693,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     TrajectoryElement::iterator itPos = trajectory[ 0 ].begin();
                     for( ; itPos != trajectory[ 0 ].end(); ++itPos ) {
                         if( itPos->t == time ) {
-                            (*p_result)[ time ][ itPos->ID ] = Point2d( itPos->x, itPos->y );
+                            (*p_result)[ time ][ itResult->first ] = Point2d( itPos->x, itPos->y );
                         }
                     }
                 }

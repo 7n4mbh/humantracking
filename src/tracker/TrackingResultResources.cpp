@@ -240,7 +240,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 time_t _sec = pepmap.timeStamp / 1000000ULL;
                 string strTime( ctime( &_sec ) );
                 strTime.erase( strTime.size() - 1 );
-                cout << "Tracking Result: Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
+                cout << "Tracking Result(posHuman.size=" << posHuman.size() << "): Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
 //#ifdef WINDOWS_OS
     //            ofs_pepmap << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
 //#endif
