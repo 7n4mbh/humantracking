@@ -1,0 +1,149 @@
+<?xml version="1.0" standalone="yes"?>
+<CalibrationProject>
+  <xs:schema id="CalibrationProject" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xs:element name="CalibrationProject" msdata:IsDataSet="true" msdata:UseCurrentLocale="true">
+      <xs:complexType>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="data">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="ObjWidth" type="xs:int" minOccurs="0" />
+                <xs:element name="ObjHeight" type="xs:int" minOccurs="0" />
+                <xs:element name="FieldSize" type="xs:double" minOccurs="0" />
+                <xs:element name="DetectionMethod" type="xs:int" minOccurs="0" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="images">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="ImagePath" type="xs:string" minOccurs="0" />
+                <xs:element name="SourceType" type="xs:int" minOccurs="0" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="results">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="ImageCount" type="xs:int" minOccurs="0" />
+                <xs:element name="focus_lenX" type="xs:double" minOccurs="0" />
+                <xs:element name="focus_lenY" type="xs:double" minOccurs="0" />
+                <xs:element name="PrincipalX" type="xs:double" minOccurs="0" />
+                <xs:element name="PrincipalY" type="xs:double" minOccurs="0" />
+                <xs:element name="Dist1" type="xs:double" minOccurs="0" />
+                <xs:element name="Dist2" type="xs:double" minOccurs="0" />
+                <xs:element name="Dist3" type="xs:double" minOccurs="0" />
+                <xs:element name="Dist4" type="xs:double" minOccurs="0" />
+                <xs:element name="focus_lenX_er" type="xs:double" minOccurs="0" />
+                <xs:element name="focus_lenY_er" type="xs:double" minOccurs="0" />
+                <xs:element name="PrincipalX_er" type="xs:double" minOccurs="0" />
+                <xs:element name="PrincipalY_er" type="xs:double" minOccurs="0" />
+                <xs:element name="Dist1_er" type="xs:double" minOccurs="0" />
+                <xs:element name="Dist2_er" type="xs:double" minOccurs="0" />
+                <xs:element name="Dist3_er" type="xs:double" minOccurs="0" />
+                <xs:element name="Dist4_er" type="xs:double" minOccurs="0" />
+                <xs:element name="dc_AllImage_errX" type="xs:double" minOccurs="0" />
+                <xs:element name="dc_AllImage_errY" type="xs:double" minOccurs="0" />
+                <xs:element name="Calib_Date" type="xs:string" minOccurs="0" />
+                <xs:element name="Calib_Type" type="xs:int" minOccurs="0" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:complexType>
+    </xs:element>
+  </xs:schema>
+  <data>
+    <ObjWidth>5</ObjWidth>
+    <ObjHeight>8</ObjHeight>
+    <FieldSize>135</FieldSize>
+    <DetectionMethod>3</DetectionMethod>
+  </data>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\camera-b_base.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\1.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\2.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\3.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\4.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\5.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\6.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\7.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\8.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\9.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\10.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\11.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\12.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\13.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\14.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <images>
+    <ImagePath>C:\Users\fukushi\Documents\project\HumanTracking\res\calibration\data\camera-b\15.png</ImagePath>
+    <SourceType>0</SourceType>
+  </images>
+  <results>
+    <ImageCount>16</ImageCount>
+    <focus_lenX>971.85522436841268</focus_lenX>
+    <focus_lenY>971.31916266391522</focus_lenY>
+    <PrincipalX>633.73498842925858</PrincipalX>
+    <PrincipalY>504.36604232987963</PrincipalY>
+    <Dist1>-0.013503284481368274</Dist1>
+    <Dist2>0.027228250804209566</Dist2>
+    <Dist3>0.0060025302598204957</Dist3>
+    <Dist4>-0.0023780712439381408</Dist4>
+    <focus_lenX_er>3.9760925769805908</focus_lenX_er>
+    <focus_lenY_er>4.5710000991821289</focus_lenY_er>
+    <PrincipalX_er>5.9248166084289551</PrincipalX_er>
+    <PrincipalY_er>5.8966760635375977</PrincipalY_er>
+    <Dist1_er>0.017073959112167358</Dist1_er>
+    <Dist2_er>0.096141718327999115</Dist2_er>
+    <Dist3_er>0.0018759227823466063</Dist3_er>
+    <Dist4_er>0.0021194086875766516</Dist4_er>
+    <dc_AllImage_errX>0.20915511505010956</dc_AllImage_errX>
+    <dc_AllImage_errY>0.32237375092232246</dc_AllImage_errY>
+    <Calib_Date>2012/04/10 17:46:34</Calib_Date>
+    <Calib_Type>2</Calib_Type>
+  </results>
+</CalibrationProject>
