@@ -261,8 +261,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 cv::cvtColor( img_occupancy, img_display_tmp, CV_GRAY2BGR );
                 resize( img_display_tmp, img_display, img_display.size() );
                 for( map<int,Point2d>::iterator it = posHuman.begin(); it != posHuman.end(); ++it ) {
-                    int col = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( it->second.x - roi_x ) + roi_width / 2.0f ) );
-                    int row = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( it->second.y - roi_y ) + roi_width / 2.0f ) );
+                    int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( it->second.x - roi_x ) + roi_width / 2.0f ) );
+                    int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( it->second.y - roi_y ) + roi_height / 2.0f ) );
                     circle( img_display, Point( row, col ), 3, CV_RGB( 255, 0, 0 ), -1 );
                 }
 
