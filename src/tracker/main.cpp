@@ -217,7 +217,7 @@ int bumblebee_mode()
 	CameraUnit* cameraunit;
     string strSerial;
 
-    resTracking.SetDelayUpdate( 0 );
+    resTracking.SetDelayUpdate( 50/*0*/ );
 
     //
     // Load camera unit list
@@ -365,7 +365,9 @@ int bumblebee_mode()
             //cout << "Data Received." << endl;
             time_t _sec = pepmap.timeStamp / 1000000ULL;
             string strTime( ctime( &_sec ) );
-            strTime.erase( strTime.size() - 1 );
+            if( !strTime.empty() ) {
+		strTime.erase( strTime.size() - 1 );
+	    }
             //cout << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
 #ifdef WINDOWS_OS
             ofs_pepmap << "Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;

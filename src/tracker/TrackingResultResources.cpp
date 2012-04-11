@@ -239,16 +239,18 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 //cout << "Data Received." << endl;
                 time_t _sec = pepmap.timeStamp / 1000000ULL;
                 string strTime;
+		// sometimes, ctime() returns null string for some reason.
+		// The following is for re-trying in that case.
                 for( int i = 0; i < 10; ++i ) {
                     strTime = string( ctime( &_sec ) );
 		    if( strTime.size() ) {
 			break;
 		    }
                 }
-                cout << "## debug info ## strTime.size=" << strTime.size() 
-                     << ", pepmap.data.size=" << pepmap.data.size() 
-                     << ", pepmap.timeStamp=" << pepmap.timeStamp 
-                     << ", pepmap.serialNumber=" << pepmap.serialNumber << endl;
+                //cout << "## debug info ## strTime.size=" << strTime.size() 
+                //     << ", pepmap.data.size=" << pepmap.data.size() 
+                //     << ", pepmap.timeStamp=" << pepmap.timeStamp 
+                //     << ", pepmap.serialNumber=" << pepmap.serialNumber << endl;
                 strTime.erase( strTime.size() - 1 );
                 cout << "Tracking Result(posHuman.size=" << posHuman.size() << "): Serial #: " << pepmap.serialNumber << ", time: " << pepmap.timeStamp << "(" << strTime << ")" << endl;
 //#ifdef WINDOWS_OS
