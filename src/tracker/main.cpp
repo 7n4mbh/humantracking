@@ -372,7 +372,7 @@ int bumblebee_mode()
 #endif
             ++cnt;
             if( pepmap.timeStamp < tmp_timestamp ) {
-                cout << "## Illegal Time Stamp! ## This pepmap will be rejected. To avoid this, have more size of sort_buffer." << endl;
+	      cout << "## Illegal Time Stamp! ## This pepmap from " << pepmap.serialNumber << " will be rejected. To avoid this, have more size of sort_buffer." << endl;
                 continue;
             }
             tmp_timestamp = pepmap.timeStamp;

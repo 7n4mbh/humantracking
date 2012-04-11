@@ -3,12 +3,19 @@
 CC = icc
 CXX = icpc
 
+LBITS = $(shell getconf LONG_BIT)
+
 EXENAME = ../../bin/tracker
 SRC = main.cpp track.cpp CameraUnit.cpp ExtractLUM.cpp MakeLUMSlice.cpp Trajectory.cpp ExtendTrajectories.cpp ClusterTrajectories.cpp RenovateTrajectory.cpp PlotCalculationProcess.cpp TrackingResultResources.cpp
 OBJ = $(SRC:%.cpp=%.o)
 INCLUDEDIR = -I/usr/include/i386-linux-gnu `pkg-config opencv --cflags-only-I`
-LIBDIR = `pkg-config opencv --libs-only-L` -L/usr/lib -L/opt/intel/Compiler/11.1/064/ipp/ia32/sharedlib
-LIB = `pkg-config opencv --libs-only-l` -lz -lippcore -lippi -lipps -lippm
+ifeq ($(LBITS),32)
+    LIBDIR = `pkg-config opencv --libs-only-L` -L/usr/lib -L/opt/intel/Compiler/11.1/064/ipp/ia32/sharedlib
+    LIB = `pkg-config opencv --libs-only-l` -lz -lippcore -lippi -lipps -lippm
+else
+    LIBDIR = `pkg-config opencv --libs-only-L` -L/usr/lib -L/opt/intel/Compiler/11.0/081/ipp/em64t/sharedlib
+    LIB = `pkg-config opencv --libs-only-l` -lz -lippcoreem64t -lippiem64t -lippsem64t -lippmem64t
+endif
 CFLAGS = $(INCLUDEDIR) -O2
 LDFLAGS = $(LIBDIR) $(LIB)
 
@@ -17,6 +24,9 @@ $(EXENAME): $(OBJ)
 
 .cpp.o:
 	$(CXX) -o $@ $< -c $(CFLAGS)
+
+bit:
+	@echo $(LBITS); echo $(LIB)
 
 clean:
 	@rm -rf $(EXENAME) $(OBJ) *~ *.bak *.BAK
