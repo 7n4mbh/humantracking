@@ -16,9 +16,24 @@
 #include <sys/time.h>
 #endif
 
+#include "opencv/cv.h"
+
 #define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
 
 #define SIZE_BUFFER ( 10000 )
+
+const CvScalar color_table[] = { CV_RGB( 255,   0,   0 )
+                       , CV_RGB( 0  , 255,   0 )
+                       , CV_RGB( 0  ,   0, 255 )
+                       , CV_RGB( 128,   0, 128 )
+                       , CV_RGB( 128, 128,   0 )
+                       , CV_RGB( 0  , 128, 128 )
+                       , CV_RGB( 128,   0,   0 )
+                       , CV_RGB( 0  , 128,   0 )
+                       , CV_RGB( 0  ,   0, 128 )
+                       , CV_RGB( 255,   0, 255 )
+                       , CV_RGB( 255, 255,   0 )
+                       , CV_RGB( 0  , 255, 255 ) };
 
 typedef struct {
     unsigned int serialNumber;

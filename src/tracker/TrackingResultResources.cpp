@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include "../humantracking.h"
 #include "TrackingResultResources.h"
 
@@ -25,6 +27,7 @@ TrackingResultResources::TrackingResultResources()
 #ifdef LINUX_OS
     pthread_mutex_init( &mutex, NULL );
 #endif
+    ofstream ofs( "result.txt" );
 }
 
 TrackingResultResources::~TrackingResultResources()
@@ -42,6 +45,7 @@ void TrackingResultResources::clear()
     bufPEPMap.clear();
     trackingResult.clear();
     nUpdateViewRequest = 0;
+    ofstream ofs( "result.txt" );
 }
 
 void TrackingResultResources::AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result )
@@ -54,9 +58,19 @@ void TrackingResultResources::AddResultTrajectories( const std::map< unsigned lo
 #endif
     cout << endl << "Received New Results!" << endl;
 
+    ofstream ofs( "result.txt", ios::out | ios::app );
+
     map< unsigned long long, map<int,Point2d> >::const_iterator it = result.begin();
     for( ; it != result.end(); ++it ) {
         trackingResult[ it->first ].insert( it->second.begin(), it->second.end() );
+        ofs << it->first // Timestamp
+            << ", " << it->second.size(); // # of people
+        for( map<int,Point2d>::const_iterator itPosHuman = it->second.begin(); itPosHuman != it->second.end(); ++itPosHuman ) {
+            ofs << ", " << itPosHuman->first // ID
+                << ", " << itPosHuman->second.x // X
+                << ", " << itPosHuman->second.y; // Y
+        }
+        ofs << endl;
     }
 #ifdef WINDOWS_OS
     LeaveCriticalSection( &cs );
@@ -241,9 +255,9 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 string strTime;
                 for( int i = 0; i < 10; ++i ) {
                     strTime = string( ctime( &_sec ) );
-		    if( strTime.size() ) {
-			break;
-		    }
+                    if( strTime.size() ) {
+                        break;
+                    }
                 }
                 cout << "## debug info ## strTime.size=" << strTime.size() 
                      << ", pepmap.data.size=" << pepmap.data.size() 
@@ -273,7 +287,9 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 for( map<int,Point2d>::iterator it = posHuman.begin(); it != posHuman.end(); ++it ) {
                     int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( it->second.x - roi_x ) + roi_width / 2.0f ) );
                     int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( it->second.y - roi_y ) + roi_height / 2.0f ) );
-                    circle( img_display, Point( row, col ), 3, CV_RGB( 255, 0, 0 ), -1 );
+                    const int sizeColorTable = sizeof( color_table ) / sizeof( CvScalar );
+                    //cout << "sizeColorTable=" << sizeColorTable << endl;
+                    circle( img_display, Point( row, col ), 3, color_table[ it->first % sizeColorTable ], -1 );
                 }
 
                 imshow( "Tracking Result", img_display );

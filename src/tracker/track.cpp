@@ -10,7 +10,7 @@
 using namespace std;
 using namespace cv;
 
-TrackingProcessLogger logTracking;
+extern TrackingProcessLogger logTracking;
 
 PARAM_COMMON commonParam; // 共通パラメータ
 PARAM_EXTRACTLUM extractlumParam; // 等速直線運動抽出パラメータ

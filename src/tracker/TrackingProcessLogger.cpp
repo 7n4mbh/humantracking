@@ -57,8 +57,7 @@ void TrackingProcessLogger::end_and_output2file()
         << 100.0 * (double)t_process_of_making_trajectory / (double)t_process << ", "
         << 100.0 * (double)t_process_of_clustering / (double)t_process << ", "
         << 100.0 * (double)t_process_of_renovation / (double)t_process << ", "
-        << 100.0 * (double)t_process_of_finishing / (double)t_process << ", "
-        << endl;
+        << 100.0 * (double)t_process_of_finishing / (double)t_process << endl;
 }
 
 void TrackingProcessLogger::set_tracking_block( unsigned long long start, unsigned long long end )

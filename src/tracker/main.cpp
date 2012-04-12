@@ -18,6 +18,7 @@
 #include "CameraUnit.h"
 #include "track.h"
 #include "TrackingResultResources.h"
+#include "TrackingProcessLogger.h"
 
 //#ifdef WINDOWS_OS
 //#include <conio.h>
@@ -38,6 +39,7 @@ map<unsigned int,string> cameraName;
 volatile bool flgRunGetPEPMapThread;
 
 TrackingResultResources resTracking;
+TrackingProcessLogger logTracking;
 
 #ifdef WINDOWS_OS
 CRITICAL_SECTION cs;
@@ -178,6 +180,7 @@ void* GetPEPMapThread( void* p_cameraunit )
 	    pthread_mutex_lock( &mutex );
 #endif
             bufPEPMap.push_back( pepmap );
+            logTracking.receive_pepmap( pepmap );
             resTracking.UpdateView();
 #ifdef WINDOWS_OS
             LeaveCriticalSection( &cs );
