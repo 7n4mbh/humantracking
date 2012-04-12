@@ -190,6 +190,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
     Mat img_display_tmp( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     Mat img_display( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     char buf[ SIZE_BUFFER ];
+
+    deque< map<int,Point2d> > result_buffer;
     
     while( pTrackingResultResources->bRunThread ) {
 #ifdef WINDOWS_OS
@@ -281,16 +283,45 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 , (const Bytef*)buf
                 , size );
 
+                result_buffer.push_back( posHuman );
+                if( result_buffer.size() > 20 ) {
+                    result_buffer.pop_front();
+                }
+
                 occupancy.convertTo( img_occupancy, CV_8U );
                 cv::cvtColor( img_occupancy, img_display_tmp, CV_GRAY2BGR );
                 resize( img_display_tmp, img_display, img_display.size() );
-                for( map<int,Point2d>::iterator it = posHuman.begin(); it != posHuman.end(); ++it ) {
-                    int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( it->second.x - roi_x ) + roi_width / 2.0f ) );
-                    int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( it->second.y - roi_y ) + roi_height / 2.0f ) );
-                    const int sizeColorTable = sizeof( color_table ) / sizeof( CvScalar );
-                    //cout << "sizeColorTable=" << sizeColorTable << endl;
-                    circle( img_display, Point( row, col ), 3, color_table[ it->first % sizeColorTable ], -1 );
+
+                map<int, vector<Point2d> > trajectory_to_draw;
+                for( deque< map<int,Point2d> >::iterator itPosHuman = result_buffer.begin(); itPosHuman != result_buffer.end(); ++itPosHuman ) {
+                    for( map<int,Point2d>::iterator it = itPosHuman->begin(); it != itPosHuman->end(); ++it ) {
+                        trajectory_to_draw[ it->first ].push_back( it->second );
+                    }
                 }
+
+                int old_col, old_row;
+                for( map< int, vector<Point2d> >::iterator itHuman = trajectory_to_draw.begin(); itHuman != trajectory_to_draw.end(); ++itHuman ) {
+                    for( vector<Point2d>::iterator it = itHuman->second.begin(); it != itHuman->second.end(); ++it ) {
+                        int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( it->x - roi_x ) + roi_width / 2.0f ) );
+                        int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( it->y - roi_y ) + roi_height / 2.0f ) );
+                        circle( img_display, Point( row, col ), 3, color_table[ itHuman->first % sizeColorTable ], -1 );
+                        if( it != itHuman->second.begin() ) {
+                            line( img_display, Point( row, col ), Point( old_row, old_col ), color_table[ itHuman->first % sizeColorTable ], 6 );
+                        }
+                        old_col = col;
+                        old_row = row;
+                    }
+                }
+
+                //for( deque< map<int,Point2d> >::iterator itPosHuman = result_buffer.begin(); itPosHuman != result_buffer.end(); ++itPosHuman ) {
+                //    for( map<int,Point2d>::iterator it = itPosHuman->begin(); it != itPosHuman->end(); ++it ) {
+                //        int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( it->second.x - roi_x ) + roi_width / 2.0f ) );
+                //        int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( it->second.y - roi_y ) + roi_height / 2.0f ) );
+                //        const int sizeColorTable = sizeof( color_table ) / sizeof( CvScalar );
+                //        //cout << "sizeColorTable=" << sizeColorTable << endl;
+                //        circle( img_display, Point( row, col ), 3, color_table[ it->first % sizeColorTable ], -1 );
+                //    }
+                //}
 
                 imshow( "Tracking Result", img_display );
                 if( pTrackingResultResources->GetDelayUpdate() ) {

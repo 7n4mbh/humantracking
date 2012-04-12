@@ -34,6 +34,7 @@ const CvScalar color_table[] = { CV_RGB( 255,   0,   0 )
                        , CV_RGB( 255,   0, 255 )
                        , CV_RGB( 255, 255,   0 )
                        , CV_RGB( 0  , 255, 255 ) };
+const int sizeColorTable = sizeof( color_table ) / sizeof( CvScalar );
 
 typedef struct {
     unsigned int serialNumber;
