@@ -15,7 +15,8 @@ TrackingProcessLogger::~TrackingProcessLogger()
 
 void TrackingProcessLogger::init( const std::string& filename )
 {
-    ofstream ofs( strFilename = filename );
+    strFilename = filename;
+    ofstream ofs( strFilename.c_str() );
     ofs << "Start Time of Tracking Block"
         << ", End Time of Tracking Block"
         << ", Process Time[usec]"
@@ -44,7 +45,7 @@ void TrackingProcessLogger::end_and_output2file()
     t_end = getTimeStamp();
     const unsigned long long t_process =  t_end - t_start;
 
-    ofstream ofs( strFilename, ios::out | ios::app );
+    ofstream ofs( strFilename.c_str(), ios::out | ios::app );
 
     ofs << t_start_of_tracking_block << ", "
         << t_end_of_tracking_block << ", "
@@ -72,9 +73,9 @@ void TrackingProcessLogger::receive_pepmap( const PEPMapInfo& pepmap )
 
 void TrackingProcessLogger::making_trajectory( TrackingProcessLogger::Event evt )
 {
-    if( evt == TrackingProcessLogger::Event::Start ) {
+    if( evt == TrackingProcessLogger::Start ) {
         t_start_of_making_trajectory = getTimeStamp();
-    } else if( evt == TrackingProcessLogger::Event::End ) {
+    } else if( evt == TrackingProcessLogger::End ) {
         t_end_of_making_trajectory = getTimeStamp();
         t_process_of_making_trajectory += t_end_of_making_trajectory - t_start_of_making_trajectory;
     }
@@ -82,9 +83,9 @@ void TrackingProcessLogger::making_trajectory( TrackingProcessLogger::Event evt 
 
 void TrackingProcessLogger::clustering( TrackingProcessLogger::Event evt )
 {
-    if( evt == TrackingProcessLogger::Event::Start ) {
+    if( evt == TrackingProcessLogger::Start ) {
         t_start_of_clustering = getTimeStamp();
-    } else if( evt == TrackingProcessLogger::Event::End ) {
+    } else if( evt == TrackingProcessLogger::End ) {
         t_end_of_clustering = getTimeStamp();
         t_process_of_clustering += t_end_of_clustering - t_start_of_clustering;
     }
@@ -92,9 +93,9 @@ void TrackingProcessLogger::clustering( TrackingProcessLogger::Event evt )
 
 void TrackingProcessLogger::renovation( TrackingProcessLogger::Event evt )
 {
-    if( evt == TrackingProcessLogger::Event::Start ) {
+    if( evt == TrackingProcessLogger::Start ) {
         t_start_of_renovation = getTimeStamp();
-    } else if( evt == TrackingProcessLogger::Event::End ) {
+    } else if( evt == TrackingProcessLogger::End ) {
         t_end_of_renovation = getTimeStamp();
         t_process_of_renovation += t_end_of_renovation - t_start_of_renovation;
     }
@@ -102,9 +103,9 @@ void TrackingProcessLogger::renovation( TrackingProcessLogger::Event evt )
 
 void TrackingProcessLogger::finishing( TrackingProcessLogger::Event evt )
 {
-    if( evt == TrackingProcessLogger::Event::Start ) {
+    if( evt == TrackingProcessLogger::Start ) {
         t_start_of_finishing = getTimeStamp();
-    } else if( evt == TrackingProcessLogger::Event::End ) {
+    } else if( evt == TrackingProcessLogger::End ) {
         t_end_of_finishing = getTimeStamp();
         t_process_of_finishing += t_end_of_finishing - t_start_of_finishing;
     }

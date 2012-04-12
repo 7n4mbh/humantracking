@@ -177,7 +177,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         flgTrackingStarts = false;
     }
     
-    logTracking.making_trajectory( TrackingProcessLogger::Event::Start );
+    logTracking.making_trajectory( TrackingProcessLogger::Start );
 
     // PEPMapをサンプラに追加する
     AddPEPMapToSampler( occupancy
@@ -272,7 +272,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         }
     }
 
-    logTracking.making_trajectory( TrackingProcessLogger::Event::End );
+    logTracking.making_trajectory( TrackingProcessLogger::End );
 
     if( !tableLUMSlice.empty() && tableLUMSlice.rbegin()->first >= timeTracking ) {
         cout << "Done with making trajectories." << endl;
@@ -301,7 +301,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         //
         // Clustering the trajectories
         //
-        logTracking.clustering( TrackingProcessLogger::Event::Start );
+        logTracking.clustering( TrackingProcessLogger::Start );
 
         cerr << "Calculating a distance table..." << endl;
 
@@ -499,9 +499,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             delete [] dist;
         } while( prevNumOfCluster != nCluster );
 
-        logTracking.clustering( TrackingProcessLogger::Event::End );
+        logTracking.clustering( TrackingProcessLogger::End );
 
-        logTracking.renovation( TrackingProcessLogger::Event::Start );
+        logTracking.renovation( TrackingProcessLogger::Start );
 
         //
         // Renovate the trajectories
@@ -665,9 +665,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         //}
 #endif
 
-        logTracking.renovation( TrackingProcessLogger::Event::End );
+	    logTracking.renovation( TrackingProcessLogger::End );
 
-        logTracking.finishing( TrackingProcessLogger::Event::Start );
+        logTracking.finishing( TrackingProcessLogger::Start );
 
         // ID未割り当ての軌跡に新しいIDを振る
         for( vector<int>::iterator itID = idOpt.begin(); itID != idOpt.end(); ++itID ) {
@@ -780,7 +780,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         ret = true;
 
-        logTracking.finishing( TrackingProcessLogger::Event::End );
+        logTracking.finishing( TrackingProcessLogger::End );
 
         logTracking.end_and_output2file();
         flgTrackingStarts = true;

@@ -2,13 +2,16 @@
 #CXX = g++
 CC = icc
 CXX = icpc
+MPICC = mpiicpc
+MPICXX = mpiicpc
 
 LBITS = $(shell getconf LONG_BIT)
 
-EXENAME = ../../bin/tracker
-SRC = main.cpp track.cpp CameraUnit.cpp ExtractLUM.cpp MakeLUMSlice.cpp Trajectory.cpp ExtendTrajectories.cpp ClusterTrajectories.cpp RenovateTrajectory.cpp PlotCalculationProcess.cpp TrackingResultResources.cpp
+EXENAME1 = ../../bin/tracker
+EXENAME2 = ../../bin/tracker_mpi
+SRC = main.cpp track.cpp CameraUnit.cpp ExtractLUM.cpp MakeLUMSlice.cpp Trajectory.cpp ExtendTrajectories.cpp ClusterTrajectories.cpp RenovateTrajectory.cpp PlotCalculationProcess.cpp TrackingResultResources.cpp TrackingProcessLogger.cpp
 OBJ = $(SRC:%.cpp=%.o)
-INCLUDEDIR = -I/usr/include/i386-linux-gnu `pkg-config opencv --cflags-only-I`
+INCLUDEDIR = -I/usr/include/i386-linux-gnu `pkg-config opencv --cflags-only-I` -I/opt/intel/ict/3.2.0.020/impi/include64
 ifeq ($(LBITS),32)
     LIBDIR = `pkg-config opencv --libs-only-L` -L/usr/lib -L/opt/intel/Compiler/11.1/064/ipp/ia32/sharedlib
     LIB = `pkg-config opencv --libs-only-l` -lz -lippcore -lippi -lipps -lippm
@@ -19,8 +22,17 @@ endif
 CFLAGS = $(INCLUDEDIR) -O2
 LDFLAGS = $(LIBDIR) $(LIB)
 
-$(EXENAME): $(OBJ)
+tracker: $(EXENAME1)
+
+tracker_mpi: $(EXENAME2)
+
+all: tracker tracker_mpi
+
+$(EXENAME1): $(OBJ)
 	$(CC) -o $@ $(OBJ) $(CFLAGS) $(LDFLAGS)
+
+$(EXENAME2): $(OBJ)
+	$(MPICXX) -o $@ $(OBJ) $(CFLAGS) $(LDFLAGS)
 
 .cpp.o:
 	$(CXX) -o $@ $< -c $(CFLAGS)
@@ -90,8 +102,9 @@ main.o: /usr/include/zconf.h /usr/include/zlibdefs.h /usr/include/unistd.h
 main.o: /usr/include/i386-linux-gnu/bits/posix_opt.h
 main.o: /usr/include/i386-linux-gnu/bits/environments.h
 main.o: /usr/include/i386-linux-gnu/bits/confname.h /usr/include/getopt.h
-main.o: humantracking.h CameraUnit.h track.h PersonTrackingCommon.h pttype.h
-main.o: PosXYT.h LinearUniformMotion.h /usr/include/boost/shared_ptr.hpp
+main.o: ../humantracking.h CameraUnit.h track.h PersonTrackingCommon.h
+main.o: pttype.h PosXYT.h LinearUniformMotion.h
+main.o: /usr/include/boost/shared_ptr.hpp
 main.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
 main.o: /usr/include/boost/config.hpp /usr/include/boost/config/user.hpp
 main.o: /usr/include/boost/config/select_compiler_config.hpp
@@ -177,7 +190,7 @@ track.o: /usr/local/include/opencv2/objdetect/objdetect.hpp
 track.o: /usr/local/include/opencv2/legacy/compat.hpp
 track.o: /usr/local/include/opencv/highgui.h
 track.o: /usr/local/include/opencv2/highgui/highgui_c.h
-track.o: /usr/local/include/opencv2/highgui/highgui.hpp humantracking.h
+track.o: /usr/local/include/opencv2/highgui/highgui.hpp ../humantracking.h
 track.o: track.h PersonTrackingCommon.h pttype.h PosXYT.h
 track.o: LinearUniformMotion.h /usr/include/boost/shared_ptr.hpp
 track.o: /usr/include/boost/smart_ptr/shared_ptr.hpp
@@ -218,6 +231,7 @@ track.o: /usr/include/i386-linux-gnu/bits/setjmp.h
 track.o: /usr/include/boost/memory_order.hpp
 track.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
 track.o: ProbSampleReplace.h Trajectory.h RenovateTrajectory.h
+track.o: TrackingProcessLogger.h
 CameraUnit.o: CameraUnit.h
 ExtractLUM.o: /usr/local/include/opencv/cv.h
 ExtractLUM.o: /usr/local/include/opencv2/core/core_c.h
@@ -778,7 +792,7 @@ RenovateTrajectory.o: /usr/include/i386-linux-gnu/bits/setjmp.h
 RenovateTrajectory.o: /usr/include/boost/memory_order.hpp
 RenovateTrajectory.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
 RenovateTrajectory.o: ProbSampleReplace.h Trajectory.h RenovateTrajectory.h
-PlotCalculationProcess.o: humantracking.h track.h
+PlotCalculationProcess.o: ../humantracking.h track.h
 PlotCalculationProcess.o: /usr/local/include/opencv/cv.h
 PlotCalculationProcess.o: /usr/local/include/opencv2/core/core_c.h
 PlotCalculationProcess.o: /usr/local/include/opencv2/core/types_c.h
@@ -882,7 +896,7 @@ PlotCalculationProcess.o: /usr/include/boost/memory_order.hpp
 PlotCalculationProcess.o: /usr/include/boost/smart_ptr/detail/operator_bool.hpp
 PlotCalculationProcess.o: ProbSampleReplace.h Trajectory.h
 PlotCalculationProcess.o: RenovateTrajectory.h
-TrackingResultResources.o: humantracking.h TrackingResultResources.h
+TrackingResultResources.o: ../humantracking.h TrackingResultResources.h
 TrackingResultResources.o: /usr/local/include/opencv/cv.h
 TrackingResultResources.o: /usr/local/include/opencv2/core/core_c.h
 TrackingResultResources.o: /usr/local/include/opencv2/core/types_c.h
@@ -986,3 +1000,4 @@ TrackingResultResources.o: /usr/local/include/opencv2/highgui/highgui_c.h
 TrackingResultResources.o: /usr/local/include/opencv2/highgui/highgui.hpp
 TrackingResultResources.o: /usr/include/zlib.h /usr/include/zconf.h
 TrackingResultResources.o: /usr/include/zlibdefs.h
+TrackingProcessLogger.o: ../humantracking.h TrackingProcessLogger.h
