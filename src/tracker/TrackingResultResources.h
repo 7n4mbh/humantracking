@@ -1,7 +1,7 @@
 #ifndef __HEADER_TRACKINGRESULTRESOURCES__
 #define __HEADER_TRACKINGRESULTRESOURCES__
 
-#include "humantracking.h"
+#include "../humantracking.h"
 
 #include <deque>
 #include <map>

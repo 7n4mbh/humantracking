@@ -13,13 +13,7 @@
 
 #include "zlib.h"
 
-#define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
-
-#if defined(WINDOWS) || defined(_WIN32)
-#define WINDOWS_OS
-#elif defined(linux) || defined(__linux__)
-#define LINUX_OS
-#endif
+#include "../humantracking.h"
 
 #ifdef WINDOWS_OS
 #include <conio.h>

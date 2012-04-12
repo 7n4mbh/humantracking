@@ -9,7 +9,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include "humantracking.h"
+#include "../humantracking.h"
 #include "track.h"
 
 using namespace std;

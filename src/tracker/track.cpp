@@ -3,12 +3,14 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
-#include "humantracking.h"
+#include "../humantracking.h"
 #include "track.h"
-
+#include "TrackingProcessLogger.h"
 
 using namespace std;
 using namespace cv;
+
+TrackingProcessLogger logTracking;
 
 PARAM_COMMON commonParam; // 共通パラメータ
 PARAM_EXTRACTLUM extractlumParam; // 等速直線運動抽出パラメータ
@@ -22,6 +24,7 @@ bool flgFirst;
 
 extern float roi_width, roi_height;
 extern float roi_x, roi_y;
+extern bool flgOutputTrackingProcessData2Files;
 
 bool load_track_parameters( std::string strPath )
 {
@@ -146,6 +149,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
     static TIME_MICRO_SEC timeEarliestPEPMap;
 
+    static bool flgTrackingStarts;
+
     bool ret = false;
 
     if( flgFirst ) {
@@ -159,11 +164,21 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         timeTracking = timeEarliestPEPMap + commonParam.termTracking;
         //timeTracking = commonParam.termTracking + 1000000000; // debug code
         flgFirst = false;
+        flgTrackingStarts = true;
+        logTracking.init( "tracking.log" );
     }
 
     // debug code
     //time_stamp = time_stamp - timeEarliestPEPMap + 1000000000;
+
+    if( flgTrackingStarts ) {
+        logTracking.set_tracking_block( timeTracking - commonParam.termTracking, timeTracking );
+        logTracking.start();
+        flgTrackingStarts = false;
+    }
     
+    logTracking.making_trajectory( TrackingProcessLogger::Event::Start );
+
     // PEPMapをサンプラに追加する
     AddPEPMapToSampler( occupancy
                       , time_stamp
@@ -257,33 +272,38 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         }
     }
 
+    logTracking.making_trajectory( TrackingProcessLogger::Event::End );
+
     if( !tableLUMSlice.empty() && tableLUMSlice.rbegin()->first >= timeTracking ) {
         cout << "Done with making trajectories." << endl;
 
-        // 計算過程をプロット
-        double sumValue = std::accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-        unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
-        OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-                        , timeTracking//tableLUMSlice.rbegin()->first
-                        , timeEarliestPEPMap
-                        , &sampler
-                        , nSample
-                        , &storageTrajectoryElement
-                        , NULL//pipeGnuplot_Trajectory
-                        , extractlumParam.stDeviation
-                        , &plotParam );
-        cerr << "完了(nSample=" << nSample << ")" << endl;
+        if( flgOutputTrackingProcessData2Files ) {
+            // Output process infomation of making trajectories.
+            double sumValue = std::accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
+            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
+            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+                            , timeTracking//tableLUMSlice.rbegin()->first
+                            , timeEarliestPEPMap
+                            , &sampler
+                            , nSample
+                            , &storageTrajectoryElement
+                            , NULL//pipeGnuplot_Trajectory
+                            , extractlumParam.stDeviation
+                            , &plotParam );
+            cerr << "完了(nSample=" << nSample << ")" << endl;
 
-        // debug code
-        if( nSample <= 3 ) {
-            cerr << "nSample is no more than 3." << endl;
+            // debug code
+            if( nSample <= 3 ) {
+                cerr << "nSample is no more than 3." << endl;
+            }
         }
 
+        //
+        // Clustering the trajectories
+        //
+        logTracking.clustering( TrackingProcessLogger::Event::Start );
 
-        //
-        // 軌跡のクラスタリング
-        //
-        cerr << "軌跡間の距離テーブル計算中..." << endl;
+        cerr << "Calculating a distance table..." << endl;
 
         //
         // クラスタリングに用いる軌跡（長さがclusterigParam.minLength以上）を取り出す
@@ -449,42 +469,46 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             cerr << endl;
 
             //
-            // 計算結果の出力
-            ++cnt_loop;
-            if( trajectoriesClustered.size() < 30 ) {
-                ostringstream oss;
-                oss << cnt_loop;
-                double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-                unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
-                OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-                                , timeTracking//tableLUMSlice.rbegin()->first
-                                , timeEarliestPEPMap
-                                , &sampler
-                                , nSample
-                                , &trajectoriesClustered
+            // Output process information of clustering
+            if( flgOutputTrackingProcessData2Files ) {
+                ++cnt_loop;
+                if( trajectoriesClustered.size() < 30 ) {
+                    ostringstream oss;
+                    oss << cnt_loop;
+                    double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
+                    unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
+                    OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+                                    , timeTracking//tableLUMSlice.rbegin()->first
+                                    , timeEarliestPEPMap
+                                    , &sampler
+                                    , nSample
+                                    , &trajectoriesClustered
 #ifdef WINDOWS_OS
-			        , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+			            , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
 #endif
 #ifdef LINUX_OS
-			        , "/home/kumalab/project/HumanTracking/bin/tmp_trajectories/"
+			            , "/home/kumalab/project/HumanTracking/bin/tmp_trajectories/"
 #endif
-                                , oss.str()
-                                , NULL
-                                , &plotParam );
-
+                                    , oss.str()
+                                    , NULL
+                                    , &plotParam );
+                }
+                
             }
 #endif
             delete [] dist;
         } while( prevNumOfCluster != nCluster );
 
+        logTracking.clustering( TrackingProcessLogger::Event::End );
 
+        logTracking.renovation( TrackingProcessLogger::Event::Start );
 
         //
-        // 軌跡の修復
+        // Renovate the trajectories
         TrajectoriesInfo infoTrj;
         infoTrj.section.resize( 1 );
 
-        cerr << "軌跡の修復開始: [ " << timeTracking - commonParam.termTracking - timeEarliestPEPMap
+        cerr << "Started renovation: [ " << timeTracking - commonParam.termTracking - timeEarliestPEPMap
                 << ", " <<  timeTracking - timeEarliestPEPMap << " )" << endl;
 
         // クラスタリングした軌跡を平均してinfoTrjに格納する
@@ -557,7 +581,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         vector<int> idOpt;
         double min = -1.0;
         //if( myRank == 0 ) {
-            cerr << "　最適解探索: セクション数" << (int)infoTrj.section.size() << endl;
+        cerr << "  Optimum analysis: # of sections" << (int)infoTrj.section.size() << endl;
         //}
         for( int idxSec = 0; idxSec < (int)infoTrj.section.size(); ++idxSec ) {
             min = -1.0;
@@ -576,8 +600,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     min = e;
                 }
             }
-            cerr << "　最適化結果: セット" << idxMinSet << endl;
-            cerr << "　　軌跡数: " << optOfSec.size() << "[個]" << endl;
+            cerr << " Optimization result: Set" << idxMinSet << endl;
+            cerr << "    # of trajectories " << optOfSec.size() << endl;
 
             opt.insert( opt.end(), optOfSec.begin(), optOfSec.end() );
             idOpt.insert( idOpt.end(), idOptOfSec.begin(), idOptOfSec.end() );
@@ -588,7 +612,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         //
         // 再修復を行う
         //if( myRank == 0 ) {
-            cerr << "　最修復開始...";
+            cerr << "  Re-renovation";
         //}
 
         // 求めた最適解をセット
@@ -637,9 +661,13 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         }
 
         //if( myRank == 0 ) {
-            cerr << "　完了..." << endl;
+            cerr << "  Done..." << endl;
         //}
 #endif
+
+        logTracking.renovation( TrackingProcessLogger::Event::End );
+
+        logTracking.finishing( TrackingProcessLogger::Event::Start );
 
         // ID未割り当ての軌跡に新しいIDを振る
         for( vector<int>::iterator itID = idOpt.begin(); itID != idOpt.end(); ++itID ) {
@@ -702,21 +730,22 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
 
         //
-        // 計算結果の出力
+        // Output process information of renovation
         //if( myRank == 0 ) {
-        {
-            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
-            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-                         , timeTracking//tableLUMSlice.rbegin()->first
-                         , timeEarliestPEPMap
-                         , &sampler
-                         , nSample
-                         , &resultTrajectory
-                         , NULL
-                         , &plotParam );
+        if( flgOutputTrackingProcessData2Files ) {
+            {
+                double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
+                unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
+                OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+                             , timeTracking//tableLUMSlice.rbegin()->first
+                             , timeEarliestPEPMap
+                             , &sampler
+                             , nSample
+                             , &resultTrajectory
+                             , NULL
+                             , &plotParam );
+            }
         }
-
 
         delete [] distTable;
 
@@ -750,6 +779,11 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         timeTracking += commonParam.intervalTracking;
 
         ret = true;
+
+        logTracking.finishing( TrackingProcessLogger::Event::End );
+
+        logTracking.end_and_output2file();
+        flgTrackingStarts = true;
     }
 
     return ret;

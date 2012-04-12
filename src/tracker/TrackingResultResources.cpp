@@ -1,4 +1,4 @@
-#include "humantracking.h"
+#include "../humantracking.h"
 #include "TrackingResultResources.h"
 
 #include "opencv/cv.h"
