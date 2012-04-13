@@ -10,9 +10,6 @@
 #include <algorithm>
 #include "Trajectory.h"
 
-#include "TrackingProcessLogger.h"
-extern TrackingProcessLogger logTracking;
-
 using namespace std;
 
 
@@ -21,16 +18,13 @@ void CTrajectory::Clip( TIME_MICRO_SEC timeBegin, TIME_MICRO_SEC timeEnd )
     CTrajectory::iterator itTrjElement;
     TrajectoryElement::iterator itErase;
 
-    logTracking.finishing_b( TrackingProcessLogger::Start );
     for( itTrjElement = begin(); itTrjElement != end(); ++itTrjElement ) {
         itErase = itTrjElement->lower_bound( PosXYT( 0.0, 0.0, timeBegin ) );
         itTrjElement->erase( itTrjElement->begin(), itErase );
         itErase = itTrjElement->upper_bound( PosXYT( 0.0, 0.0, timeEnd ) );
         itTrjElement->erase( itErase, itTrjElement->end() );
     }
-    logTracking.finishing_b( TrackingProcessLogger::End );
    
-    logTracking.finishing_c( TrackingProcessLogger::Start );
     // 長さが２未満の軌跡の要素を消去
     for( itTrjElement = begin(); itTrjElement != end(); ) {
         if( itTrjElement->size() < 2 ) {
@@ -39,7 +33,6 @@ void CTrajectory::Clip( TIME_MICRO_SEC timeBegin, TIME_MICRO_SEC timeEnd )
             ++itTrjElement;
         }
     }
-    logTracking.finishing_c( TrackingProcessLogger::End );
 }
 
 void CTrajectory::Integrate( CTrajectory* pDst )

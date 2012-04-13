@@ -776,12 +776,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         // [timeTracking - commonParam.termTracking, timeTracking]にクリッピング
         CTrajectory newStorageTrajectoryElement;
         newStorageTrajectoryElement.assign( storageTrajectoryElement.begin(), storageTrajectoryElement.end() );
-	ofstream _ofs( "tmp.txt" );
-	_ofs << "newStorageTrajectoryElement.size=" << newStorageTrajectoryElement.size() << endl << flush;
-	_ofs.close();
-        logTracking.finishing_a( TrackingProcessLogger::Start );
         newStorageTrajectoryElement.Clip( timeTracking - ( commonParam.termTracking - commonParam.intervalTracking ), timeTracking );
-        logTracking.finishing_a( TrackingProcessLogger::End );
         storageTrajectoryElement.assign( newStorageTrajectoryElement.begin(), newStorageTrajectoryElement.end() );
 
         timeTracking += commonParam.intervalTracking;
