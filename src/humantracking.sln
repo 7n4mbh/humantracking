@@ -7,6 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tracker", "tracker\tracker.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "integrate", "integrate\integrate.vcxproj", "{3A38F52F-15AA-46ED-950E-3A1F5BA70205}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B7A26F87-1D16-4205-ABA2-A2253BD783F4}"
+	ProjectSection(SolutionItems) = preProject
+		humantracking.h = humantracking.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32

@@ -13,11 +13,12 @@
 //
 //#include "GL/glui.h"
 
-#include "humantracking.h"
+#include "../humantracking.h"
 
 #include "CameraUnit.h"
 #include "track.h"
 #include "TrackingResultResources.h"
+#include "TrackingProcessLogger.h"
 
 //#ifdef WINDOWS_OS
 //#include <conio.h>
@@ -28,6 +29,7 @@ using namespace cv;
 
 bool flgPEPMapFile = false;
 string strPEPMapFile;
+bool flgOutputTrackingProcessData2Files = false;
 
 float roi_width, roi_height;
 float roi_x, roi_y;
@@ -37,6 +39,7 @@ map<unsigned int,string> cameraName;
 volatile bool flgRunGetPEPMapThread;
 
 TrackingResultResources resTracking;
+TrackingProcessLogger logTracking;
 
 #ifdef WINDOWS_OS
 CRITICAL_SECTION cs;
@@ -177,6 +180,7 @@ void* GetPEPMapThread( void* p_cameraunit )
 	    pthread_mutex_lock( &mutex );
 #endif
             bufPEPMap.push_back( pepmap );
+            logTracking.receive_pepmap( pepmap );
             resTracking.UpdateView();
 #ifdef WINDOWS_OS
             LeaveCriticalSection( &cs );
@@ -374,7 +378,7 @@ int bumblebee_mode()
 #endif
             ++cnt;
             if( pepmap.timeStamp < tmp_timestamp ) {
-	      cout << "## Illegal Time Stamp! ## This pepmap from " << pepmap.serialNumber << " will be rejected. To avoid this, have more size of sort_buffer." << endl;
+	        cout << "## Illegal Time Stamp! ## This pepmap from " << pepmap.serialNumber << " will be rejected. To avoid this, have more size of sort_buffer." << endl;
                 continue;
             }
             tmp_timestamp = pepmap.timeStamp;
@@ -628,6 +632,8 @@ int main( int argc, char *argv[] )
             flgPEPMapFile = true;
             strPEPMapFile = string( argv[ ++i ] );
             getfilename( strPEPMapFile, &strPath, &strName, &strNoextName );
+        } else if( strOpt == "--output-trackingprocess-files" ) {
+            flgOutputTrackingProcessData2Files = true;
         }
     }
 
