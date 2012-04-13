@@ -26,7 +26,7 @@ extern float roi_width, roi_height;
 extern float roi_x, roi_y;
 extern bool flgOutputTrackingProcessData2Files;
 
-bool load_track_parameters( std::string strPath )
+bool load_track_parameters( std::string strPath, std::string strFileName )
 {
     commonParam.termTracking = 10000000;//8500000;//10000000;
     commonParam.intervalTracking = 7000000;//7000000;
@@ -74,7 +74,7 @@ bool load_track_parameters( std::string strPath )
     ifstream ifs;
 
     ostringstream oss;
-    oss << strPath << "tracking.cfg";
+    oss << strPath << strFileName;//"tracking.cfg";
     ifs.open( oss.str().c_str() );
 
     if( !ifs.is_open() ) {
@@ -106,7 +106,11 @@ bool load_track_parameters( std::string strPath )
                 extractlumParam.kLUM = atof( strEq[ 1 ].c_str() );
             } else if( strEq[ 0 ] == "PARAM_EXTRACTLUM.kVerifySample" ) {
                 extractlumParam.kVerifySample = atof( strEq[ 1 ].c_str() );
-            }
+            } else if( strEq[ 0 ] == "PARAM_COMMON.termTracking" ) {
+                commonParam.termTracking = atof( strEq[ 1 ].c_str() );
+            } else if( strEq[ 0 ] == "PARAM_COMMON.intervalTracking" ) {
+                commonParam.intervalTracking = atof( strEq[ 1 ].c_str() );
+            } 
         }
     }
 

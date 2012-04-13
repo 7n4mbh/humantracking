@@ -70,7 +70,7 @@ typedef struct {
     double kSample; ///< ’Šo‚·‚éƒTƒ“ƒvƒ‹”‚ðŒˆ‚ß‚é‚½‚ß‚Ì”ä—áŒW”
 } PARAM_PLOT;
 
-bool load_track_parameters( std::string strPath );
+bool load_track_parameters( std::string strPath, std::string strFileName );
 void initialize_tracker();
 bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result, const cv::Mat& occupancy, unsigned long long time_stamp );
 

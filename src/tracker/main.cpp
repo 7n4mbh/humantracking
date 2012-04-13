@@ -351,7 +351,7 @@ int bumblebee_mode()
             }
 
             unsigned long long diff = sort_buffer.rbegin()->first - sort_buffer.begin()->first;
-            if( diff < 1000000 ) {
+            if( diff < 300000/*1000000*/ ) {
                 break;
             }
             
@@ -625,6 +625,7 @@ int pepmapfile_mode( string strVideoFile )
 int main( int argc, char *argv[] )
 {
     string strPath, strName, strNoextName;
+    string strTrackingConfigFile = "tracking.cfg";
 
     for( int i = 0; i < argc; ++i ) {
         string strOpt = argv[ i ];
@@ -634,13 +635,15 @@ int main( int argc, char *argv[] )
             getfilename( strPEPMapFile, &strPath, &strName, &strNoextName );
         } else if( strOpt == "--output-trackingprocess-files" ) {
             flgOutputTrackingProcessData2Files = true;
-        }
+        } else if( strOpt == "-c" ) {
+	    strTrackingConfigFile = string( argv[ ++i ] );
+	}
     }
 
     initialize_tracker();
 
     load_pepmap_config();
-    load_track_parameters( strPath );
+    load_track_parameters( strPath, strTrackingConfigFile );
 
     resTracking.init( strPath + "result.txt" );
 
