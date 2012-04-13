@@ -81,6 +81,8 @@ bool load_track_parameters( std::string strPath, std::string strFileName )
         return false;
     }
 
+    cout << "Loading the tracking parameters..." << endl;
+
     string str;
     vector<string> strEq;
     while( !ifs.eof() ) {
@@ -104,12 +106,16 @@ bool load_track_parameters( std::string strPath, std::string strFileName )
         if( strEq.size() == 2 ) {
             if( strEq[ 0 ] == "PARAM_EXTRACTLUM.kLUM" ) {
                 extractlumParam.kLUM = atof( strEq[ 1 ].c_str() );
+		cout << "  " << strEq[ 0 ] << "=" << extractlumParam.kLUM << endl;
             } else if( strEq[ 0 ] == "PARAM_EXTRACTLUM.kVerifySample" ) {
                 extractlumParam.kVerifySample = atof( strEq[ 1 ].c_str() );
+		cout << "  " << strEq[ 0 ] << "=" << extractlumParam.kVerifySample << endl;
             } else if( strEq[ 0 ] == "PARAM_COMMON.termTracking" ) {
                 commonParam.termTracking = atof( strEq[ 1 ].c_str() );
+		cout << "  " << strEq[ 0 ] << "=" << commonParam.termTracking << endl;
             } else if( strEq[ 0 ] == "PARAM_COMMON.intervalTracking" ) {
                 commonParam.intervalTracking = atof( strEq[ 1 ].c_str() );
+		cout << "  " << strEq[ 0 ] << "=" << commonParam.intervalTracking << endl;
             } 
         }
     }

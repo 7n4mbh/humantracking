@@ -221,7 +221,7 @@ int bumblebee_mode()
 	CameraUnit* cameraunit;
     string strSerial;
 
-    resTracking.SetDelayUpdate( 50/*0*/ );
+    resTracking.SetDelayUpdate( 40/*0*/ );
 
     //
     // Load camera unit list

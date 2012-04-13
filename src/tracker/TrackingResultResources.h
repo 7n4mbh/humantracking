@@ -23,6 +23,8 @@ private:
     std::deque<PEPMapInfo> bufPEPMap;
     std::map<unsigned long long, std::map<int,cv::Point2d> > trackingResult;
     std::string strResultFilename;
+    std::map<int,cv::Point2d> posHumanStill;
+    std::map<int,unsigned long> cntStill;
 #ifdef WINDOWS_OS
     HANDLE hThread;
     DWORD ThreadId;

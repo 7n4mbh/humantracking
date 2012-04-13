@@ -43,6 +43,8 @@ void TrackingResultResources::init( std::string filename )
     trackingResult.clear();
     nUpdateViewRequest = 0;
     delayUpdate = 0;
+    posHumanStill.clear();
+    cntStill.clear();
     strResultFilename = filename;
     ofstream ofs( strResultFilename.c_str() );
 }
@@ -52,6 +54,8 @@ void TrackingResultResources::clear()
     bufPEPMap.clear();
     trackingResult.clear();
     nUpdateViewRequest = 0;
+    posHumanStill.clear();
+    cntStill.clear();
     ofstream ofs( strResultFilename.c_str() );
 }
 
@@ -76,7 +80,21 @@ void TrackingResultResources::AddResultTrajectories( const std::map< unsigned lo
             ofs << ", " << itPosHuman->first // ID
                 << ", " << itPosHuman->second.x // X
                 << ", " << itPosHuman->second.y; // Y
-        }
+	    map<int,Point2d>::iterator itPosHumanStill;
+	    if( ( itPosHumanStill = posHumanStill.find( itPosHuman->first ) ) != posHumanStill.end() ) {
+		const float dx = itPosHumanStill->second.x - itPosHuman->second.x;
+		const float dy = itPosHumanStill->second.y - itPosHuman->second.y;
+		const float dist = sqrt( dx * dx + dy * dy );
+		if( dist < 0.5f ) {
+		    cntStill[ itPosHuman->first ]++;
+		} else {
+		    cntStill[ itPosHuman->first ] = 0;
+		    itPosHumanStill->second = itPosHuman->second;
+		}
+	    } else {
+		posHumanStill[ itPosHuman->first ] = itPosHuman->second;
+	    }
+	}
         ofs << endl;
     }
 #ifdef WINDOWS_OS
@@ -320,6 +338,14 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                         old_col = col;
                         old_row = row;
                     }
+
+		    if( pTrackingResultResources->cntStill.find( itHuman->first ) != pTrackingResultResources->cntStill.end() ) {
+			if( pTrackingResultResources->cntStill[ itHuman->first ] > 30 ) {
+			    int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( pTrackingResultResources->posHumanStill[ itHuman->first ].x - roi_x ) + roi_width / 2.0f ) );
+			    int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( pTrackingResultResources->posHumanStill[ itHuman->first ].y - roi_y ) + roi_height / 2.0f ) );
+			    circle( img_display, Point( row, col ), ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * 0.5 * scale_m2px, color_table[ itHuman->first % sizeColorTable ], 2 );
+			}
+		    }
                 }
 
                 //for( deque< map<int,Point2d> >::iterator itPosHuman = result_buffer.begin(); itPosHuman != result_buffer.end(); ++itPosHuman ) {
