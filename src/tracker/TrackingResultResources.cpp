@@ -18,8 +18,6 @@ extern float scale_m2px;
 TrackingResultResources::TrackingResultResources()
 {
     bRunThread = false;
-    nUpdateViewRequest = 0;
-    delayUpdate = 0;
 #ifdef WINDOWS_OS
     hThread = NULL;
     InitializeCriticalSection( &cs );
@@ -27,7 +25,6 @@ TrackingResultResources::TrackingResultResources()
 #ifdef LINUX_OS
     pthread_mutex_init( &mutex, NULL );
 #endif
-    ofstream ofs( "result.txt" );
 }
 
 TrackingResultResources::~TrackingResultResources()
@@ -40,12 +37,22 @@ TrackingResultResources::~TrackingResultResources()
 #endif
 }
 
+void TrackingResultResources::init( std::string filename )
+{
+    bufPEPMap.clear();
+    trackingResult.clear();
+    nUpdateViewRequest = 0;
+    delayUpdate = 0;
+    strResultFilename = filename;
+    ofstream ofs( strResultFilename.c_str() );
+}
+
 void TrackingResultResources::clear()
 {
     bufPEPMap.clear();
     trackingResult.clear();
     nUpdateViewRequest = 0;
-    ofstream ofs( "result.txt" );
+    ofstream ofs( strResultFilename.c_str() );
 }
 
 void TrackingResultResources::AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result )
@@ -58,7 +65,7 @@ void TrackingResultResources::AddResultTrajectories( const std::map< unsigned lo
 #endif
     cout << endl << "Received New Results!" << endl;
 
-    ofstream ofs( "result.txt", ios::out | ios::app );
+    ofstream ofs(  strResultFilename.c_str(), ios::out | ios::app );
 
     map< unsigned long long, map<int,Point2d> >::const_iterator it = result.begin();
     for( ; it != result.end(); ++it ) {

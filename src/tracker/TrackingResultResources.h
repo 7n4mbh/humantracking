@@ -5,6 +5,7 @@
 
 #include <deque>
 #include <map>
+#include <string>
 
 #ifdef WINDOWS_OS
 #include <windows.h>
@@ -21,6 +22,7 @@ private:
     int delayUpdate;
     std::deque<PEPMapInfo> bufPEPMap;
     std::map<unsigned long long, std::map<int,cv::Point2d> > trackingResult;
+    std::string strResultFilename;
 #ifdef WINDOWS_OS
     HANDLE hThread;
     DWORD ThreadId;
@@ -39,6 +41,7 @@ public:
     bool EnableViewWindow();
     bool TerminateViewWindow();
     void UpdateView();
+    void init( std::string filename );
     void clear();
     void SetDelayUpdate( int delay_update );
     int GetDelayUpdate();

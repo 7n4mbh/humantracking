@@ -642,6 +642,8 @@ int main( int argc, char *argv[] )
     load_pepmap_config();
     load_track_parameters( strPath );
 
+    resTracking.init( strPath + "result.txt" );
+
     if( !flgPEPMapFile ) {
         return bumblebee_mode();
     } else {
