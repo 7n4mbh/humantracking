@@ -28,6 +28,10 @@ void TrackingProcessLogger::init( const std::string& filename )
         << ", Percentage of Clustering"
         << ", Percentage of Renovation"
         << ", Percentage of Finishing"
+        << ", Percentage of Finishing_A"
+        << ", Percentage of Finishing_B"
+        << ", Percentage of Finishing_C"
+        << ", Percentage of Finishing_D"
         << endl;
 }
 
@@ -37,6 +41,10 @@ void TrackingProcessLogger::start()
     t_process_of_clustering = t_start_of_clustering = t_end_of_clustering = 0;
     t_process_of_renovation = t_start_of_renovation = t_end_of_renovation = 0;
     t_process_of_finishing = t_start_of_finishing = t_end_of_finishing = 0;
+    t_process_of_finishing_a = t_start_of_finishing_a = t_end_of_finishing_a = 0;
+    t_process_of_finishing_b = t_start_of_finishing_b = t_end_of_finishing_b = 0;
+    t_process_of_finishing_c = t_start_of_finishing_c = t_end_of_finishing_c = 0;
+    t_process_of_finishing_d = t_start_of_finishing_d = t_end_of_finishing_d = 0;
     t_start = getTimeStamp();
 }
 
@@ -54,6 +62,10 @@ void TrackingProcessLogger::end_and_output2file()
         << t_process_of_clustering << ", "
         << t_process_of_renovation << ", "
         << t_process_of_finishing << ", "
+        << t_process_of_finishing_a << ", "
+        << t_process_of_finishing_b << ", "
+        << t_process_of_finishing_c << ", "
+        << t_process_of_finishing_d << ", "
         << 100.0 * (double)t_process_of_making_trajectory / (double)t_process << ", "
         << 100.0 * (double)t_process_of_clustering / (double)t_process << ", "
         << 100.0 * (double)t_process_of_renovation / (double)t_process << ", "
@@ -109,3 +121,45 @@ void TrackingProcessLogger::finishing( TrackingProcessLogger::Event evt )
         t_process_of_finishing += t_end_of_finishing - t_start_of_finishing;
     }
 }
+
+void TrackingProcessLogger::finishing_a( TrackingProcessLogger::Event evt )
+{
+    if( evt == TrackingProcessLogger::Start ) {
+        t_start_of_finishing_a = getTimeStamp();
+    } else if( evt == TrackingProcessLogger::End ) {
+        t_end_of_finishing_a = getTimeStamp();
+        t_process_of_finishing_a += t_end_of_finishing_a - t_start_of_finishing_a;
+    }
+}
+
+void TrackingProcessLogger::finishing_b( TrackingProcessLogger::Event evt )
+{
+    if( evt == TrackingProcessLogger::Start ) {
+        t_start_of_finishing_b = getTimeStamp();
+    } else if( evt == TrackingProcessLogger::End ) {
+        t_end_of_finishing_b = getTimeStamp();
+        t_process_of_finishing_b += t_end_of_finishing_b - t_start_of_finishing_b;
+    }
+}
+
+void TrackingProcessLogger::finishing_c( TrackingProcessLogger::Event evt )
+{
+    if( evt == TrackingProcessLogger::Start ) {
+        t_start_of_finishing_c = getTimeStamp();
+    } else if( evt == TrackingProcessLogger::End ) {
+        t_end_of_finishing_c = getTimeStamp();
+        t_process_of_finishing_c += t_end_of_finishing_c - t_start_of_finishing_c;
+    }
+}
+
+void TrackingProcessLogger::finishing_d( TrackingProcessLogger::Event evt )
+{
+    if( evt == TrackingProcessLogger::Start ) {
+        t_start_of_finishing_d = getTimeStamp();
+    } else if( evt == TrackingProcessLogger::End ) {
+        t_end_of_finishing_d = getTimeStamp();
+        t_process_of_finishing_d += t_end_of_finishing_d - t_start_of_finishing_d;
+    }
+}
+
+

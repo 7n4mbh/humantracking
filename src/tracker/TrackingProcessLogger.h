@@ -15,6 +15,10 @@ private:
     unsigned long long t_process_of_clustering, t_start_of_clustering, t_end_of_clustering;
     unsigned long long t_process_of_renovation, t_start_of_renovation, t_end_of_renovation;
     unsigned long long t_process_of_finishing, t_start_of_finishing, t_end_of_finishing;
+    unsigned long long t_process_of_finishing_a, t_start_of_finishing_a, t_end_of_finishing_a;
+    unsigned long long t_process_of_finishing_b, t_start_of_finishing_b, t_end_of_finishing_b;
+    unsigned long long t_process_of_finishing_c, t_start_of_finishing_c, t_end_of_finishing_c;
+    unsigned long long t_process_of_finishing_d, t_start_of_finishing_d, t_end_of_finishing_d;
     std::string strFilename;
 
 public:
@@ -31,6 +35,10 @@ public:
     void clustering( TrackingProcessLogger::Event evt );
     void renovation( TrackingProcessLogger::Event evt );
     void finishing( TrackingProcessLogger::Event evt );
+    void finishing_a( TrackingProcessLogger::Event evt );
+    void finishing_b( TrackingProcessLogger::Event evt );
+    void finishing_c( TrackingProcessLogger::Event evt );
+    void finishing_d( TrackingProcessLogger::Event evt );
 };
 
 #endif
