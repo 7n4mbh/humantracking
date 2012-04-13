@@ -10,6 +10,7 @@
 #define _TRAJECTORY_H
 
 #include <vector>
+#include <list>
 #include <set>
 #include <map>
 #include "PersonTrackingCommon.h"
@@ -23,7 +24,7 @@ typedef std::set<PosXYTID,PosXYT_T_Less> TrajectoryElement;
 /**
  * 軌跡クラス
  */
-class CTrajectory : public std::vector<TrajectoryElement> {
+class CTrajectory : public std::list<TrajectoryElement> {
     friend std::ostream& operator<<( std::ostream& os, CTrajectory& obj );
 public:
     /**

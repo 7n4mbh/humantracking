@@ -677,7 +677,6 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             }
         }
 
-        logTracking.finishing_a( TrackingProcessLogger::Start );
         // 軌跡の補間を行う
         for( vector<TrajectoryElement>::iterator itTrj = opt.begin(); itTrj != opt.end(); ++itTrj ) {
             TrajectoryElement::iterator it = itTrj->begin();
@@ -695,10 +694,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 ++itNext;
             }
         }
-        logTracking.finishing_a( TrackingProcessLogger::End );
 
         // 結果の保存
-        logTracking.finishing_b( TrackingProcessLogger::Start );
         p_result->clear();
         resultTrajectory.clear();
         vector<int>::iterator itID = idOpt.begin();
@@ -710,9 +707,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             //trj.Clip( 0, timeTracking - ( commonParam.termTracking - commonParam.intervalTracking ) );
             //(*p_result)[ id ] = trj; // 表示用
         }
-        logTracking.finishing_b( TrackingProcessLogger::End );
 
-        logTracking.finishing_c( TrackingProcessLogger::Start );
         for( unsigned long long time = max( timeTracking - commonParam.termTracking, timeEarliestPEPMap )
                 ; time < timeTracking - ( commonParam.termTracking - commonParam.intervalTracking )
                 ; time += commonParam.intervalTrajectory ) {
@@ -723,8 +718,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             for( ; itResult != resultTrajectory.end(); ++itResult ) {
                 const CTrajectory& trajectory = itResult->second;
                 if( trajectory.size() > 0 ) {
-                    TrajectoryElement::iterator itPos = trajectory[ 0 ].begin();
-                    for( ; itPos != trajectory[ 0 ].end(); ++itPos ) {
+                    TrajectoryElement::iterator itPos = trajectory.front().begin();
+                    for( ; itPos != trajectory.front().end(); ++itPos ) {
                         if( itPos->t == time ) {
                             (*p_result)[ time ][ itResult->first ] = Point2d( itPos->x, itPos->y );
                         }
@@ -732,7 +727,6 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 }
             }
         }
-        logTracking.finishing_c( TrackingProcessLogger::End );
 
         //
         // Output process information of renovation
@@ -754,7 +748,6 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         delete [] distTable;
 
-        logTracking.finishing_d( TrackingProcessLogger::Start );
         //
         // sampler
         sampler.erase( sampler.begin()
@@ -779,14 +772,17 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         // [timeTracking - commonParam.termTracking, timeTracking]にクリッピング
         CTrajectory newStorageTrajectoryElement;
         newStorageTrajectoryElement.assign( storageTrajectoryElement.begin(), storageTrajectoryElement.end() );
+	ofstream _ofs( "tmp.txt" );
+	_ofs << "newStorageTrajectoryElement.size=" << newStorageTrajectoryElement.size() << endl << flush;
+	_ofs.close();
+        logTracking.finishing_a( TrackingProcessLogger::Start );
         newStorageTrajectoryElement.Clip( timeTracking - ( commonParam.termTracking - commonParam.intervalTracking ), timeTracking );
+        logTracking.finishing_a( TrackingProcessLogger::End );
         storageTrajectoryElement.assign( newStorageTrajectoryElement.begin(), newStorageTrajectoryElement.end() );
 
         timeTracking += commonParam.intervalTracking;
 
         ret = true;
-
-        logTracking.finishing_d( TrackingProcessLogger::End );
 
         logTracking.finishing( TrackingProcessLogger::End );
 
