@@ -54,11 +54,11 @@ void UpdateStatusBar()
 
   gchar* str_msg;// = (gchar*)oss.str().c_str();
   str_msg = g_strdup_printf( "Newest PEP-map time:%s, Current Play Time:%s", strTime1.c_str(), strTime2.c_str() );
-  /*
+  
   gtk_statusbar_push( GTK_STATUSBAR(statusbar)
   		    , gtk_statusbar_get_context_id( GTK_STATUSBAR(statusbar), str_msg )
   		    , str_msg );
-  */
+  
   g_free( str_msg );
 
 }
