@@ -25,37 +25,39 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
 void UpdateStatusBar()
 {
   ostringstream oss;
-  string strTime;
+  string strTime1, strTime2;
   time_t _sec;
   if( !pepmap.empty() ) {
     _sec = pepmap.front() / 1000000ULL;
     // sometimes, ctime() returns null string for some reason.
     // The following is for re-trying in that case.
     for( int i = 0; i < 10; ++i ) {
-      strTime = string( ctime( &_sec ) );
-      if( strTime.size() ) {
+      strTime1 = string( ctime( &_sec ) );
+      if( strTime1.size() ) {
 	break;
       }
     }
-    oss << "Newest PEP-map time:" << strTime;
+    //oss << "Newest PEP-map time:" << strTime;
 
     _sec = t_current_time / 1000000ULL;
     // sometimes, ctime() returns null string for some reason.
     // The following is for re-trying in that case.
     for( int i = 0; i < 10; ++i ) {
-      strTime = string( ctime( &_sec ) );
-      if( strTime.size() ) {
+      strTime2 = string( ctime( &_sec ) );
+      if( strTime2.size() ) {
 	break;
       }
     }
 
-    oss << ", Current Play Time:" << strTime;
+    //oss << ", Current Play Time:" << strTime;
   }
 
-  gchar* str_msg = (gchar*)oss.str().c_str();
-  gtk_statusbar_push( GTK_STATUSBAR(statusbar)
-		    , gtk_statusbar_get_context_id( GTK_STATUSBAR(statusbar), str_msg )
-		    , str_msg );
+  gchar* str_msg;// = (gchar*)oss.str().c_str();
+  str_msg = g_strdup_printf( "Newest PEP-map time:%s, Current Play Time:", strTime1.c_str(), strTime2.c_str() );
+  //gtk_statusbar_push( GTK_STATUSBAR(statusbar)
+  //		    , gtk_statusbar_get_context_id( GTK_STATUSBAR(statusbar), str_msg )
+  //		    , str_msg );
+  g_free( str_msg );
 
 }
 
