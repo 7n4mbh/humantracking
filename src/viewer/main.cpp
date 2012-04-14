@@ -20,6 +20,8 @@ vector<unsigned long long> pepmap;
 int tracking_status = 0;
 unsigned long long t_current_time = 0;
 
+static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer data);
+
 void MessageReceived( std::string msg )
 {
     if( msg.empty() ) {
@@ -80,7 +82,8 @@ void MessageReceived( std::string msg )
         iss.str( strCmd[ 1 ] );
         iss >> t_current_time;
     }
-    gtk_widget_queue_draw( window );
+    gtk_widget_queue_draw( progress );
+    //on_expose_event( progress, NULL, NULL );
 }
 
 
@@ -218,6 +221,15 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
     return FALSE;
 }
 
+static gboolean
+time_handler(GtkWidget *widget)
+{
+  if (widget->window == NULL) return FALSE;
+
+  gtk_widget_queue_draw(widget);
+  return TRUE;
+}
+
 void init_gui( int argc, char *argv[] )
 {
   //GtkWidget *window;
@@ -259,6 +271,8 @@ void init_gui( int argc, char *argv[] )
       G_CALLBACK(on_expose_event), NULL);
   g_signal_connect_swapped(G_OBJECT(window), "destroy",
         G_CALLBACK(gtk_main_quit), NULL);
+
+  g_timeout_add(100, (GSourceFunc) time_handler, (gpointer) window);
 
   gtk_widget_show((GtkWidget*)statusbar);
   gtk_widget_show_all(window);

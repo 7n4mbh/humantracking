@@ -83,7 +83,7 @@ void Viewer::exec()
 #ifdef LINUX_OS
     if((fp=popen("/home/kenichiro/project/HumanTracking/bin/viewer","w"))==NULL){
         fprintf(stderr,"error!!!\n");
-        exit(-1);
+        ::exit(-1);
     }
 #endif
 }
@@ -133,9 +133,14 @@ void Viewer::send( string msg )
 #endif
 
 #ifdef LINUX_OS
-    pthread_mutex_lock( mutex );
-    fputs( msg.c_str(), fp );
-    pthread_mutex_unlock( mutex );
+    pthread_mutex_lock( &mutex );
+    cout << "## debug code! ## Viewer::send()" << endl;
+    msg += "\n";
+    if( fputs( msg.c_str(), fp ) == -1 ) {
+      cerr << "Error occured in fputs()." << endl;
+      ::exit( -1 );
+    }
+    pthread_mutex_unlock( &mutex );
 #endif
 }
 
