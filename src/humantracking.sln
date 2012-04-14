@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		humantracking.h = humantracking.h
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "viewer", "viewer\viewer.vcxproj", "{F51542CB-82D6-475C-BD7B-A34458B79B6E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -31,6 +33,7 @@ Global
 		{467CC5A1-F850-4608-A3B7-8A0ADB00828C}.Debug|Win32.ActiveCfg = Debug|Win32
 		{467CC5A1-F850-4608-A3B7-8A0ADB00828C}.Debug|Win32.Build.0 = Debug|Win32
 		{467CC5A1-F850-4608-A3B7-8A0ADB00828C}.Debug|x64.ActiveCfg = Debug|x64
+		{467CC5A1-F850-4608-A3B7-8A0ADB00828C}.Debug|x64.Build.0 = Debug|x64
 		{467CC5A1-F850-4608-A3B7-8A0ADB00828C}.Release|Win32.ActiveCfg = Release|Win32
 		{467CC5A1-F850-4608-A3B7-8A0ADB00828C}.Release|Win32.Build.0 = Release|Win32
 		{467CC5A1-F850-4608-A3B7-8A0ADB00828C}.Release|x64.ActiveCfg = Release|x64
@@ -41,6 +44,14 @@ Global
 		{3A38F52F-15AA-46ED-950E-3A1F5BA70205}.Release|Win32.ActiveCfg = Release|Win32
 		{3A38F52F-15AA-46ED-950E-3A1F5BA70205}.Release|Win32.Build.0 = Release|Win32
 		{3A38F52F-15AA-46ED-950E-3A1F5BA70205}.Release|x64.ActiveCfg = Release|Win32
+		{F51542CB-82D6-475C-BD7B-A34458B79B6E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F51542CB-82D6-475C-BD7B-A34458B79B6E}.Debug|Win32.Build.0 = Debug|Win32
+		{F51542CB-82D6-475C-BD7B-A34458B79B6E}.Debug|x64.ActiveCfg = Debug|x64
+		{F51542CB-82D6-475C-BD7B-A34458B79B6E}.Debug|x64.Build.0 = Debug|x64
+		{F51542CB-82D6-475C-BD7B-A34458B79B6E}.Release|Win32.ActiveCfg = Release|Win32
+		{F51542CB-82D6-475C-BD7B-A34458B79B6E}.Release|Win32.Build.0 = Release|Win32
+		{F51542CB-82D6-475C-BD7B-A34458B79B6E}.Release|x64.ActiveCfg = Release|x64
+		{F51542CB-82D6-475C-BD7B-A34458B79B6E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
