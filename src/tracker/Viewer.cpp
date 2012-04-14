@@ -140,6 +140,7 @@ void Viewer::send( string msg )
       cerr << "Error occured in fputs()." << endl;
       ::exit( -1 );
     }
+    fflush( fp );
     pthread_mutex_unlock( &mutex );
 #endif
 }
