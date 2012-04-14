@@ -12,8 +12,12 @@ using namespace std;
 GtkWidget *window;
 GtkWidget *progress;
 GtkWidget *planview;
+GtkWidget *statusbar;
 
-unsigned long long t_start_tracking, t_end_tracking;
+vector<unsigned long long> tracking_block;
+unsigned long long t_start_tracking;
+vector<unsigned long long> pepmap;
+int tracking_status = 0;
 
 void MessageReceived( std::string msg )
 {
@@ -39,21 +43,42 @@ void MessageReceived( std::string msg )
     if( strCmd.empty() ) {
         return;
     }
-
-    if( strCmd[ 0 ] == "TrackingBlock" ) {
+    
+    unsigned long long t_start, t_end;
+    if( strCmd[ 0 ] == "StartTime" ) {
         istringstream iss;
+	unsigned long long t;
         iss.str( strCmd[ 1 ] );
         iss >> t_start_tracking;
+    } else if( strCmd[ 0 ] == "TrackingBlock" ) {
+        istringstream iss;
+        iss.str( strCmd[ 1 ] );
+        iss >> t_start;
         iss.clear();
         iss.str( strCmd[ 2 ] );
-        iss >> t_end_tracking;
+        iss >> t_end;
+	if( tracking_block.empty() ) {
+	  t_start_tracking = t_start;
+	}
+	tracking_block.push_back( t_start );
+	tracking_block.push_back( t_end );
+	//cout << "New Tracking Block Added:" << t_start << "-" << t_end << endl;
+    } else if( strCmd[ 0 ] == "TrackingStatus" ) {
+        istringstream iss;
+        iss.str( strCmd[ 1 ] );
+        iss >> tracking_status;       
+    } else if( strCmd[ 0 ] == "PEPMap" ) {
+        istringstream iss;
+	unsigned long long t;
+        iss.str( strCmd[ 1 ] );
+        iss >> t;
+        pepmap.push_back( t );
     }
-
     gtk_widget_queue_draw( window );
 }
 
 
-/*
+
 #ifdef WINDOWS_OS
 DWORD WINAPI KeyInThread( LPVOID p_param )
 #else
@@ -66,8 +91,8 @@ void* KeyInThread( void* p_param )
         cin >> str;
 
         gchar* str_msg = (gchar*)str.c_str();
-        gtk_statusbar_push( GTK_STATUSBAR(window)
-                          , gtk_statusbar_get_context_id( GTK_STATUSBAR(window), str_msg )
+        gtk_statusbar_push( GTK_STATUSBAR(statusbar/*window*/)
+			    , gtk_statusbar_get_context_id( GTK_STATUSBAR(statusbar/*window*/), str_msg )
                           , str_msg );
 
         MessageReceived( str );
@@ -80,8 +105,8 @@ void* KeyInThread( void* p_param )
     return NULL;
 #endif
 }
-*/
 
+/*
 static gboolean signal_key_press( GtkWidget* widget, GdkEventKey* evt, gpointer window )
 {
     static ostringstream oss;
@@ -106,6 +131,7 @@ static gboolean signal_key_press( GtkWidget* widget, GdkEventKey* evt, gpointer 
 
     return FALSE;
 }
+*/
 
 static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer data)
 {
@@ -118,10 +144,50 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
 
   cairo_set_source_rgb(cr, 1, 0, 0);
   cairo_set_line_width (cr, 1.0);
-  cairo_rectangle(cr, 5, 5, progress->allocation.width / 2, progress->allocation.height / 2);
-  cairo_fill(cr);
-  
-  cairo_stroke(cr);
+
+  const unsigned long long display_term = 60000000ULL;
+  const double t2px = (double)progress->allocation.width / (double)display_term;
+
+  // Draw PEP-map time
+  for( int i = 0; i < pepmap.size(); ++i ) {
+    const int x = (int)( (double)( pepmap[ i ] - t_start_tracking ) * t2px );
+    cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_move_to(cr, x, 0 );
+    cairo_line_to(cr, x, 20 );
+    cairo_stroke( cr );
+  }
+
+  // Draw tracking blocks
+  for( int i = 0; i < tracking_block.size() / 2; ++i ) {
+    const int x1 = (int)( (double)( tracking_block[ 2 * i     ] - t_start_tracking ) * t2px );
+    const int x2 = (int)( (double)( tracking_block[ 2 * i + 1 ] - t_start_tracking ) * t2px );
+
+    if( i >= tracking_block.size() / 2 - 1 ) {
+      switch( tracking_status ) {
+      case 0:
+  	  cairo_set_source_rgb(cr, 1, 1, 1); // Making trajectories
+	  break;
+      case 1:
+	  cairo_set_source_rgb(cr, 1, 0, 0); // Clustering
+	  break;
+      case 2:
+	  cairo_set_source_rgb(cr, 1, 1, 0); // Renovating
+	  break;
+      default:
+	  cairo_set_source_rgb(cr, 0, 1, 0);
+	  break;
+      }
+    } else {
+      cairo_set_source_rgb(cr, 0, 1, 0);
+    }
+    cairo_rectangle(cr, x1, 5, x2 - x1, 10 );
+    cairo_fill(cr);
+   //cairo_stroke(cr);
+
+    cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_rectangle(cr, x1, 5, x2 - x1, 10 );
+    cairo_stroke(cr);
+  }
 
   cairo_destroy(cr);
 
@@ -141,7 +207,7 @@ void init_gui( int argc, char *argv[] )
   //GtkWidget *window;
   GtkWidget *vbox;
 
-  GtkWidget *statusbar;
+  //GtkWidget *statusbar;
   //GtkWidget *button;
 
 
@@ -169,10 +235,10 @@ void init_gui( int argc, char *argv[] )
   planview = gtk_image_new();
   gtk_box_pack_end(GTK_BOX(vbox), planview, TRUE, TRUE, 1);
   
-  g_signal_connect( G_OBJECT(window)
-                  , "key-press-event"
-                  , G_CALLBACK (signal_key_press)
-                  , G_OBJECT(statusbar) );
+  //g_signal_connect( G_OBJECT(window)
+  //                , "key-press-event"
+  //                , G_CALLBACK (signal_key_press)
+  //                , G_OBJECT(statusbar) );
   g_signal_connect(progress, "expose-event",
       G_CALLBACK(on_expose_event), NULL);
   g_signal_connect_swapped(G_OBJECT(window), "destroy",
@@ -188,23 +254,23 @@ void init_gui( int argc, char *argv[] )
 
 int main( int argc, char *argv[] )
 {
-//#ifdef WINDOWS_OS
-//    DWORD idThread;
-//    HANDLE hThread = CreateThread( NULL, 0, KeyInThread, NULL, NULL, &idThread );
-//#else
-//    pthread_t thread;
-//    pthread_create(&thread , NULL , KeyInThread , NULL);
-//#endif
+#ifdef WINDOWS_OS
+    DWORD idThread;
+    HANDLE hThread = CreateThread( NULL, 0, KeyInThread, NULL, NULL, &idThread );
+#else
+    pthread_t thread;
+    pthread_create(&thread , NULL , KeyInThread , NULL);
+#endif
 
     init_gui( argc, argv );
     gtk_main();
-//
-//#ifdef WINDOWS_OS
-//    //WaitForSingleObject( hThread, INFINITE );
-//    TerminateThread( hThread, FALSE );
-//#else
-//    pthread_join(thread , NULL);
-//#endif
+
+#ifdef WINDOWS_OS
+    //WaitForSingleObject( hThread, INFINITE );
+    TerminateThread( hThread, FALSE );
+#else
+    pthread_cancel(thread);
+#endif
 
     return 0;
 }

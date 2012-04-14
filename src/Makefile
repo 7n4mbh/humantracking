@@ -1,9 +1,12 @@
 all: tracker cameraunit
 
-.PHONY: tracker cameraunit
+.PHONY: tracker cameraunit viewer
 
 tracker:
 	(cd tracker;make)
 
 cameraunit:
-	cd cameraunit;make
+	(cd cameraunit;make)
+
+viewer:
+	(cd viewer;make)
