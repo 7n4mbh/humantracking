@@ -22,6 +22,43 @@ unsigned long long t_current_time = 0;
 
 static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer data);
 
+void UpdateStatusBar()
+{
+  ostringstream oss;
+  string strTime;
+  time_t _sec;
+  if( !pepmap.empty() ) {
+    _sec = pepmap.front() / 1000000ULL;
+    // sometimes, ctime() returns null string for some reason.
+    // The following is for re-trying in that case.
+    for( int i = 0; i < 10; ++i ) {
+      strTime = string( ctime( &_sec ) );
+      if( strTime.size() ) {
+	break;
+      }
+    }
+    oss << "Newest PEP-map time:" << strTime;
+
+    _sec = t_current_time / 1000000ULL;
+    // sometimes, ctime() returns null string for some reason.
+    // The following is for re-trying in that case.
+    for( int i = 0; i < 10; ++i ) {
+      strTime = string( ctime( &_sec ) );
+      if( strTime.size() ) {
+	break;
+      }
+    }
+
+    oss << ", Current Play Time:" << strTime;
+  }
+
+  gchar* str_msg = (gchar*)oss.str().c_str();
+  gtk_statusbar_push( GTK_STATUSBAR(statusbar)
+		    , gtk_statusbar_get_context_id( GTK_STATUSBAR(statusbar), str_msg )
+		    , str_msg );
+
+}
+
 void MessageReceived( std::string msg )
 {
     if( msg.empty() ) {
@@ -76,11 +113,13 @@ void MessageReceived( std::string msg )
         iss.str( strCmd[ 1 ] );
         iss >> t;
         pepmap.push_back( t );
+	UpdateStatusBar();
     } else if( strCmd[ 0 ] == "Time" ) {
         istringstream iss;
 	    unsigned long long t;
         iss.str( strCmd[ 1 ] );
         iss >> t_current_time;
+	UpdateStatusBar();
     }
     gtk_widget_queue_draw( progress );
     //on_expose_event( progress, NULL, NULL );
@@ -99,10 +138,10 @@ void* KeyInThread( void* p_param )
     for( ; ; ) {
         cin >> str;
 
-        gchar* str_msg = (gchar*)str.c_str();
-        gtk_statusbar_push( GTK_STATUSBAR(statusbar/*window*/)
-			    , gtk_statusbar_get_context_id( GTK_STATUSBAR(statusbar/*window*/), str_msg )
-                          , str_msg );
+        //gchar* str_msg = (gchar*)str.c_str();
+        //gtk_statusbar_push( GTK_STATUSBAR(statusbar)
+	//		    , gtk_statusbar_get_context_id( GTK_STATUSBAR(statusbar), str_msg )
+        //                  , str_msg );
 
         MessageReceived( str );
 
@@ -210,6 +249,41 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
 
   cairo_destroy(cr);
 
+  /*
+  ostringstream oss;
+  string strTime;
+  time_t _sec;
+  if( !pepmap.empty() ) {
+    _sec = pepmap.front() / 1000000ULL;
+    // sometimes, ctime() returns null string for some reason.
+    // The following is for re-trying in that case.
+    for( int i = 0; i < 10; ++i ) {
+      strTime = string( ctime( &_sec ) );
+      if( strTime.size() ) {
+	break;
+      }
+    }
+    oss << "Newest PEP-map time:" << strTime;
+
+    _sec = t_current_time / 1000000ULL;
+    // sometimes, ctime() returns null string for some reason.
+    // The following is for re-trying in that case.
+    for( int i = 0; i < 10; ++i ) {
+      strTime = string( ctime( &_sec ) );
+      if( strTime.size() ) {
+	break;
+      }
+    }
+
+    oss << ", Current Play Time:" << strTime;
+  }
+
+  gchar* str_msg = (gchar*)oss.str().c_str();
+  gtk_statusbar_push( GTK_STATUSBAR(statusbar)
+		    , gtk_statusbar_get_context_id( GTK_STATUSBAR(statusbar), str_msg )
+		    , str_msg );
+
+  */
 
     //gdk_draw_arc( progress->window
     //            , progress->style->fg_gc[gtk_widget_get_state(progress)]
@@ -272,7 +346,7 @@ void init_gui( int argc, char *argv[] )
   g_signal_connect_swapped(G_OBJECT(window), "destroy",
         G_CALLBACK(gtk_main_quit), NULL);
 
-  g_timeout_add(100, (GSourceFunc) time_handler, (gpointer) window);
+  //g_timeout_add(100, (GSourceFunc) time_handler, (gpointer) window);
 
   gtk_widget_show((GtkWidget*)statusbar);
   gtk_widget_show_all(window);
