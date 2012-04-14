@@ -14,6 +14,7 @@
 #include "opencv/cv.h"
 
 #include "Trajectory.h"
+#include "Viewer.h"
 
 class TrackingResultResources {
 private:
@@ -25,6 +26,7 @@ private:
     std::string strResultFilename;
     std::map<int,cv::Point2d> posHumanStill;
     std::map<int,unsigned long> cntStill;
+    Viewer* pViewer;
 #ifdef WINDOWS_OS
     HANDLE hThread;
     DWORD ThreadId;
@@ -43,7 +45,7 @@ public:
     bool EnableViewWindow();
     bool TerminateViewWindow();
     void UpdateView();
-    void init( std::string filename );
+    void init( std::string filename, Viewer* p_viewer );
     void clear();
     void SetDelayUpdate( int delay_update );
     int GetDelayUpdate();

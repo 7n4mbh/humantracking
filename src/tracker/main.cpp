@@ -19,6 +19,7 @@
 #include "track.h"
 #include "TrackingResultResources.h"
 #include "TrackingProcessLogger.h"
+#include "Viewer.h"
 
 //#ifdef WINDOWS_OS
 //#include <conio.h>
@@ -40,6 +41,7 @@ volatile bool flgRunGetPEPMapThread;
 
 TrackingResultResources resTracking;
 TrackingProcessLogger logTracking;
+Viewer viewer;
 
 #ifdef WINDOWS_OS
 CRITICAL_SECTION cs;
@@ -181,6 +183,7 @@ void* GetPEPMapThread( void* p_cameraunit )
 #endif
             bufPEPMap.push_back( pepmap );
             logTracking.receive_pepmap( pepmap );
+            viewer.SetPEPMap( pepmap );
             resTracking.UpdateView();
 #ifdef WINDOWS_OS
             LeaveCriticalSection( &cs );
@@ -588,6 +591,9 @@ int pepmapfile_mode( string strVideoFile )
                 a[ 1 ] = pepmap.data[ j * 2 + 1 ];
                 buf[ j ] = strtol( a, NULL, 16 );
             }
+
+            logTracking.receive_pepmap( pepmap );
+            viewer.SetPEPMap( pepmap );
             cout << "Data Received." << endl;
 
             uLongf len_uncompressed = (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) * 2;
@@ -626,6 +632,7 @@ int main( int argc, char *argv[] )
 {
     string strPath, strName, strNoextName;
     string strTrackingConfigFile = "tracking.cfg";
+    int ret;
 
     for( int i = 0; i < argc; ++i ) {
         string strOpt = argv[ i ];
@@ -645,11 +652,16 @@ int main( int argc, char *argv[] )
     load_pepmap_config();
     load_track_parameters( strPath, strTrackingConfigFile );
 
-    resTracking.init( strPath + "result.txt" );
+    resTracking.init( strPath + "result.txt", &viewer );
+    viewer.exec();
 
     if( !flgPEPMapFile ) {
-        return bumblebee_mode();
+        ret = bumblebee_mode();
     } else {
-        return pepmapfile_mode( strPEPMapFile );
+        ret = pepmapfile_mode( strPEPMapFile );
     }
+
+    viewer.exit();
+
+    return ret;
 }

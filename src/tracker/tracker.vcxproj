@@ -162,6 +162,7 @@
     <ClCompile Include="TrackingProcessLogger.cpp" />
     <ClCompile Include="TrackingResultResources.cpp" />
     <ClCompile Include="Trajectory.cpp" />
+    <ClCompile Include="Viewer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraUnit.h" />
@@ -175,6 +176,7 @@
     <ClInclude Include="TrackingProcessLogger.h" />
     <ClInclude Include="TrackingResultResources.h" />
     <ClInclude Include="Trajectory.h" />
+    <ClInclude Include="Viewer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

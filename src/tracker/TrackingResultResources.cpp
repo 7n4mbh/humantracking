@@ -18,6 +18,7 @@ extern float scale_m2px;
 TrackingResultResources::TrackingResultResources()
 {
     bRunThread = false;
+    pViewer = NULL;
 #ifdef WINDOWS_OS
     hThread = NULL;
     InitializeCriticalSection( &cs );
@@ -37,7 +38,7 @@ TrackingResultResources::~TrackingResultResources()
 #endif
 }
 
-void TrackingResultResources::init( std::string filename )
+void TrackingResultResources::init( std::string filename, Viewer* p_viewer )
 {
     bufPEPMap.clear();
     trackingResult.clear();
@@ -46,6 +47,7 @@ void TrackingResultResources::init( std::string filename )
     posHumanStill.clear();
     cntStill.clear();
     strResultFilename = filename;
+    pViewer = p_viewer;
     ofstream ofs( strResultFilename.c_str() );
 }
 
@@ -339,13 +341,13 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                         old_row = row;
                     }
 
-		    if( pTrackingResultResources->cntStill.find( itHuman->first ) != pTrackingResultResources->cntStill.end() ) {
-			if( pTrackingResultResources->cntStill[ itHuman->first ] > 30 ) {
-			    int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( pTrackingResultResources->posHumanStill[ itHuman->first ].x - roi_x ) + roi_width / 2.0f ) );
-			    int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( pTrackingResultResources->posHumanStill[ itHuman->first ].y - roi_y ) + roi_height / 2.0f ) );
-			    circle( img_display, Point( row, col ), ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * 0.5 * scale_m2px, color_table[ itHuman->first % sizeColorTable ], 2 );
-			}
-		    }
+		            if( pTrackingResultResources->cntStill.find( itHuman->first ) != pTrackingResultResources->cntStill.end() ) {
+                        if( pTrackingResultResources->cntStill[ itHuman->first ] > 30 ) {
+	                        int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( pTrackingResultResources->posHumanStill[ itHuman->first ].x - roi_x ) + roi_width / 2.0f ) );
+	                        int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( pTrackingResultResources->posHumanStill[ itHuman->first ].y - roi_y ) + roi_height / 2.0f ) );
+	                        circle( img_display, Point( row, col ), ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * 0.5 * scale_m2px, color_table[ itHuman->first % sizeColorTable ], 2 );
+                        }
+		            }
                 }
 
                 //for( deque< map<int,Point2d> >::iterator itPosHuman = result_buffer.begin(); itPosHuman != result_buffer.end(); ++itPosHuman ) {
@@ -357,6 +359,10 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 //        circle( img_display, Point( row, col ), 3, color_table[ it->first % sizeColorTable ], -1 );
                 //    }
                 //}
+
+                if( pTrackingResultResources->pViewer ) {
+                    pTrackingResultResources->pViewer->SetPos( pepmap.timeStamp );
+                }
 
                 imshow( "Tracking Result", img_display );
                 if( pTrackingResultResources->GetDelayUpdate() ) {

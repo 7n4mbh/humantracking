@@ -18,6 +18,7 @@ vector<unsigned long long> tracking_block;
 unsigned long long t_start_tracking;
 vector<unsigned long long> pepmap;
 int tracking_status = 0;
+unsigned long long t_current_time = 0;
 
 void MessageReceived( std::string msg )
 {
@@ -69,10 +70,15 @@ void MessageReceived( std::string msg )
         iss >> tracking_status;       
     } else if( strCmd[ 0 ] == "PEPMap" ) {
         istringstream iss;
-	unsigned long long t;
+	    unsigned long long t;
         iss.str( strCmd[ 1 ] );
         iss >> t;
         pepmap.push_back( t );
+    } else if( strCmd[ 0 ] == "Time" ) {
+        istringstream iss;
+	    unsigned long long t;
+        iss.str( strCmd[ 1 ] );
+        iss >> t_current_time;
     }
     gtk_widget_queue_draw( window );
 }
@@ -147,6 +153,16 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
 
   const unsigned long long display_term = 60000000ULL;
   const double t2px = (double)progress->allocation.width / (double)display_term;
+
+
+  // Draw Current time
+  {
+    const int x = (int)( (double)( t_current_time - t_start_tracking ) * t2px );
+    cairo_set_source_rgb(cr, 1, 0, 0);
+    cairo_move_to(cr, x, 0 );
+    cairo_line_to(cr, x, 30 );
+    cairo_stroke( cr );
+  }
 
   // Draw PEP-map time
   for( int i = 0; i < pepmap.size(); ++i ) {

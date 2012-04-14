@@ -6,11 +6,7 @@
 #include <deque>
 #include <string>
 
-#if defined(WINDOWS) || defined(_WIN32)
-#define WINDOWS_OS
-#elif defined(linux) || defined(__linux__)
-#define LINUX_OS
-#endif
+#include "../humantracking.h"
 
 #ifdef WINDOWS_OS
 #include <windows.h>

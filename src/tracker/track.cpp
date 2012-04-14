@@ -6,11 +6,13 @@
 #include "../humantracking.h"
 #include "track.h"
 #include "TrackingProcessLogger.h"
+#include "Viewer.h"
 
 using namespace std;
 using namespace cv;
 
 extern TrackingProcessLogger logTracking;
+extern Viewer viewer;
 
 PARAM_COMMON commonParam; // 共通パラメータ
 PARAM_EXTRACTLUM extractlumParam; // 等速直線運動抽出パラメータ
@@ -176,6 +178,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         flgFirst = false;
         flgTrackingStarts = true;
         logTracking.init( "tracking.log" );
+        viewer.SetStartTime( timeEarliestPEPMap );
     }
 
     // debug code
@@ -184,6 +187,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
     if( flgTrackingStarts ) {
         logTracking.set_tracking_block( timeTracking - commonParam.termTracking, timeTracking );
         logTracking.start();
+        viewer.SetTrackingStatus( 0 );
+        viewer.SetTrackingBlock( timeTracking - commonParam.termTracking, timeTracking );
         flgTrackingStarts = false;
     }
     
@@ -312,6 +317,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         // Clustering the trajectories
         //
         logTracking.clustering( TrackingProcessLogger::Start );
+        viewer.SetTrackingStatus( 1 );
 
         cerr << "Calculating a distance table..." << endl;
 
@@ -512,6 +518,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         logTracking.clustering( TrackingProcessLogger::End );
 
         logTracking.renovation( TrackingProcessLogger::Start );
+        viewer.SetTrackingStatus( 2 );
 
         //
         // Renovate the trajectories
@@ -676,6 +683,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 #endif
 
 	    logTracking.renovation( TrackingProcessLogger::End );
+        viewer.SetTrackingStatus( 3 );
 
         logTracking.finishing( TrackingProcessLogger::Start );
 
