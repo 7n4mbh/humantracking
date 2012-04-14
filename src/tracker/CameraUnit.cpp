@@ -13,7 +13,7 @@
 
 using namespace std;
 
-#define SIZE_BUFFER ( 1000 )
+//#define SIZE_BUFFER ( 1000 )
 #define R (0)
 #define W (1)
 
