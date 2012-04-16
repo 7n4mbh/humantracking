@@ -137,7 +137,7 @@ void Viewer::send( string msg )
 
 #ifdef LINUX_OS
     pthread_mutex_lock( &mutex );
-    cout << "## debug code! ## Viewer::send()" << endl;
+    //cout << "## debug code! ## Viewer::send()" << endl;
     msg += "\n";
     if( fputs( msg.c_str(), fp ) == -1 ) {
       cerr << "Error occured in fputs()." << endl;
@@ -197,6 +197,7 @@ void Viewer::SetResult( const std::map< unsigned long long, std::map<int,cv::Poi
                 << ", " << itPosHuman->second.x // X
                 << ", " << itPosHuman->second.y; // Y
         }
-        oss << endl;
+        oss << "\r";
+        send( oss.str() );
     }
 }

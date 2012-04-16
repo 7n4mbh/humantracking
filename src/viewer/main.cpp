@@ -26,8 +26,8 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
 void UpdateStatusBar()
 {
   ostringstream oss;
-  string strTime1, strTime2;
-  time_t _sec1, _sec2, diff = 0;
+  string strTime1, strTime2, strTime3;
+  time_t _sec1, _sec2, _sec3, diff = 0, diff2 = 0;
   if( !pepmap.empty() ) {
     _sec1 = pepmap.back() / 1000000ULL;
     // sometimes, ctime() returns null string for some reason.
@@ -54,8 +54,22 @@ void UpdateStatusBar()
     //oss << ", Current Play Time:" << strTime;
   }
 
+  if( !result.empty() ) {
+    _sec3 = result.back() / 1000000ULL;
+    diff2 = _sec1 - _sec3;
+    // sometimes, ctime() returns null string for some reason.
+    // The following is for re-trying in that case.
+    for( int i = 0; i < 10; ++i ) {
+      strTime3 = string( ctime( &_sec3 ) );
+      if( strTime3.size() ) {
+	break;
+      }
+    }
+  }
+
   gchar* str_msg;// = (gchar*)oss.str().c_str();
-  str_msg = g_strdup_printf( "Newest PEP-map time:%s, Current Play Time:%s, diff:%d[sec]", strTime1.c_str(), strTime2.c_str(), diff );
+  str_msg = g_strdup_printf( "Newest PEP-map time:%s, Current Play Time:%s(diff:%d[sec]), Newest Result time:%s(diff:%d[sec])", strTime1.c_str(), strTime2.c_str(), diff, strTime3.c_str(), diff2 );  
+  //str_msg = g_strdup_printf( "Newest Result time:%s", strTime3.c_str() );
   
   gtk_statusbar_push( GTK_STATUSBAR(statusbar)
   		    , gtk_statusbar_get_context_id( GTK_STATUSBAR(statusbar), str_msg )

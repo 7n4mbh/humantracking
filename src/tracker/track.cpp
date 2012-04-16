@@ -746,6 +746,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             }
         }
 
+	viewer.SetResult( *p_result );
+
         //
         // Output process information of renovation
         //if( myRank == 0 ) {
