@@ -26,34 +26,35 @@ void UpdateStatusBar()
 {
   ostringstream oss;
   string strTime1, strTime2;
-  time_t _sec;
+  time_t _sec1, _sec2, diff = 0;
   if( !pepmap.empty() ) {
-    _sec = pepmap.front() / 1000000ULL;
+    _sec1 = pepmap.back() / 1000000ULL;
     // sometimes, ctime() returns null string for some reason.
     // The following is for re-trying in that case.
     for( int i = 0; i < 10; ++i ) {
-      strTime1 = string( ctime( &_sec ) );
+      strTime1 = string( ctime( &_sec1 ) );
       if( strTime1.size() ) {
 	break;
       }
     }
     //oss << "Newest PEP-map time:" << strTime;
 
-    _sec = t_current_time / 1000000ULL;
+    _sec2 = t_current_time / 1000000ULL;
     // sometimes, ctime() returns null string for some reason.
     // The following is for re-trying in that case.
     for( int i = 0; i < 10; ++i ) {
-      strTime2 = string( ctime( &_sec ) );
+      strTime2 = string( ctime( &_sec2 ) );
       if( strTime2.size() ) {
 	break;
       }
     }
 
+    diff = _sec1 - _sec2;
     //oss << ", Current Play Time:" << strTime;
   }
 
   gchar* str_msg;// = (gchar*)oss.str().c_str();
-  str_msg = g_strdup_printf( "Newest PEP-map time:%s, Current Play Time:%s", strTime1.c_str(), strTime2.c_str() );
+  str_msg = g_strdup_printf( "Newest PEP-map time:%s, Current Play Time:%s, diff:%d[sec]", strTime1.c_str(), strTime2.c_str(), diff );
   
   gtk_statusbar_push( GTK_STATUSBAR(statusbar)
   		    , gtk_statusbar_get_context_id( GTK_STATUSBAR(statusbar), str_msg )
@@ -187,6 +188,8 @@ static gboolean signal_key_press( GtkWidget* widget, GdkEventKey* evt, gpointer 
 
 static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer data)
 {
+
+    if( widget == progress ) {
   cairo_t *cr;
 
   cr = gdk_cairo_create(progress->window/*widget->window*/);
@@ -199,6 +202,15 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
 
   const unsigned long long display_term = 60000000ULL;
   const double t2px = (double)progress->allocation.width / (double)display_term;
+
+
+  // Update t_start_tracking
+  if( !tracking_block.empty() ) {
+      if( tracking_block.back() - t_start_tracking >= display_term ) {
+	  tracking_block.erase( tracking_block.begin(), tracking_block.end() - 2 );
+	  t_start_tracking = tracking_block.front();
+      }
+  }
 
 
   // Draw Current time
@@ -217,6 +229,14 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
     cairo_move_to(cr, x, 0 );
     cairo_line_to(cr, x, 20 );
     cairo_stroke( cr );
+  }
+
+  // Draw unit
+  for( unsigned long long t = 0; t <= display_term; t += 1000000 ) {
+      cairo_set_source_rgb(cr,0,0,0);
+      cairo_move_to(cr, t * t2px, 34);
+      cairo_line_to(cr, t * t2px, 39);
+      cairo_stroke(cr);
   }
 
   // Draw tracking blocks
@@ -252,7 +272,7 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
   }
 
   cairo_destroy(cr);
-
+    }
   /*
   ostringstream oss;
   string strTime;
@@ -288,8 +308,9 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
 		    , str_msg );
 
   */
-  UpdateStatusBar();
-
+    //if( widget == statusbar ) {
+    //UpdateStatusBar();
+    //}
     //gdk_draw_arc( progress->window
     //            , progress->style->fg_gc[gtk_widget_get_state(progress)]
     //            , TRUE
@@ -304,6 +325,8 @@ static gboolean
 time_handler(GtkWidget *widget)
 {
   if (widget->window == NULL) return FALSE;
+
+  UpdateStatusBar();
 
   gtk_widget_queue_draw(widget);
   return TRUE;
@@ -332,7 +355,7 @@ void init_gui( int argc, char *argv[] )
   gtk_box_pack_end(GTK_BOX(vbox), statusbar, FALSE, TRUE, 1);
 
   progress = gtk_drawing_area_new();
-  gtk_widget_set_size_request(progress, 80, 35);
+  gtk_widget_set_size_request(progress, 80, 40);
   gtk_box_pack_end(GTK_BOX(vbox), progress, FALSE, TRUE, 1);
 
   //button = gtk_button_new_with_label("button");
@@ -351,7 +374,7 @@ void init_gui( int argc, char *argv[] )
   g_signal_connect_swapped(G_OBJECT(window), "destroy",
         G_CALLBACK(gtk_main_quit), NULL);
 
-  //g_timeout_add(100, (GSourceFunc) time_handler, (gpointer) window);
+  g_timeout_add(100, (GSourceFunc) time_handler, (gpointer) window);
 
   gtk_widget_show((GtkWidget*)statusbar);
   gtk_widget_show_all(window);

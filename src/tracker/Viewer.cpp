@@ -81,7 +81,7 @@ void Viewer::exec()
 #endif
 
 #ifdef LINUX_OS
-    if((fp=popen("/home/kenichiro/project/HumanTracking/bin/viewer","w"))==NULL){
+    if((fp=popen("/home/fukushi/project/HumanTracking/bin/viewer","w"))==NULL){
         fprintf(stderr,"error!!!\n");
         ::exit(-1);
     }
