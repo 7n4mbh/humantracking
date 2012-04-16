@@ -19,6 +19,7 @@ unsigned long long t_start_tracking;
 vector<unsigned long long> pepmap;
 int tracking_status = 0;
 unsigned long long t_current_time = 0;
+vector<unsigned long long> result; // temporal declaration. should be 'map< unsigned long long, map<int,Point2d> >'.
 
 static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer data);
 
@@ -121,10 +122,15 @@ void MessageReceived( std::string msg )
 	//UpdateStatusBar();
     } else if( strCmd[ 0 ] == "Time" ) {
         istringstream iss;
-	    unsigned long long t;
         iss.str( strCmd[ 1 ] );
         iss >> t_current_time;
 	//UpdateStatusBar();
+    } else if( strCmd[ 0 ] == "Result" ) {
+        istringstream iss;
+        unsigned long long t;
+        iss.str( strCmd[ 1 ] );
+        iss >> t;
+        result.push_back( t );
     }
     gtk_widget_queue_draw( progress );
     //on_expose_event( progress, NULL, NULL );
@@ -229,6 +235,17 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
     cairo_move_to(cr, x, 0 );
     cairo_line_to(cr, x, 20 );
     cairo_stroke( cr );
+  }
+
+  // Draw result time
+  for( int i = 0; i < result.size(); ++i ) {
+    if( result[ i ] >= t_start_tracking && result[ i ] < t_start_tracking + display_term ) {
+        const int x = (int)( (double)( result[ i ] - t_start_tracking ) * t2px );
+        cairo_set_source_rgb(cr, 0, 1, 0);
+        cairo_move_to(cr, x, 0 );
+        cairo_line_to(cr, x, 20 );
+        cairo_stroke( cr );
+    }
   }
 
   // Draw unit

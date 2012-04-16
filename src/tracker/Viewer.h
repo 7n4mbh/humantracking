@@ -33,6 +33,7 @@ public:
     void SetPEPMap( const PEPMapInfo& pepmap );
     void SetTrackingStatus( int status );
     void SetPos( unsigned long long time );
+    void SetResult( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result );
 };
 
 #endif

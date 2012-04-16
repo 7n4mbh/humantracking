@@ -1,9 +1,12 @@
 #include <sstream>
+#include <map>
 
+#include "opencv/cv.h"
 #include "../humantracking.h"
 #include "Viewer.h"
 
 using namespace std;
+using namespace cv;
 
 Viewer::Viewer()
 {
@@ -178,4 +181,22 @@ void Viewer::SetPos( unsigned long long time )
     ostringstream oss;
     oss << "Time=" << time << "\r";
     send( oss.str() );
+}
+
+void Viewer::SetResult( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result )
+{
+    ostringstream oss;
+
+    map< unsigned long long, map<int,Point2d> >::const_iterator it = result.begin();
+    for( ; it != result.end(); ++it ) {
+        oss << "Result=" 
+            <<it->first // Timestamp
+            << ", " << it->second.size(); // # of people
+        for( map<int,Point2d>::const_iterator itPosHuman = it->second.begin(); itPosHuman != it->second.end(); ++itPosHuman ) {
+            oss << ", " << itPosHuman->first // ID
+                << ", " << itPosHuman->second.x // X
+                << ", " << itPosHuman->second.y; // Y
+        }
+        oss << endl;
+    }
 }
