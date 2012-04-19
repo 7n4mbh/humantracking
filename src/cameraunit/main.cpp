@@ -668,6 +668,7 @@ void execute( int start_frame = 0 )
     //Image convertedImage( img.data, 4 * iMaxCols * 2 * iMaxRows );//img.rows() * img.cols() * 3 );
     TriclopsImage16 depthImage16;
     Mat img_depth( height, width, CV_32F );
+    Mat img_camera( height, width, CV_8U );
 
     unsigned long long timeStamp;
 
@@ -813,14 +814,14 @@ void execute( int start_frame = 0 )
                             if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
                                 occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
                             }
-                            row = (int)( occupancy_2.rows - scale_m2px * pv_z );
-                            if( row >= 0 && row < occupancy_2.rows && col >= 0 && col < occupancy_2.cols ) {
-                                occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
-                            }
-                            col = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) );
-                            if( row >= 0 && row < occupancy_3.rows && col >= 0 && col < occupancy_3.cols ) {
-                                occupancy_3.at<unsigned short>( row, col ) = occupancy_3.at<unsigned short>( row, col ) + 1;
-                            }
+                            //row = (int)( occupancy_2.rows - scale_m2px * pv_z );
+                            //if( row >= 0 && row < occupancy_2.rows && col >= 0 && col < occupancy_2.cols ) {
+                            //    occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
+                            //}
+                            //col = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) );
+                            //if( row >= 0 && row < occupancy_3.rows && col >= 0 && col < occupancy_3.cols ) {
+                            //    occupancy_3.at<unsigned short>( row, col ) = occupancy_3.at<unsigned short>( row, col ) + 1;
+                            //}
                         }                    
                     }
                 }
@@ -883,18 +884,49 @@ void execute( int start_frame = 0 )
 	        ofs << dec << endl;
         }
 
+
+
+        // JPEG compression of the grabbed image
+        vector<uchar> buff;//buffer for coding
+        vector<int> param = vector<int>(2);
+        param[0]=CV_IMWRITE_JPEG_QUALITY;
+        param[1]=70;//default(95) 0-100
+
+        Mat imgCamRight = image( Range::all(), Range(1, iMaxCols + 1 ) );
+        resize( imgCamRight, img_camera, img_camera.size() );
+        imshow( "Camera", img_camera );
+
+ 
+        imencode(".jpg",image,buff,param);
+        //cout<<"coded file size(jpg)"<<buff.size()<<endl;//fit buff size automatically.
+        //Mat jpegimage = imdecode(Mat(buff),CV_LOAD_IMAGE_COLOR);        
+
+	    // Send grabbed image to stdout
+        if( flgStdOutPEPMap ) {
+	        cout << "<CameraImage>" << endl // Header
+                 << camInfo.serialNumber << endl // Serial Number
+                 << timeStamp << endl // Time stamp
+                 << image.cols << endl // Width
+                 << image.rows << endl // Height
+                 << buff.size() << endl; // data length
+	        for( size_t i = 0; i < buff.size(); ++i ) { // PEPMap data
+	          cout << hex << setw(2) << setfill( '0' ) << (int)buff[ i ];
+	        }
+	        cout << dec << endl;
+        }
+
         if( flgWindow ) {
             occupancy.convertTo( img_occupancy, CV_8U );
             resize( img_occupancy, img_display2, img_display2.size() );
             imshow( "Occupancy Map", img_display2 );
 
-            occupancy_2.convertTo( img_occupancy, CV_8U );
-            resize( img_occupancy, img_display2, img_display2.size() );
-            imshow( "Occupancy Map 2", img_display2 );
+            //occupancy_2.convertTo( img_occupancy, CV_8U );
+            //resize( img_occupancy, img_display2, img_display2.size() );
+            //imshow( "Occupancy Map 2", img_display2 );
 
-            occupancy_3.convertTo( img_occupancy, CV_8U );
-            resize( img_occupancy, img_display2, img_display2.size() );
-            imshow( "Occupancy Map 3", img_display2 );
+            //occupancy_3.convertTo( img_occupancy, CV_8U );
+            //resize( img_occupancy, img_display2, img_display2.size() );
+            //imshow( "Occupancy Map 3", img_display2 );
         }
 
         //{
