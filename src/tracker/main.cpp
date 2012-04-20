@@ -627,6 +627,7 @@ int pepmapfile_mode( string strVideoFile )
     resTracking.clear();
     resTracking.EnableViewWindow();
     PEPMapInfo pepmap;
+    CameraImageInfo cam_image;
     //unsigned long long timeStamp;
     //unsigned int serialNumber;
     int size;
@@ -683,7 +684,16 @@ int pepmapfile_mode( string strVideoFile )
                 resTracking.AddResultTrajectories( result );
             }
             resTracking.AddPEPMapInfo( pepmap );
-        }
+        } else if( str.find( "<CameraImage>" ) != str.npos ) {
+            int size;
+            ifs >> cam_image.serialNumber
+                >> cam_image.timeStamp
+                >> cam_image.width
+                >> cam_image.height
+                >> size
+                >> cam_image.data;
+            viewer.SetCameraImage( cam_image );
+       }
 
     }
     return 0;

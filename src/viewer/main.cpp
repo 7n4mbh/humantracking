@@ -485,14 +485,14 @@ int main( int argc, char *argv[] )
 #endif
 
 
-    g_thread_init( NULL );
-    gdk_threads_init();
-    gdk_threads_enter();
+    //g_thread_init( NULL );
+    //gdk_threads_init();
+    //gdk_threads_enter();
 
     init_gui( argc, argv );
     gtk_main();
 
-    gdk_threads_leave();
+    //gdk_threads_leave();
 
 #ifdef WINDOWS_OS
     //WaitForSingleObject( hThread, INFINITE );

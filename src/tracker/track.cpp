@@ -440,10 +440,12 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
             // クラスタを間引く
             cerr << "利用クラスタの選定...";
-            vector<double> frequency( tmpTrajectoriesClustered.size(), 0.0 );
-            CalcFrequency( (double*)&(frequency[ 0 ]), dist, tmpTrajectoriesClustered.size(), 0.1, clusteringParam.thDistance );
             vector<int> idxClusterUse;
-            ReduceTrajectory( &idxClusterUse, (double*)&(frequency[0]), frequency.size(), 55.0/*80.0*/ );
+            if( !tmpTrajectoriesClustered.empty() ) {
+                vector<double> frequency( tmpTrajectoriesClustered.size(), 0.0 );
+                CalcFrequency( (double*)&(frequency[ 0 ]), dist, tmpTrajectoriesClustered.size(), 0.1, clusteringParam.thDistance );
+                ReduceTrajectory( &idxClusterUse, (double*)&(frequency[0]), frequency.size(), 55.0/*80.0*/ );
+            }
             cerr << "完了（" << idxClusterUse.size() << "[個]）...";
 
             // 距離テーブル再配置
