@@ -1,7 +1,7 @@
-CC = gcc
-CXX = g++
-#CC = icc
-#CXX = icpc
+#CC = gcc
+#CXX = g++
+CC = icc
+CXX = icpc
 
 EXENAME = ../../bin/viewer
 SRC = main.cpp

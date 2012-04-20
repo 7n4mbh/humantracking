@@ -24,6 +24,11 @@ vector<unsigned long long> pepmap;
 int tracking_status = 0;
 unsigned long long t_current_time = 0;
 vector<unsigned long long> result; // temporal declaration. should be 'map< unsigned long long, map<int,Point2d> >'.
+Mat jpegimage;
+string jpegimage_from;
+#ifdef LINUX_OS
+pthread_mutex_t mutex;
+#endif
 
 static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer data);
 
@@ -175,11 +180,19 @@ void MessageReceived( std::string msg )
             buff[ j ] = strtol( a, NULL, 16 );
         }
 
-        Mat jpegimage = imdecode(Mat(buff),CV_LOAD_IMAGE_COLOR); 
-        imshow( "Camera Image in Viewer", jpegimage );
-        cvWaitKey( 1 );
+#ifdef LINUX_OS
+        pthread_mutex_lock( &mutex );
+#endif
+        ///*Mat*/ jpegimage = imdecode(Mat(buff),CV_LOAD_IMAGE_COLOR); 
+	//jpegimage_from = strCmd[ 1 ];
+        //imshow( "Camera Image in Viewer", jpegimage );
+        //cvWaitKey( 1 );
+#ifdef LINUX_OS
+        pthread_mutex_unlock( &mutex );
+#endif
 }
     gtk_widget_queue_draw( progress );
+    //cvWaitKey();
     //on_expose_event( progress, NULL, NULL );
 }
 
@@ -382,6 +395,16 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
     //            , progress->allocation.width, progress->allocation.height
     //            , 0, 64 * 360 );
 
+#ifdef LINUX_OS
+    pthread_mutex_lock( &mutex );
+#endif
+    if( jpegimage.rows != 0 ) {
+	//imshow( jpegimage_from.c_str(), jpegimage );
+    }
+#ifdef LINUX_OS
+    pthread_mutex_unlock( &mutex );
+#endif
+
     return FALSE;
 }
 
@@ -453,7 +476,9 @@ int main( int argc, char *argv[] )
 #ifdef WINDOWS_OS
     DWORD idThread;
     HANDLE hThread = CreateThread( NULL, 0, KeyInThread, NULL, NULL, &idThread );
-#else
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_init( &mutex, NULL );    
     pthread_t thread;
     pthread_create(&thread , NULL , KeyInThread , NULL);
 #endif
@@ -466,6 +491,7 @@ int main( int argc, char *argv[] )
     TerminateThread( hThread, FALSE );
 #else
     pthread_cancel(thread);
+    pthread_mutex_destroy( &mutex );
 #endif
 
     return 0;
