@@ -31,6 +31,7 @@ using namespace cv;
 bool flgPEPMapFile = false;
 string strPEPMapFile;
 bool flgOutputTrackingProcessData2Files = false;
+bool flgCommTestMode = false;
 
 float roi_width, roi_height;
 float roi_x, roi_y;
@@ -145,6 +146,7 @@ void* GetPEPMapThread( void* p_cameraunit )
     pCameraUnit->send( "run\n", 4 );
 
     PEPMapInfo pepmap;
+    CameraImageInfo cam_image;
     char buf[ SIZE_BUFFER ];
 	while( flgRunGetPEPMapThread ) {
 		pCameraUnit->readline( buf, SIZE_BUFFER );
@@ -191,7 +193,65 @@ void* GetPEPMapThread( void* p_cameraunit )
 #ifdef LINUX_OS
 	    pthread_mutex_unlock( &mutex );
 #endif
-		}
+		} else if( str.find( "<CameraImage>" ) != str.npos ) {
+            {
+                pCameraUnit->readline( buf, SIZE_BUFFER );
+                string strtmp( buf );
+                istringstream iss( strtmp );
+                iss >> cam_image.serialNumber;
+            }
+            {
+                pCameraUnit->readline( buf, SIZE_BUFFER );
+                string strtmp( buf );
+                istringstream iss( strtmp );
+                iss >> cam_image.timeStamp;
+            }
+            {
+                pCameraUnit->readline( buf, SIZE_BUFFER );
+                string strtmp( buf );
+                istringstream iss( strtmp );
+                iss >> cam_image.width;
+            }
+            {
+                pCameraUnit->readline( buf, SIZE_BUFFER );
+                string strtmp( buf );
+                istringstream iss( strtmp );
+                iss >> cam_image.height;
+            }
+            time_t _sec = pepmap.timeStamp / 1000000ULL;
+            pCameraUnit->readline( buf, SIZE_BUFFER );
+            int size = atoi( buf );
+
+            vector<uchar> buff( size * 2 + 1 );
+            pCameraUnit->read( (char*)&buff[ 0 ], size * 2 );
+            buff[ size * 2 ] = '\0';
+            cam_image.data = string( (char*)&buff[ 0 ] );
+
+#ifdef WINDOWS_OS
+            EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+	    pthread_mutex_lock( &mutex );
+#endif
+            viewer.SetCameraImage( cam_image );
+#ifdef WINDOWS_OS
+            LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+	    pthread_mutex_unlock( &mutex );
+#endif
+            //buff.resize( size );
+            //char a[ 3 ]; a[ 2 ] = '\0';
+            //for( int j = 0; j < size; ++j ) {
+            //    a[ 0 ] = pepmap.data[ j * 2 ];
+            //    a[ 1 ] = pepmap.data[ j * 2 + 1 ];
+            //    buff[ j ] = strtol( a, NULL, 16 );
+            //}
+
+            //Mat jpegimage = imdecode(Mat(buff),CV_LOAD_IMAGE_COLOR); 
+            //imshow( "Camera Image", jpegimage );
+            //cvWaitKey( 1 );
+        }
 	}
 
     buf[ 0 ] = 'q'; buf[ 1 ] = '\n';
@@ -397,16 +457,18 @@ int bumblebee_mode()
             //imshow( "Occupancy Map", img_display2 );
             //(void)cvWaitKey( 10 );
 
-            // Tracking
-            //map<int,CTrajectory> result;
-            map< unsigned long long, map<int,Point2d> > result;
-            if( track( &result, occupancy, pepmap.timeStamp ) ) {
-                // Store result view resources
-                resTracking.AddResultTrajectories( result );
+            if( flgCommTestMode == false ) {
+                // Tracking
+                //map<int,CTrajectory> result;
+                map< unsigned long long, map<int,Point2d> > result;
+                if( track( &result, occupancy, pepmap.timeStamp ) ) {
+                    // Store result view resources
+                    resTracking.AddResultTrajectories( result );
+                }
+	            //cout << "Adding PEP-map info...";
+                resTracking.AddPEPMapInfo( pepmap );
+	            //cout << "Done." << endl;
             }
-	    //cout << "Adding PEP-map info...";
-            resTracking.AddPEPMapInfo( pepmap );
-	    //cout << "Done." << endl;
         }
 	} while( cnt < 2000 );
 
@@ -643,8 +705,10 @@ int main( int argc, char *argv[] )
         } else if( strOpt == "--output-trackingprocess-files" ) {
             flgOutputTrackingProcessData2Files = true;
         } else if( strOpt == "-c" ) {
-	    strTrackingConfigFile = string( argv[ ++i ] );
-	}
+            strTrackingConfigFile = string( argv[ ++i ] );
+        } else if( strOpt == "--comm-testmode" ) {
+            flgCommTestMode = true;
+        }
     }
 
     initialize_tracker();

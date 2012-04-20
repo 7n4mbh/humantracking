@@ -1,12 +1,16 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include <gtk/gtk.h>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 #include "../humantracking.h"
 
 using namespace std;
+using namespace cv;
 
 
 GtkWidget *window;
@@ -145,7 +149,36 @@ void MessageReceived( std::string msg )
         iss.str( strCmd[ 1 ] );
         iss >> t;
         result.push_back( t );
-    }
+    } else if( strCmd[ 0 ] == "CameraImage" ) {
+        istringstream iss;
+        CameraImageInfo cam_image;
+        iss.str( strCmd[ 1 ] );
+        iss >> cam_image.serialNumber;
+        iss.str( "" ); iss.clear();
+        iss.str( strCmd[ 2 ] );
+        iss >> cam_image.timeStamp;
+        iss.str( "" ); iss.clear();
+        iss.str( strCmd[ 3 ] );
+        iss >> cam_image.width;
+        iss.str( "" ); iss.clear();
+        iss.str( strCmd[ 4 ] );
+        iss >> cam_image.height;
+        iss.str( "" ); iss.clear();
+        iss.str( strCmd[ 5 ] );
+        iss >> cam_image.data;
+
+        vector<uchar> buff( cam_image.data.size() / 2 );
+        char a[ 3 ]; a[ 2 ] = '\0';
+        for( int j = 0; j < buff.size(); ++j ) {
+            a[ 0 ] = cam_image.data[ j * 2 ];
+            a[ 1 ] = cam_image.data[ j * 2 + 1 ];
+            buff[ j ] = strtol( a, NULL, 16 );
+        }
+
+        Mat jpegimage = imdecode(Mat(buff),CV_LOAD_IMAGE_COLOR); 
+        imshow( "Camera Image in Viewer", jpegimage );
+        cvWaitKey( 1 );
+}
     gtk_widget_queue_draw( progress );
     //on_expose_event( progress, NULL, NULL );
 }

@@ -475,10 +475,10 @@ void CameraUnit::PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
     // redirect.c launch redirect from a command line to prevent location
     // confusion.
     ostringstream oss;
-    if( strAddr == "192.168.1.100" ) { 
+    if( strAddr != "192.168.1.18" ) { 
         oss << "C:\\Windows\\SUA\\bin\\rsh " << strAddr << " -l kumalab /home/kumalab/project/HumanTracking/bin/cameraunit --nowindow";
     } else {
-        oss << "C:\\Windows\\SUA\\bin\\rsh " << strAddr << " -l kumalab /home/kumalab/project/HumanTracking/bin/cameraunit --nowindow --null-pepmap"; // debug code
+        oss << ".\\cameraunit.exe --nowindow"; // debug code
     }
     if (!CreateProcess( NULL
                       , (LPSTR)oss.str().c_str()//"C:\\Windows\\SUA\\bin\\rsh 192.168.1.100 -l kumalab /home/kumalab/project/HumanTracking/bin/cameraunit --nowindow"

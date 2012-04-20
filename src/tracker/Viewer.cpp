@@ -69,7 +69,7 @@ void Viewer::exec()
     si.hStdInput = hRead; 
     si.hStdOutput = GetStdHandle( STD_OUTPUT_HANDLE ); 
     si.hStdError = GetStdHandle( STD_ERROR_HANDLE ); 
-    if (!CreateProcess(NULL, "viewer.exe", NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) { 
+    if (!CreateProcess(NULL, ".\\viewer.exe", NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) { 
         cerr << "Error occured in Create Process." << endl;
         CloseHandle(hWrite); 
         hWrite = NULL; 
@@ -166,6 +166,18 @@ void Viewer::SetPEPMap( const PEPMapInfo& pepmap )
 {
     ostringstream oss;
     oss << "PEPMap=" << pepmap.timeStamp << "\r";
+    send( oss.str() );
+}
+
+void Viewer::SetCameraImage( const CameraImageInfo& cam_image )
+{
+    ostringstream oss;
+    oss << "CameraImage=" 
+        << cam_image.serialNumber << "," 
+        << cam_image.timeStamp << ","
+        << cam_image.width << ","
+        << cam_image.height << ","
+        << cam_image.data << "\r";
     send( oss.str() );
 }
 
