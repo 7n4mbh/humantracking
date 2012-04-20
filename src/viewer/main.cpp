@@ -183,15 +183,17 @@ void MessageReceived( std::string msg )
 #ifdef LINUX_OS
         pthread_mutex_lock( &mutex );
 #endif
-        ///*Mat*/ jpegimage = imdecode(Mat(buff),CV_LOAD_IMAGE_COLOR); 
-	//jpegimage_from = strCmd[ 1 ];
+        /*Mat*/ jpegimage = imdecode(Mat(buff),CV_LOAD_IMAGE_COLOR); 
+	jpegimage_from = strCmd[ 1 ];
         //imshow( "Camera Image in Viewer", jpegimage );
         //cvWaitKey( 1 );
 #ifdef LINUX_OS
         pthread_mutex_unlock( &mutex );
 #endif
 }
-    gtk_widget_queue_draw( progress );
+    //gdk_threads_enter();
+    //gtk_widget_queue_draw( progress );
+    //gdk_threads_leave();
     //cvWaitKey();
     //on_expose_event( progress, NULL, NULL );
 }
@@ -399,7 +401,7 @@ static gboolean on_expose_event(GtkWidget *widget, GdkEventExpose *evt, gpointer
     pthread_mutex_lock( &mutex );
 #endif
     if( jpegimage.rows != 0 ) {
-	//imshow( jpegimage_from.c_str(), jpegimage );
+	imshow( jpegimage_from.c_str(), jpegimage );
     }
 #ifdef LINUX_OS
     pthread_mutex_unlock( &mutex );
@@ -426,7 +428,6 @@ void init_gui( int argc, char *argv[] )
 
   //GtkWidget *statusbar;
   //GtkWidget *button;
-
 
   gtk_init(&argc, &argv);
 
@@ -483,8 +484,15 @@ int main( int argc, char *argv[] )
     pthread_create(&thread , NULL , KeyInThread , NULL);
 #endif
 
+
+    g_thread_init( NULL );
+    gdk_threads_init();
+    gdk_threads_enter();
+
     init_gui( argc, argv );
     gtk_main();
+
+    gdk_threads_leave();
 
 #ifdef WINDOWS_OS
     //WaitForSingleObject( hThread, INFINITE );

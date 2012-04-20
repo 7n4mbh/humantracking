@@ -162,11 +162,11 @@ void CameraUnit::connect( const std::string& addr )
 	close( pipe_p2c[R] );
 	close( pipe_c2p[W] );
 	int ret;
-        //if( strAddr == "192.168.1.100" ) {
-	  ret = execlp( "rsh", "rsh", strAddr.c_str(), "-l", "kumalab", "/home/kumalab/project/HumanTracking/bin/cameraunit", "--nowindow", NULL );
-	  //} else {
-	//ret = execlp( "rsh", "rsh", strAddr.c_str(), "-l", "kumalab", "/home/kumalab/project/HumanTracking/bin/cameraunit", "--nowindow", "--null-pepmap", NULL ); // debug code
-	//}
+        if( strAddr == "192.168.1.100" ) {
+            ret = execlp( "rsh", "rsh", strAddr.c_str(), "-l", "kumalab", "/home/kumalab/project/HumanTracking/bin/cameraunit", "--nowindow", NULL );
+	} else {
+            ret = execlp( "rsh", "rsh", strAddr.c_str(), "-l", "kumalab", "/home/kumalab/project/HumanTracking/bin/cameraunit", "--nowindow", "--no-stdout-camimage", "--no-stdout-geometry", NULL ); // debug code
+	}
 	if( ret < 0 ) {
 	//if( execlp( "./child", "child", NULL ) < 0 ) {
   	    perror( "execlp" );
