@@ -1891,7 +1891,8 @@ double Optimize( vector<TrajectoryElement>* pDst, std::vector<int>* pDstID, std:
                     if( find( infoTrj.connectable[ idxPrevPoint ].begin()
                             , infoTrj.connectable[ idxPrevPoint ].end()
                             , idxPoint ) != infoTrj.connectable[ idxPrevPoint ].end() ) {
-                        trj.insert( PosXYTID( pos.x, pos.y, pos.t, (*pPointIdxToTrjNo)[ idxPoint ] ) );
+                        //trj.insert( PosXYTID( pos.x, pos.y, pos.t, (*pPointIdxToTrjNo)[ idxPoint ] ) );
+                        trj.insert( pos );
                         ++nEnabledPoints;
                     } else {
                         if( trj.size() >= 3 ) {
@@ -1900,11 +1901,13 @@ double Optimize( vector<TrajectoryElement>* pDst, std::vector<int>* pDstID, std:
                         }
                         id = -1;
                         trj.clear();
-                        trj.insert( PosXYTID( pos.x, pos.y, pos.t, (*pPointIdxToTrjNo)[ idxPoint ] ) );
+                        //trj.insert( PosXYTID( pos.x, pos.y, pos.t, (*pPointIdxToTrjNo)[ idxPoint ] ) );
+                        trj.insert( pos );
                         ++nEnabledPoints;
                     }
                 } else {
-                        trj.insert( PosXYTID( pos.x, pos.y, pos.t, (*pPointIdxToTrjNo)[ idxPoint ] ) );
+                        //trj.insert( PosXYTID( pos.x, pos.y, pos.t, (*pPointIdxToTrjNo)[ idxPoint ] ) );
+                        trj.insert( pos );
                         ++nEnabledPoints;
                 }
                 flgMaking = true;

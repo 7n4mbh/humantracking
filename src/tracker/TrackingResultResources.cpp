@@ -334,6 +334,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 occupancy.convertTo( img_occupancy, CV_8U );
                 cv::cvtColor( img_occupancy, img_display_tmp, CV_GRAY2BGR );
                 resize( img_display_tmp, img_display, img_display.size() );
+                const float scale_width = (float)img_display.size().width / (float)img_display_tmp.size().width;
+                const float scale_height = (float)img_display.size().height / (float)img_display_tmp.size().height;
 
                 map<int, vector<Point2d> > trajectory_to_draw;
                 for( deque< map<int,Point2d> >::iterator itPosHuman = result_buffer.begin(); itPosHuman != result_buffer.end(); ++itPosHuman ) {
@@ -367,7 +369,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 for( multimap<int,Point2d>::iterator itHuman = regionHuman.begin(); itHuman != regionHuman.end(); ++itHuman ) {
                     int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_width / 2.0f ) );
                     int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_height / 2.0f ) );
-                    rectangle( img_display, Point( row - 1, col - 1 ), Point( row + 1, col + 1 ), color_table[ itHuman->first % sizeColorTable ], CV_FILLED );
+                    rectangle( img_display, Point( row - scale_height / 2, col - scale_width / 2 ), Point( row + scale_height / 2, col + scale_width / 2 ), color_table[ itHuman->first % sizeColorTable ], CV_FILLED );
                 }
 
                 //for( deque< map<int,Point2d> >::iterator itPosHuman = result_buffer.begin(); itPosHuman != result_buffer.end(); ++itPosHuman ) {

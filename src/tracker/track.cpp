@@ -747,11 +747,13 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                         if( itPos->t == time ) {
                             (*p_result)[ time ][ itResult->first ] = Point2d( itPos->x, itPos->y );
                             const int trj_no = itPos->ID;
-                            for( CTrajectory::iterator it = trajectoriesClustered[ trj_no ].begin()
-                               ; it != trajectoriesClustered[ trj_no ].end(); ++it ) {
-                                   TrajectoryElement::iterator itPos2;
-                                if( ( itPos2 = it->lower_bound( PosXYT( 0.0, 0.0, time ) ) ) != it->end() ) {
-                                    (*p_ext_result)[ time ].insert( pair<int,Point2d>( itResult->first, Point2d( itPos2->x, itPos2->y ) ) );
+                            if( trj_no < trajectoriesClustered.size() ) {
+                                for( CTrajectory::iterator it = trajectoriesClustered[ trj_no ].begin()
+                                   ; it != trajectoriesClustered[ trj_no ].end(); ++it ) {
+                                       TrajectoryElement::iterator itPos2;
+                                    if( ( itPos2 = it->find( PosXYT( 0.0, 0.0, time ) ) ) != it->end() ) {
+                                        (*p_ext_result)[ time ].insert( pair<int,Point2d>( itResult->first, Point2d( itPos2->x, itPos2->y ) ) );
+                                    }
                                 }
                             }
                         }
