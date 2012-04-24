@@ -130,7 +130,7 @@ void initialize_tracker()
     flgFirst = true;
 }
 
-bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result, const Mat& occupancy, unsigned long long time_stamp )
+bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result, std::map<unsigned long long, std::multimap<int,cv::Point2d> >* p_ext_result, const Mat& occupancy, unsigned long long time_stamp )
 {
     static TIME_MICRO_SEC timeTracking; // 追跡時刻[usec]
                                  // [timeTracking - commonParam.termTracking, timeTrackig) の範囲で追跡処理を行う事を意味する
@@ -585,7 +585,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 //            }
 
         // セクション分割
-        DivideIntoSections( &infoTrj, rnvtrjParam );
+        map<int,int> pointIdxToTrjNo;
+        DivideIntoSections( &infoTrj, &pointIdxToTrjNo, rnvtrjParam );
 
         // 各セクションでセットを作成
         for( int i = 0; i < (int)infoTrj.section.size(); ++i ) {
@@ -611,7 +612,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 vector<TrajectoryElement> trjElement;
                 vector<int> idTrjElement;
                 double t1 = 0.0, t2 = 0.0, t3 = 0.0;
-                double e = Optimize( &trjElement, &idTrjElement, &reserve, idxSec, idxSet, 20, &infoTrj, rnvtrjParam, &t1, &t2, &t3 );
+                double e = Optimize( &trjElement, &idTrjElement, &reserve, idxSec, idxSet, 20, &infoTrj, &pointIdxToTrjNo, rnvtrjParam, &t1, &t2, &t3 );
                 if( e >= 0.0 && ( min < 0.0 || e < min ) ) {
                     optOfSec = trjElement;
                     idOptOfSec = idTrjElement;
@@ -626,7 +627,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             idOpt.insert( idOpt.end(), idOptOfSec.begin(), idOptOfSec.end() );
         }
 
-#define RE_RENOVATE
+//#define RE_RENOVATE
 #ifdef RE_RENOVATE
         //
         // 再修復を行う
@@ -728,11 +729,14 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             //(*p_result)[ id ] = trj; // 表示用
         }
 
+        //map<unsigned long long, multimap<int,Point2d> > ext_result;
+
         for( unsigned long long time = max( timeTracking - commonParam.termTracking, timeEarliestPEPMap )
                 ; time < timeTracking - ( commonParam.termTracking - commonParam.intervalTracking )
                 ; time += commonParam.intervalTrajectory ) {
 
             (*p_result)[ time ];
+            (*p_ext_result)[ time ];
 
             map<int,CTrajectory>::const_iterator itResult = resultTrajectory.begin();
             for( ; itResult != resultTrajectory.end(); ++itResult ) {
@@ -742,13 +746,21 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     for( ; itPos != trajectory.front().end(); ++itPos ) {
                         if( itPos->t == time ) {
                             (*p_result)[ time ][ itResult->first ] = Point2d( itPos->x, itPos->y );
+                            const int trj_no = itPos->ID;
+                            for( CTrajectory::iterator it = trajectoriesClustered[ trj_no ].begin()
+                               ; it != trajectoriesClustered[ trj_no ].end(); ++it ) {
+                                   TrajectoryElement::iterator itPos2;
+                                if( ( itPos2 = it->lower_bound( PosXYT( 0.0, 0.0, time ) ) ) != it->end() ) {
+                                    (*p_ext_result)[ time ].insert( pair<int,Point2d>( itResult->first, Point2d( itPos2->x, itPos2->y ) ) );
+                                }
+                            }
                         }
                     }
                 }
             }
         }
 
-	viewer.SetResult( *p_result );
+        viewer.SetResult( *p_result );
 
         //
         // Output process information of renovation

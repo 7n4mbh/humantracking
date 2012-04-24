@@ -461,9 +461,10 @@ int bumblebee_mode()
                 // Tracking
                 //map<int,CTrajectory> result;
                 map< unsigned long long, map<int,Point2d> > result;
-                if( track( &result, occupancy, pepmap.timeStamp ) ) {
+                map<unsigned long long, multimap<int,Point2d> > ext_result;
+                if( track( &result, &ext_result, occupancy, pepmap.timeStamp ) ) {
                     // Store result view resources
-                    resTracking.AddResultTrajectories( result );
+                    resTracking.AddResultTrajectories( result, ext_result );
                 }
 	            //cout << "Adding PEP-map info...";
                 resTracking.AddPEPMapInfo( pepmap );
@@ -679,9 +680,10 @@ int pepmapfile_mode( string strVideoFile )
             
             // Tracking
             map< unsigned long long, map<int,Point2d> > result;
-            if( track( &result, occupancy, pepmap.timeStamp ) ) {
+            map<unsigned long long, multimap<int,Point2d> > ext_result;
+            if( track( &result, &ext_result, occupancy, pepmap.timeStamp ) ) {
                 // Store result view resources
-                resTracking.AddResultTrajectories( result );
+                resTracking.AddResultTrajectories( result, ext_result );
             }
             resTracking.AddPEPMapInfo( pepmap );
         } else if( str.find( "<CameraImage>" ) != str.npos ) {

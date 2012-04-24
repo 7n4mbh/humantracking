@@ -955,6 +955,8 @@ void execute( int start_frame = 0 )
 	        cout << "<Geometry>" << endl // Header
                  << camInfo.serialNumber << endl // Serial Number
                  << timeStamp << endl // Time stamp             
+                 << geometry.cols << endl // Width
+                 << geometry.rows << endl // Height
                  << len_compressed_geometry << endl; // PEPMap data length
 	        for( size_t i = 0; i < len_compressed_geometry; ++i ) { // Geometry map data
 	          cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
@@ -966,6 +968,8 @@ void execute( int start_frame = 0 )
 	        ofs << "<Geometry>" << endl // Header
                  << camInfo.serialNumber << endl // Serial Number
                  << timeStamp << endl // Time stamp             
+                 << geometry.cols << endl // Width
+                 << geometry.rows << endl // Height
                  << len_compressed_geometry << endl; // PEPMap data length
 	        for( size_t i = 0; i < len_compressed_geometry; ++i ) { // Geometry map data
 	          ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];

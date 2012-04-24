@@ -23,6 +23,7 @@ private:
     int delayUpdate;
     std::deque<PEPMapInfo> bufPEPMap;
     std::map<unsigned long long, std::map<int,cv::Point2d> > trackingResult;
+    std::map<unsigned long long, std::multimap<int,cv::Point2d> > trackingResultExt;
     std::string strResultFilename;
     std::map<int,cv::Point2d> posHumanStill;
     std::map<int,unsigned long> cntStill;
@@ -40,7 +41,7 @@ private:
 public:
     TrackingResultResources();
     virtual ~TrackingResultResources();
-    void AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result );
+    void AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result, const std::map<unsigned long long, std::multimap<int,cv::Point2d> >& ext_result );
     void AddPEPMapInfo( PEPMapInfo& pepmap );
     bool EnableViewWindow();
     bool TerminateViewWindow();

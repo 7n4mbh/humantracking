@@ -42,6 +42,7 @@ void TrackingResultResources::init( std::string filename, Viewer* p_viewer )
 {
     bufPEPMap.clear();
     trackingResult.clear();
+    trackingResultExt.clear();
     nUpdateViewRequest = 0;
     delayUpdate = 0;
     posHumanStill.clear();
@@ -55,13 +56,14 @@ void TrackingResultResources::clear()
 {
     bufPEPMap.clear();
     trackingResult.clear();
+    trackingResultExt.clear();
     nUpdateViewRequest = 0;
     posHumanStill.clear();
     cntStill.clear();
     ofstream ofs( strResultFilename.c_str() );
 }
 
-void TrackingResultResources::AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result )
+void TrackingResultResources::AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result, const std::map<unsigned long long, std::multimap<int,cv::Point2d> >& ext_result )
 {
 #ifdef WINDOWS_OS
     EnterCriticalSection( &cs );
@@ -73,32 +75,43 @@ void TrackingResultResources::AddResultTrajectories( const std::map< unsigned lo
 
     ofstream ofs(  strResultFilename.c_str(), ios::out | ios::app );
 
-    map< unsigned long long, map<int,Point2d> >::const_iterator it = result.begin();
-    for( ; it != result.end(); ++it ) {
-        trackingResult[ it->first ].insert( it->second.begin(), it->second.end() );
-        ofs << it->first // Timestamp
-            << ", " << it->second.size(); // # of people
-        for( map<int,Point2d>::const_iterator itPosHuman = it->second.begin(); itPosHuman != it->second.end(); ++itPosHuman ) {
-            ofs << ", " << itPosHuman->first // ID
-                << ", " << itPosHuman->second.x // X
-                << ", " << itPosHuman->second.y; // Y
-	    map<int,Point2d>::iterator itPosHumanStill;
-	    if( ( itPosHumanStill = posHumanStill.find( itPosHuman->first ) ) != posHumanStill.end() ) {
-		const float dx = itPosHumanStill->second.x - itPosHuman->second.x;
-		const float dy = itPosHumanStill->second.y - itPosHuman->second.y;
-		const float dist = sqrt( dx * dx + dy * dy );
-		if( dist < 0.5f ) {
-		    cntStill[ itPosHuman->first ]++;
-		} else {
-		    cntStill[ itPosHuman->first ] = 0;
-		    itPosHumanStill->second = itPosHuman->second;
-		}
-	    } else {
-		posHumanStill[ itPosHuman->first ] = itPosHuman->second;
+
+    {
+        map< unsigned long long, map<int,Point2d> >::const_iterator it = result.begin();
+        for( ; it != result.end(); ++it ) {
+            trackingResult[ it->first ].insert( it->second.begin(), it->second.end() );
+            ofs << it->first // Timestamp
+                << ", " << it->second.size(); // # of people
+            for( map<int,Point2d>::const_iterator itPosHuman = it->second.begin(); itPosHuman != it->second.end(); ++itPosHuman ) {
+                ofs << ", " << itPosHuman->first // ID
+                    << ", " << itPosHuman->second.x // X
+                    << ", " << itPosHuman->second.y; // Y
+	        map<int,Point2d>::iterator itPosHumanStill;
+	        if( ( itPosHumanStill = posHumanStill.find( itPosHuman->first ) ) != posHumanStill.end() ) {
+		    const float dx = itPosHumanStill->second.x - itPosHuman->second.x;
+		    const float dy = itPosHumanStill->second.y - itPosHuman->second.y;
+		    const float dist = sqrt( dx * dx + dy * dy );
+		    if( dist < 0.5f ) {
+		        cntStill[ itPosHuman->first ]++;
+		    } else {
+		        cntStill[ itPosHuman->first ] = 0;
+		        itPosHumanStill->second = itPosHuman->second;
+		    }
+	        } else {
+		    posHumanStill[ itPosHuman->first ] = itPosHuman->second;
+	        }
 	    }
-	}
-        ofs << endl;
+            ofs << endl;
+        }
     }
+
+    {
+        std::map<unsigned long long, std::multimap<int,cv::Point2d> >::const_iterator it = ext_result.begin();
+        for( ; it != ext_result.end(); ++it ) {
+            trackingResultExt[ it->first ].insert( it->second.begin(), it->second.end() );
+        }
+    }
+
 #ifdef WINDOWS_OS
     LeaveCriticalSection( &cs );
 #endif
@@ -246,6 +259,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
             PEPMapInfo pepmap = pTrackingResultResources->bufPEPMap.front();
             unsigned long long timeStamp = pTrackingResultResources->trackingResult.begin()->first;
             map<int,Point2d> posHuman = pTrackingResultResources->trackingResult.begin()->second;
+            multimap<int,Point2d> regionHuman = pTrackingResultResources->trackingResultExt.begin()->second;
 #ifdef WINDOWS_OS
             LeaveCriticalSection( &pTrackingResultResources->cs );
 #endif
@@ -350,6 +364,12 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 		            }
                 }
 
+                for( multimap<int,Point2d>::iterator itHuman = regionHuman.begin(); itHuman != regionHuman.end(); ++itHuman ) {
+                    int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_width / 2.0f ) );
+                    int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_height / 2.0f ) );
+                    rectangle( img_display, Point( row - 1, col - 1 ), Point( row + 1, col + 1 ), color_table[ itHuman->first % sizeColorTable ], CV_FILLED );
+                }
+
                 //for( deque< map<int,Point2d> >::iterator itPosHuman = result_buffer.begin(); itPosHuman != result_buffer.end(); ++itPosHuman ) {
                 //    for( map<int,Point2d>::iterator it = itPosHuman->begin(); it != itPosHuman->end(); ++it ) {
                 //        int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( it->second.x - roi_x ) + roi_width / 2.0f ) );
@@ -378,6 +398,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
                 pTrackingResultResources->trackingResult.erase( pTrackingResultResources->trackingResult.begin() );
+                pTrackingResultResources->trackingResultExt.erase( pTrackingResultResources->trackingResultExt.begin() );
 		//cout << " -> erase()" << endl;
 #ifdef WINDOWS_OS
                 LeaveCriticalSection( &pTrackingResultResources->cs );

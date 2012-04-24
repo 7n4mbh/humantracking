@@ -21,7 +21,7 @@ using namespace std;
 //using namespace nyx::util::random;
 //using namespace nyx::util::research;
 
-void DivideIntoSections( TrajectoriesInfo* pInfoTrj, PARAM_RENOVATE_TRAJECTORY param )
+void DivideIntoSections( TrajectoriesInfo* pInfoTrj, std::map<int,int>* pPointIdxToTrjNo, PARAM_RENOVATE_TRAJECTORY param )
 {
     TrajectoriesInfo& infoTrj = *pInfoTrj;
 
@@ -44,9 +44,9 @@ void DivideIntoSections( TrajectoriesInfo* pInfoTrj, PARAM_RENOVATE_TRAJECTORY p
     }
 
     // 全ての軌跡に含まれる点をpointsに格納する
-    int idxPoint = 0;
+    int idxPoint = 0, idxTrj = 0;
     vector<TrajectoryElement>::iterator itTrj = infoTrj.trjElement.begin();
-    for( ; itTrj != infoTrj.trjElement.end(); ++itTrj ) {
+    for( ; itTrj != infoTrj.trjElement.end(); ++itTrj, ++idxTrj ) {
         TrajectoryWithPointIndex trjPointIdx;
         TrajectoryElement::iterator itPos = itTrj->begin();
         for( ; itPos != itTrj->end(); ++itPos ) {
@@ -57,6 +57,7 @@ void DivideIntoSections( TrajectoriesInfo* pInfoTrj, PARAM_RENOVATE_TRAJECTORY p
             pos.y = itPos->y;
             infoTrj.points.push_back( pos );
             trjPointIdx.push_back( PointIndex( itPos->t, idxPoint ) );
+            (*pPointIdxToTrjNo)[ idxPoint ] = idxTrj;
             ++idxPoint;
         }
         infoTrj.trjPointIdx.push_back( trjPointIdx );
@@ -71,7 +72,7 @@ void DivideIntoSections( TrajectoriesInfo* pInfoTrj, PARAM_RENOVATE_TRAJECTORY p
     for( size_t i = 0; i < infoTrj.points.size(); ++i ) {
         index[ infoTrj.points[ i ].ID ] = (int)i;
     }
-    int idxTrj = 0;
+    /*int*/ idxTrj = 0;
     vector<TrajectoryWithPointIndex>::iterator itTrjPointIdx = infoTrj.trjPointIdx.begin();
     for( ; itTrjPointIdx != infoTrj.trjPointIdx.end(); ++itTrjPointIdx ) {
         TrajectoryWithPointIndex::iterator itPointIdx = itTrjPointIdx->begin();
@@ -1401,7 +1402,7 @@ void MakeSet( int idxSection, TrajectoriesInfo* pInfoTrj, map<int,int>* pReserve
 //    return min_energy + energyExPoints;
 //}
 
-double Optimize( vector<TrajectoryElement>* pDst, std::vector<int>* pDstID, std::map<int,int>* pReserve, int idxSection, int idxSet, int nStart, TrajectoriesInfo* pInfoTrj, PARAM_RENOVATE_TRAJECTORY param, double* p_t1, double* p_t2, double* p_t3 )
+double Optimize( vector<TrajectoryElement>* pDst, std::vector<int>* pDstID, std::map<int,int>* pReserve, int idxSection, int idxSet, int nStart, TrajectoriesInfo* pInfoTrj, std::map<int,int>* pPointIdxToTrjNo, PARAM_RENOVATE_TRAJECTORY param, double* p_t1, double* p_t2, double* p_t3 )
 {
     TrajectoriesInfo& infoTrj = *pInfoTrj;
     Section& section = infoTrj.section[ idxSection ];
@@ -1890,7 +1891,7 @@ double Optimize( vector<TrajectoryElement>* pDst, std::vector<int>* pDstID, std:
                     if( find( infoTrj.connectable[ idxPrevPoint ].begin()
                             , infoTrj.connectable[ idxPrevPoint ].end()
                             , idxPoint ) != infoTrj.connectable[ idxPrevPoint ].end() ) {
-                        trj.insert( PosXYT( pos.x, pos.y, pos.t ) );
+                        trj.insert( PosXYTID( pos.x, pos.y, pos.t, (*pPointIdxToTrjNo)[ idxPoint ] ) );
                         ++nEnabledPoints;
                     } else {
                         if( trj.size() >= 3 ) {
@@ -1899,11 +1900,11 @@ double Optimize( vector<TrajectoryElement>* pDst, std::vector<int>* pDstID, std:
                         }
                         id = -1;
                         trj.clear();
-                        trj.insert( PosXYT( pos.x, pos.y, pos.t ) );
+                        trj.insert( PosXYTID( pos.x, pos.y, pos.t, (*pPointIdxToTrjNo)[ idxPoint ] ) );
                         ++nEnabledPoints;
                     }
                 } else {
-                        trj.insert( PosXYT( pos.x, pos.y, pos.t ) );
+                        trj.insert( PosXYTID( pos.x, pos.y, pos.t, (*pPointIdxToTrjNo)[ idxPoint ] ) );
                         ++nEnabledPoints;
                 }
                 flgMaking = true;

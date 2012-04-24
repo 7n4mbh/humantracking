@@ -72,7 +72,7 @@ typedef struct {
 
 bool load_track_parameters( std::string strPath, std::string strFileName );
 void initialize_tracker();
-bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result, const cv::Mat& occupancy, unsigned long long time_stamp );
+bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result, std::map<unsigned long long, std::multimap<int,cv::Point2d> >* p_ext_result, const cv::Mat& occupancy, unsigned long long time_stamp );
 
 void Gaussian( std::vector<PosXYTVID>* pPosVec, float stdev );
 
@@ -98,9 +98,9 @@ int Clustering2( std::vector< std::vector<int> >* pDst, std::vector<int>& classI
 bool VerifyClusteredTrajectories( CTrajectory& trj, double threshold );
 void CalcFrequency( double* pDst, double* distTable, int size, double sigma, double thDist );
 void ReduceTrajectory( vector<int>* pDst, double* frequency, int size, double fval );
-void DivideIntoSections( TrajectoriesInfo* pInfoTrj, PARAM_RENOVATE_TRAJECTORY param );
+void DivideIntoSections( TrajectoriesInfo* pInfoTrj, std::map<int,int>* pPointIdxToTrjNo, PARAM_RENOVATE_TRAJECTORY param );
 void MakeSet( int idxSection, TrajectoriesInfo* pInfoTrj, map<int,int>* pReserve );
-double Optimize( std::vector<TrajectoryElement>* pDst, std::vector<int>* pDstID, std::map<int,int>* pReserve, int idxSection, int idxSet, int nStart, TrajectoriesInfo* pInfoTrj, PARAM_RENOVATE_TRAJECTORY param, double* p_t1 = NULL, double* p_t2 = NULL, double* p_t3 = NULL );
+double Optimize( std::vector<TrajectoryElement>* pDst, std::vector<int>* pDstID, std::map<int,int>* pReserve, int idxSection, int idxSet, int nStart, TrajectoriesInfo* pInfoTrj, std::map<int,int>* pPointIdxToTrjNo, PARAM_RENOVATE_TRAJECTORY param, double* p_t1 = NULL, double* p_t2 = NULL, double* p_t3 = NULL );
 
 void OutputProcess( TIME_MICRO_SEC timeBegin
                      , TIME_MICRO_SEC timeEnd
