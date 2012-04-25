@@ -163,6 +163,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
     static bool flgTrackingStarts;
 
+    static set<TIME_MICRO_SEC> time_of_received_pepmap;
+
     bool ret = false;
 
     if( flgFirst ) {
@@ -192,6 +194,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         flgTrackingStarts = false;
     }
     
+    time_of_received_pepmap.insert( time_stamp );
+
     logTracking.making_trajectory( TrackingProcessLogger::Start );
 
     // PEPMapをサンプラに追加する
@@ -738,6 +742,12 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             (*p_result)[ time ];
             (*p_ext_result)[ time ];
 
+            const set<TIME_MICRO_SEC>::iterator it_start_pepmap_time = time_of_received_pepmap.lower_bound( time );
+            const set<TIME_MICRO_SEC>::iterator it_end_pepmap_time = time_of_received_pepmap.lower_bound( time + commonParam.intervalTrajectory );
+            for( set<TIME_MICRO_SEC>::iterator it = it_start_pepmap_time; it != it_end_pepmap_time; ++it ) {
+               (*p_ext_result)[ *it ]; 
+            }
+
             map<int,CTrajectory>::const_iterator itResult = resultTrajectory.begin();
             for( ; itResult != resultTrajectory.end(); ++itResult ) {
                 const CTrajectory& trajectory = itResult->second;
@@ -746,13 +756,26 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     for( ; itPos != trajectory.front().end(); ++itPos ) {
                         if( itPos->t == time ) {
                             (*p_result)[ time ][ itResult->first ] = Point2d( itPos->x, itPos->y );
+
                             const int trj_no = itPos->ID;
                             if( trj_no < trajectoriesClustered.size() ) {
                                 for( CTrajectory::iterator it = trajectoriesClustered[ trj_no ].begin()
                                    ; it != trajectoriesClustered[ trj_no ].end(); ++it ) {
-                                       TrajectoryElement::iterator itPos2;
+                                    TrajectoryElement::iterator itPos2;
                                     if( ( itPos2 = it->find( PosXYT( 0.0, 0.0, time ) ) ) != it->end() ) {
                                         (*p_ext_result)[ time ].insert( pair<int,Point2d>( itResult->first, Point2d( itPos2->x, itPos2->y ) ) );
+                                        PosXYT pos0, pos1;
+                                        pos0 = *itPos2;
+                                        advance( itPos2, 1 );
+                                        if( itPos2 != it->end() ) {
+                                            pos1 = *itPos2;
+                                            for( set<TIME_MICRO_SEC>::iterator it = it_start_pepmap_time; it != it_end_pepmap_time; ++it ) {
+                                                PosXYT pos;
+                                                pos.x = ( pos1.x - pos0.x ) / ( (double)( pos1.t - pos0.t ) ) * ( (double)( *it - *it_start_pepmap_time ) ) + pos0.x;
+                                                pos.y = ( pos1.y - pos0.y ) / ( (double)( pos1.t - pos0.t ) ) * ( (double)( *it - *it_start_pepmap_time ) ) + pos0.y;
+                                                (*p_ext_result)[ *it ].insert( pair<int,Point2d>( itResult->first, Point2d( pos.x, pos.y ) ) );
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -810,6 +833,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         newStorageTrajectoryElement.assign( storageTrajectoryElement.begin(), storageTrajectoryElement.end() );
         newStorageTrajectoryElement.Clip( timeTracking - ( commonParam.termTracking - commonParam.intervalTracking ), timeTracking );
         storageTrajectoryElement.assign( newStorageTrajectoryElement.begin(), newStorageTrajectoryElement.end() );
+
+        time_of_received_pepmap.erase( time_of_received_pepmap.begin()
+                                     , time_of_received_pepmap.lower_bound( timeTracking - ( commonParam.termTracking - commonParam.intervalTracking ) ) );
 
         timeTracking += commonParam.intervalTracking;
 

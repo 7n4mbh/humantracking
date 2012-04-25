@@ -259,7 +259,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
             PEPMapInfo pepmap = pTrackingResultResources->bufPEPMap.front();
             unsigned long long timeStamp = pTrackingResultResources->trackingResult.begin()->first;
             map<int,Point2d> posHuman = pTrackingResultResources->trackingResult.begin()->second;
-            multimap<int,Point2d> regionHuman = pTrackingResultResources->trackingResultExt.begin()->second;
+            
 #ifdef WINDOWS_OS
             LeaveCriticalSection( &pTrackingResultResources->cs );
 #endif
@@ -366,10 +366,14 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 		            }
                 }
 
-                for( multimap<int,Point2d>::iterator itHuman = regionHuman.begin(); itHuman != regionHuman.end(); ++itHuman ) {
-                    int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_width / 2.0f ) );
-                    int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_height / 2.0f ) );
-                    rectangle( img_display, Point( row - scale_height / 2, col - scale_width / 2 ), Point( row + scale_height / 2, col + scale_width / 2 ), color_table[ itHuman->first % sizeColorTable ], CV_FILLED );
+                
+                map<unsigned long long,multimap<int,Point2d> >::iterator itRegionHuman = pTrackingResultResources->trackingResultExt.find( pepmap.timeStamp );
+                if( itRegionHuman != pTrackingResultResources->trackingResultExt.end() ) {
+                    for( multimap<int,Point2d>::iterator itHuman = itRegionHuman->second.begin(); itHuman != itRegionHuman->second.end(); ++itHuman ) {
+                        int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_width / 2.0f ) );
+                        int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_height / 2.0f ) );
+                        rectangle( img_display, Point( row - scale_height / 2, col - scale_width / 2 ), Point( row + scale_height / 2, col + scale_width / 2 ), color_table[ itHuman->first % sizeColorTable ], CV_FILLED );
+                    }
                 }
 
                 //for( deque< map<int,Point2d> >::iterator itPosHuman = result_buffer.begin(); itPosHuman != result_buffer.end(); ++itPosHuman ) {
@@ -399,8 +403,10 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 #ifdef LINUX_OS
                 pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
+                pTrackingResultResources->trackingResultExt.erase( pTrackingResultResources->trackingResultExt.begin()
+                                                                 , pTrackingResultResources->trackingResultExt.lower_bound( pTrackingResultResources->trackingResult.begin()->first )  );
                 pTrackingResultResources->trackingResult.erase( pTrackingResultResources->trackingResult.begin() );
-                pTrackingResultResources->trackingResultExt.erase( pTrackingResultResources->trackingResultExt.begin() );
+
 		//cout << " -> erase()" << endl;
 #ifdef WINDOWS_OS
                 LeaveCriticalSection( &pTrackingResultResources->cs );
