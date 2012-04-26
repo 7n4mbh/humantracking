@@ -52,8 +52,14 @@ void TrackingResultResources::init( std::string result_filename, std::string res
     strResultCameraVideoFilename = result_cameravideo_filename;
     pViewer = p_viewer;
     ofstream ofs( strResultFilename.c_str() );
-    pepmapVideoWriter.open( strResultPEPMapVideoFilename, CV_FOURCC('M','J','P','G'), 40, Size( (int)( roi_width * 80 ), (int)( roi_height * 80 ) ) );
-    cameraVideoWriter.open( strResultCameraVideoFilename, CV_FOURCC('M','J','P','G'), 10, Size( 512, 384 ) );
+    if( !pepmapVideoWriter.open( strResultPEPMapVideoFilename, CV_FOURCC('X','V','I','D'), 40, Size( (int)( roi_width * 80 ), (int)( roi_height * 80 ) ) ) ) {
+      cerr << "Couldn't open " << strResultPEPMapVideoFilename << "." <<  endl;
+      exit( 1 );
+    }
+    if( !cameraVideoWriter.open( strResultCameraVideoFilename, CV_FOURCC('X','V','I','D'), 10, Size( 512, 384 ) ) ) {
+      cerr << "Couldn't open " << strResultCameraVideoFilename << "." <<  endl;
+      exit( 1 );
+    }
 }
 
 void TrackingResultResources::clear()
