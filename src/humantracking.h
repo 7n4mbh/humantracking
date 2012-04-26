@@ -49,6 +49,13 @@ typedef struct {
     std::string data;
 } CameraImageInfo;
 
+typedef struct {
+    unsigned int serialNumber;
+    unsigned long long timeStamp;
+    int width, height;
+    std::string data;
+} GeometryMapInfo;
+
 inline unsigned long long getTimeStamp()
 {
 #ifdef WINDOWS_OS

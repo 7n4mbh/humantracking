@@ -629,6 +629,7 @@ int pepmapfile_mode( string strVideoFile )
     resTracking.EnableViewWindow();
     PEPMapInfo pepmap;
     CameraImageInfo cam_image;
+    GeometryMapInfo geometry;
     //unsigned long long timeStamp;
     //unsigned int serialNumber;
     int size;
@@ -695,6 +696,16 @@ int pepmapfile_mode( string strVideoFile )
                 >> size
                 >> cam_image.data;
             viewer.SetCameraImage( cam_image );
+            resTracking.AddCameraImageInfo( cam_image );
+       } else if( str.find( "<Geometry>" ) != str.npos ) {
+            int size;
+            ifs >> geometry.serialNumber
+                >> geometry.timeStamp
+                >> geometry.width
+                >> geometry.height
+                >> size
+                >> geometry.data;
+            resTracking.AddGeometryMapInfo( geometry );
        }
 
     }
