@@ -38,7 +38,7 @@ TrackingResultResources::~TrackingResultResources()
 #endif
 }
 
-void TrackingResultResources::init( std::string filename, Viewer* p_viewer )
+void TrackingResultResources::init( std::string result_filename, std::string result_pepmapvideo_filename, std::string result_cameravideo_filename, Viewer* p_viewer )
 {
     bufPEPMap.clear();
     trackingResult.clear();
@@ -47,9 +47,13 @@ void TrackingResultResources::init( std::string filename, Viewer* p_viewer )
     delayUpdate = 0;
     posHumanStill.clear();
     cntStill.clear();
-    strResultFilename = filename;
+    strResultFilename = result_filename;
+    strResultPEPMapVideoFilename = result_pepmapvideo_filename;
+    strResultCameraVideoFilename = result_cameravideo_filename;
     pViewer = p_viewer;
     ofstream ofs( strResultFilename.c_str() );
+    pepmapVideoWriter.open( strResultPEPMapVideoFilename, CV_FOURCC('M','J','P','G'), 40, Size( (int)( roi_width * 80 ), (int)( roi_height * 80 ) ) );
+    cameraVideoWriter.open( strResultCameraVideoFilename, CV_FOURCC('M','J','P','G'), 10, Size( 512, 384 ) );
 }
 
 void TrackingResultResources::clear()
@@ -462,6 +466,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                     }
 
                     imshow( "Camera", img_cam_display );
+                    pTrackingResultResources->cameraVideoWriter.write( img_cam_display );
                 }
 
                 //for( deque< map<int,Point2d> >::iterator itPosHuman = result_buffer.begin(); itPosHuman != result_buffer.end(); ++itPosHuman ) {
@@ -479,6 +484,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 }
 
                 imshow( "Tracking Result", img_display );
+                pTrackingResultResources->pepmapVideoWriter.write( img_display );
                 if( pTrackingResultResources->GetDelayUpdate() ) {
 		            (void)cvWaitKey( pTrackingResultResources->GetDelayUpdate() );
                 } else {

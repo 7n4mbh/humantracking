@@ -12,6 +12,7 @@
 #endif
 
 #include "opencv/cv.h"
+#include "opencv/highgui.h"
 
 #include "Trajectory.h"
 #include "Viewer.h"
@@ -26,10 +27,11 @@ private:
     std::map<unsigned long long, GeometryMapInfo> bufGeometry;
     std::map<unsigned long long, std::map<int,cv::Point2d> > trackingResult;
     std::map<unsigned long long, std::multimap<int,cv::Point2d> > trackingResultExt;
-    std::string strResultFilename;
+    std::string strResultFilename, strResultPEPMapVideoFilename, strResultCameraVideoFilename;
     std::map<int,cv::Point2d> posHumanStill;
     std::map<int,unsigned long> cntStill;
     Viewer* pViewer;
+    cv::VideoWriter pepmapVideoWriter, cameraVideoWriter;
 #ifdef WINDOWS_OS
     HANDLE hThread;
     DWORD ThreadId;
@@ -50,7 +52,7 @@ public:
     bool EnableViewWindow();
     bool TerminateViewWindow();
     void UpdateView();
-    void init( std::string filename, Viewer* p_viewer );
+    void init( std::string result_filename, std::string result_pepmapvideo_filename, std::string result_cameravideo_filename, Viewer* p_viewer );
     void clear();
     void SetDelayUpdate( int delay_update );
     int GetDelayUpdate();

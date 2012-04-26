@@ -739,7 +739,7 @@ int main( int argc, char *argv[] )
     load_pepmap_config();
     load_track_parameters( strPath, strTrackingConfigFile );
 
-    resTracking.init( strPath + "result.txt", &viewer );
+    resTracking.init( strPath + "result.txt", strPath + "result_pepmap.avi", strPath + "result_camera.avi", &viewer );
     viewer.exec();
 
     if( !flgPEPMapFile ) {
