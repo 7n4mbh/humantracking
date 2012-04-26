@@ -11,25 +11,24 @@ using namespace std;
 
 string strPEPMapFilePath;
 
-typedef struct {
-    unsigned int serialNumber;
-    unsigned long long timeStamp;
-    string data;
-} PEPMapInfo;
-
 int main( int argc, char *argv[] )
 {
     //map<unsigned long long,PEPMapInfo> pepmap;
     vector<unsigned int> serialNumber;
     vector<ifstream> ifs;
-    vector<PEPMapInfo> pepmap, geometry;
+    vector<PEPMapInfo> pepmap;
     vector<CameraImageInfo> cam_image;
+    vector<GeometryMapInfo> geometry;
     string str;
+    unsigned long long time_start = 0;
 
     for( int i = 1; i < argc; ++i ) {
         string strOpt = argv[ i ];
         if( strOpt == "-d" ) {
             strPEPMapFilePath = string( argv[ ++i ] );
+        } else if( strOpt == "-t" ) {
+            istringstream iss( string( argv[ ++i ] ).c_str() );
+            iss >> time_start;
         } else {
             serialNumber.push_back( atoi( argv[ i ]) );
         }
@@ -38,6 +37,7 @@ int main( int argc, char *argv[] )
     pepmap.resize( serialNumber.size() );
     cam_image.resize( serialNumber.size() );
     geometry.resize( serialNumber.size() );
+    ifs.resize( serialNumber.size() );
 
     for( int i = 0; i < serialNumber.size(); ++i ) {
         ostringstream oss;
@@ -56,7 +56,10 @@ int main( int argc, char *argv[] )
 		    if( str.find( "<PEPMap>" ) != str.npos ) {
                 int size;
                 ifs[ i ] >> pepmap[ i ].serialNumber >> pepmap[ i ].timeStamp >> size >> pepmap[ i ].data;
-            } else if( str.find( "<CameraImage>" ) != str.npos ) {
+                if( /*pepmap[ i ].serialNumber != 7420008 ||*/ pepmap[ i ].timeStamp >= time_start/*1236097834238000ULL*/ ) {
+                    break;
+                }
+            }/* else if( str.find( "<CameraImage>" ) != str.npos ) {
                 int size;
                 ifs[ i ] >> cam_image[ i ].serialNumber
                          >> cam_image[ i ].timeStamp
@@ -68,19 +71,33 @@ int main( int argc, char *argv[] )
                 int size;
                 ifs[ i ] >> geometry[ i ].serialNumber >> geometry[ i ].timeStamp >> size >> geometry[ i ].data;
             }
-            break;
+            break;*/
         }
     }
 
     ostringstream oss;
     oss << strPEPMapFilePath << "pepmap.dat";
-    bool flgLoop;
+    ofstream ofs( oss.str() );
+    if( !ofs.is_open() ) {
+        cerr << oss.str() << "could not be opened." << endl;
+        exit( 1 );
+    }    
+
+    bool flgLoop, flgFirst = true;
+    PEPMapInfo prev_pepmap;
     do {
         int idx_min = 0;
         for( int i = 1; i < pepmap.size(); ++i ) {
             if( ifs[ idx_min ].eof() || ( pepmap[ idx_min ].timeStamp > pepmap[ i ].timeStamp ) ) {
                 idx_min = i;
             }
+        }
+
+        if( !flgFirst && pepmap[ idx_min ].serialNumber == prev_pepmap.serialNumber && pepmap[ idx_min ].timeStamp == prev_pepmap.timeStamp ) {
+            break;
+        } else {
+            prev_pepmap = pepmap[ idx_min ];
+            flgFirst = false;
         }
 
         ofs << "<PEPMap>" << endl
@@ -103,24 +120,45 @@ int main( int argc, char *argv[] )
                          >> cam_image[ idx_min ].height
                          >> size
                          >> cam_image[ idx_min ].data;            
-                ofs << cam_image[ idx_min ].serialNumber
-                         << cam_image[ idx_min ].timeStamp
-                         << cam_image[ idx_min ].width
-                         << cam_image[ idx_min ].height
-                         << size
-                         << cam_image[ idx_min ].data;   
+                ofs << "<CameraImage>" << endl
+                    << cam_image[ idx_min ].serialNumber << endl
+                    << cam_image[ idx_min ].timeStamp << endl
+                    << cam_image[ idx_min ].width << endl
+                    << cam_image[ idx_min ].height << endl
+                    << size << endl
+                    << cam_image[ idx_min ].data << endl;   
             } else if( str.find( "<Geometry>" ) != str.npos ) {
                 int size;
-                ifs[ idx_min ] >> geometry[ idx_min ].serialNumber >> geometry[ idx_min ].timeStamp >> size >> geometry[ idx_min ].data;
-                ofs << geometry[ idx_min ].serialNumber << geometry[ idx_min ].timeStamp << size << geometry[ idx_min ].data;
+                ifs[ idx_min ] >> geometry[ idx_min ].serialNumber 
+                               >> geometry[ idx_min ].timeStamp 
+                               >> geometry[ idx_min ].width
+                               >> geometry[ idx_min ].height
+                               >> size 
+                               >> geometry[ idx_min ].data;
+                ofs << "<Geometry>" << endl
+                    << geometry[ idx_min ].serialNumber << endl
+                    << geometry[ idx_min ].timeStamp << endl
+                    << geometry[ idx_min ].width << endl
+                    << geometry[ idx_min ].height << endl
+                    << size << endl
+                    << geometry[ idx_min ].data << endl;
             }
         }
 
         flgLoop = false;
         for( int i = 0; i < ifs.size(); ++i ) {
+            cout << "    " << serialNumber[ i ];
+            if( !ifs[ i ].eof() ) {
+                cout << ":Data Available";
+            } else {
+                cout << ":No Data Available";
+            }
             flgLoop = flgLoop || !ifs[ i ].eof();
         }
+        cout << endl;
     } while( flgLoop );
+/*
+
 
         size_t nPEPMaps = 0;
         while( !ifs.eof() ) {
@@ -152,7 +190,7 @@ int main( int argc, char *argv[] )
         ofs << it->second.data.size() / 2 << endl;
         ofs << it->second.data << endl;
     }
-
+*/
     cout << "Done." << endl;
 
     return 0;
