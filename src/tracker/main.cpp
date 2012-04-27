@@ -711,7 +711,12 @@ int pepmapfile_mode( string strVideoFile )
     }
 
     while( resTracking.hasDataToDisplay() ) {
-        cvWaitKey( 1000 );
+#ifdef WINDOWS_OS
+	Sleep( 1000 );
+#endif
+#ifdef LINUX_OS     
+        sleep( 1 );
+#endif
     }
 
     resTracking.TerminateViewWindow();
