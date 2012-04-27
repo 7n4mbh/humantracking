@@ -155,6 +155,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
     // 追跡結果（IDと軌跡のマップ）
     static map<int,CTrajectory> resultTrajectory;
 
+    //static vector<CTrajectory> prevTrajectoriesClustered;
+    static map<unsigned long long, std::multimap<int,cv::Point2d> >  remainedExtendedResult;
+
     // idNext
     // 次に割り振るべきID番号
     static int idNext;
@@ -173,6 +176,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         tableLUMSlice.clear();
         storageTrajectoryElement.clear();
         resultTrajectory.clear();
+        remainedExtendedResult.clear();
         idNext = 1;
         timeEarliestPEPMap = time_stamp;
         timeTracking = timeEarliestPEPMap + commonParam.termTracking;
@@ -735,7 +739,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         //map<unsigned long long, multimap<int,Point2d> > ext_result;
 
-        for( unsigned long long time = max( timeTracking - commonParam.termTracking, timeEarliestPEPMap )
+        unsigned long long time;
+        p_ext_result->insert( remainedExtendedResult.begin(), remainedExtendedResult.end() );
+        for( /*unsigned long long*/ time = max( timeTracking - commonParam.termTracking, timeEarliestPEPMap )
                 ; time < timeTracking - ( commonParam.termTracking - commonParam.intervalTracking )
                 ; time += commonParam.intervalTrajectory ) {
 
@@ -784,6 +790,49 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 }
             }
         }
+
+        remainedExtendedResult.clear();
+        for( ; time < timeTracking; time += commonParam.intervalTrajectory ) {
+            const set<TIME_MICRO_SEC>::iterator it_start_pepmap_time = time_of_received_pepmap.lower_bound( time );
+            const set<TIME_MICRO_SEC>::iterator it_end_pepmap_time = time_of_received_pepmap.lower_bound( time + commonParam.intervalTrajectory );
+
+            map<int,CTrajectory>::const_iterator itResult = resultTrajectory.begin();
+            for( ; itResult != resultTrajectory.end(); ++itResult ) {
+                const CTrajectory& trajectory = itResult->second;
+                if( trajectory.size() > 0 ) {
+                    TrajectoryElement::iterator itPos = trajectory.front().begin();
+                    for( ; itPos != trajectory.front().end(); ++itPos ) {
+                        if( itPos->t == time ) {
+                            //(*p_result)[ time ][ itResult->first ] = Point2d( itPos->x, itPos->y );
+
+                            const int trj_no = itPos->ID;
+                            //if( trj_no < trajectoriesClustered.size() ) {
+                                for( CTrajectory::iterator it = trajectoriesClustered[ trj_no ].begin()
+                                   ; it != trajectoriesClustered[ trj_no ].end(); ++it ) {
+                                    TrajectoryElement::iterator itPos2;
+                                    if( ( itPos2 = it->find( PosXYT( 0.0, 0.0, time ) ) ) != it->end() ) {
+                                        (*p_ext_result)[ time ].insert( pair<int,Point2d>( itResult->first, Point2d( itPos2->x, itPos2->y ) ) );
+                                        PosXYT pos0, pos1;
+                                        pos0 = *itPos2;
+                                        advance( itPos2, 1 );
+                                        if( itPos2 != it->end() ) {
+                                            pos1 = *itPos2;
+                                            for( set<TIME_MICRO_SEC>::iterator it = it_start_pepmap_time; it != it_end_pepmap_time; ++it ) {
+                                                PosXYT pos;
+                                                pos.x = ( pos1.x - pos0.x ) / ( (double)( pos1.t - pos0.t ) ) * ( (double)( *it - *it_start_pepmap_time ) ) + pos0.x;
+                                                pos.y = ( pos1.y - pos0.y ) / ( (double)( pos1.t - pos0.t ) ) * ( (double)( *it - *it_start_pepmap_time ) ) + pos0.y;
+                                                remainedExtendedResult[ *it ].insert( pair<int,Point2d>( itResult->first, Point2d( pos.x, pos.y ) ) );
+                                            }
+                                        }
+                                    }
+                                }
+                            //}
+                        }
+                    }
+                }
+            }       
+        }
+
 
         viewer.SetResult( *p_result );
 
@@ -836,6 +885,10 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         time_of_received_pepmap.erase( time_of_received_pepmap.begin()
                                      , time_of_received_pepmap.lower_bound( timeTracking - ( commonParam.termTracking - commonParam.intervalTracking ) ) );
+
+
+        //prevTrajectoriesClustered = trajectoriesClustered;
+
 
         timeTracking += commonParam.intervalTracking;
 

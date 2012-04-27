@@ -422,13 +422,17 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 map<int,int> geometry_to_ID;
                 if( itRegionHuman != pTrackingResultResources->trackingResultExt.end() ) {
                     for( multimap<int,Point2d>::iterator itHuman = itRegionHuman->second.begin(); itHuman != itRegionHuman->second.end(); ++itHuman ) {
-                        int col_on_pepmap = scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_width / 2.0f );
-                        int row_on_pepmap = scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_height / 2.0f );
-                        int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * col_on_pepmap );
-                        int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * row_on_pepmap );
-                        int keyval = col_on_pepmap * occupancy.rows + row_on_pepmap + 1;
-                        rectangle( img_display, Point( row - scale_height / 2, col - scale_width / 2 ), Point( row + scale_height / 2, col + scale_width / 2 ), color_table[ itHuman->first % sizeColorTable ], CV_FILLED );
-                        geometry_to_ID[ keyval ] = itHuman->first;
+                        int _col_on_pepmap = scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_width / 2.0f );
+                        int _row_on_pepmap = scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_height / 2.0f );
+                        for( int col_on_pepmap = max( _col_on_pepmap - 2, 0 ); col_on_pepmap < min( _col_on_pepmap + 2, occupancy.cols - 1 ); ++col_on_pepmap ) {
+                            for( int row_on_pepmap = max( _row_on_pepmap - 2, 0 ); row_on_pepmap < min( _row_on_pepmap + 2, occupancy.rows - 1 ); ++row_on_pepmap ) {
+                                int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * col_on_pepmap );
+                                int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * row_on_pepmap );
+                                int keyval = col_on_pepmap * occupancy.rows + row_on_pepmap + 1;
+                                rectangle( img_display, Point( row - scale_height / 2, col - scale_width / 2 ), Point( row + scale_height / 2, col + scale_width / 2 ), color_table[ itHuman->first % sizeColorTable ], CV_FILLED );
+                                geometry_to_ID[ keyval ] = itHuman->first;
+                            }
+                        }
                     }
                 }
 
