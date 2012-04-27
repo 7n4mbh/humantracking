@@ -73,6 +73,27 @@ void TrackingResultResources::clear()
     ofstream ofs( strResultFilename.c_str() );
 }
 
+bool TrackingResultResources::hasDataToDisplay()
+{
+#ifdef WINDOWS_OS
+    EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_lock( &mutex );
+#endif
+
+    bool ret = !bufPEPMap.empty() && !trackingResult.empty();
+
+#ifdef WINDOWS_OS
+    LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_unlock( &mutex );
+#endif
+
+    return ret;
+}
+
 void TrackingResultResources::AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result, const std::map<unsigned long long, std::multimap<int,cv::Point2d> >& ext_result )
 {
 #ifdef WINDOWS_OS

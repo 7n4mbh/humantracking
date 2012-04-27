@@ -56,6 +56,7 @@ public:
     void clear();
     void SetDelayUpdate( int delay_update );
     int GetDelayUpdate();
+    bool hasDataToDisplay();
 
 private:
 #ifdef WINDOWS_OS

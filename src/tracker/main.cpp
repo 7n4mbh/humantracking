@@ -618,7 +618,7 @@ int pepmapfile_mode( string strVideoFile )
         return false;
     }
 
-    resTracking.SetDelayUpdate( 25 );
+    resTracking.SetDelayUpdate( 10 );
 
 	char buf[ SIZE_BUFFER ];
     string str;
@@ -709,6 +709,13 @@ int pepmapfile_mode( string strVideoFile )
        }
 
     }
+
+    while( resTracking.hasDataToDisplay() ) {
+        cvWaitKey( 1000 );
+    }
+
+    resTracking.TerminateViewWindow();
+
     return 0;
 }
 
