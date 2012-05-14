@@ -142,6 +142,21 @@ int main( int argc, char *argv[] )
                     << geometry[ idx_min ].height << endl
                     << size << endl
                     << geometry[ idx_min ].data << endl;
+            } else if( str.find( "<Geometry2>" ) != str.npos ) {
+                int size;
+                ifs[ idx_min ] >> geometry[ idx_min ].serialNumber 
+                               >> geometry[ idx_min ].timeStamp 
+                               >> geometry[ idx_min ].width
+                               >> geometry[ idx_min ].height
+                               >> size 
+                               >> geometry[ idx_min ].data;
+                ofs << "<Geometry2>" << endl
+                    << geometry[ idx_min ].serialNumber << endl
+                    << geometry[ idx_min ].timeStamp << endl
+                    << geometry[ idx_min ].width << endl
+                    << geometry[ idx_min ].height << endl
+                    << size << endl
+                    << geometry[ idx_min ].data << endl;
             }
         }
 

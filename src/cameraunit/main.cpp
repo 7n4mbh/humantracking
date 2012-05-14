@@ -59,6 +59,7 @@ VideoCapture video;
 vector<unsigned long long> frame_to_timestamp;
 
 bool flgSavePEPMap = false;
+bool flgSaveCamImage = false;
 bool flgStdOutPEPMap = true;
 bool flgStdOutCamImage = true;
 bool flgStdOutGeometryMap = true;
@@ -797,6 +798,7 @@ void execute( int start_frame = 0 )
         Mat occupancy_2 = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
         Mat occupancy_3 = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
         Mat geometry = Mat::zeros( height, width, CV_16U );
+        Mat geometry_2 = Mat::zeros( height, width, CV_16U );
         int row, col;
         if( !flgNullPEPMap ) {
             //vector<Point3f> point_foreground;
@@ -820,18 +822,23 @@ void execute( int start_frame = 0 )
                             if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
                                 occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
                             }
-                            //row = (int)( occupancy_2.rows - scale_m2px * pv_z );
+                            geometry.at<unsigned short>( y, x ) = row * occupancy.cols + col + 1;
+                            
+                            row = (int)( occupancy_2.rows - scale_m2px * pv_z );
                             //if( row >= 0 && row < occupancy_2.rows && col >= 0 && col < occupancy_2.cols ) {
                             //    occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
                             //}
+                            geometry_2.at<unsigned short>( y, x ) = row * occupancy_2.cols + col + 1;
+
                             //col = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) );
                             //if( row >= 0 && row < occupancy_3.rows && col >= 0 && col < occupancy_3.cols ) {
                             //    occupancy_3.at<unsigned short>( row, col ) = occupancy_3.at<unsigned short>( row, col ) + 1;
                             //}
-                            geometry.at<unsigned short>( y, x ) = row * occupancy.cols + col + 1;
+
                         } else {
                             img_depth.at<float>( y, x ) = 0.0f;
                             geometry.at<unsigned short>( y, x ) = 0;
+                            geometry_2.at<unsigned short>( y, x ) = 0;
                         }
                     }
                 }
@@ -926,7 +933,7 @@ void execute( int start_frame = 0 )
 	        cout << dec << endl;
         }
 
-        if( flgSavePEPMap ) {
+        if( flgSaveCamImage ) {
             ofs << "<CameraImage>" << endl // Header
                  << camInfo.serialNumber << endl // Serial Number
                  << timeStamp << endl // Time stamp
@@ -942,39 +949,83 @@ void execute( int start_frame = 0 )
 
         //
         // Send Geometry data to stdout
-        // Compress occupancy map
-        uLongf len_compressed_geometry = len_compress_buf_geometry;
-        compress( compress_buf_geometry
-                , &len_compressed_geometry
-                , geometry.data
-                , len_compress_buf_geometry );
-        cout << "Compressed the geometry map: size=" << len_compress_buf_geometry << " -> " << len_compressed_geometry << "[bytes]" << endl;
+        {
+            // Compress geometry map
+            uLongf len_compressed_geometry = len_compress_buf_geometry;
+            compress( compress_buf_geometry
+                    , &len_compressed_geometry
+                    , geometry.data
+                    , len_compress_buf_geometry );
+            cout << "Compressed the geometry map: size=" << len_compress_buf_geometry << " -> " << len_compressed_geometry << "[bytes]" << endl;
 
-	    // Send Geometry map to stdout
-        if( flgStdOutGeometryMap ) {
-	        cout << "<Geometry>" << endl // Header
-                 << camInfo.serialNumber << endl // Serial Number
-                 << timeStamp << endl // Time stamp             
-                 << geometry.cols << endl // Width
-                 << geometry.rows << endl // Height
-                 << len_compressed_geometry << endl; // PEPMap data length
-	        for( size_t i = 0; i < len_compressed_geometry; ++i ) { // Geometry map data
-	          cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
-	        }
-	        cout << dec << endl;
+	        // Send Geometry map to stdout
+            if( flgStdOutGeometryMap ) {
+	            cout << "<Geometry>" << endl // Header
+                     << camInfo.serialNumber << endl // Serial Number
+                     << timeStamp << endl // Time stamp             
+                     << geometry.cols << endl // Width
+                     << geometry.rows << endl // Height
+                     << len_compressed_geometry << endl; // PEPMap data length
+	            for( size_t i = 0; i < len_compressed_geometry; ++i ) { // Geometry map data
+	              cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+	            }
+	            cout << dec << endl;
+            }
+
+            // Save Geometry map to the file
+            if( flgSavePEPMap ) {
+	            ofs << "<Geometry>" << endl // Header
+                     << camInfo.serialNumber << endl // Serial Number
+                     << timeStamp << endl // Time stamp             
+                     << geometry.cols << endl // Width
+                     << geometry.rows << endl // Height
+                     << len_compressed_geometry << endl; // PEPMap data length
+	            for( size_t i = 0; i < len_compressed_geometry; ++i ) { // Geometry map data
+	              ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+	            }
+	            ofs << dec << endl;
+            }
         }
 
-        if( flgSavePEPMap ) {
-	        ofs << "<Geometry>" << endl // Header
-                 << camInfo.serialNumber << endl // Serial Number
-                 << timeStamp << endl // Time stamp             
-                 << geometry.cols << endl // Width
-                 << geometry.rows << endl // Height
-                 << len_compressed_geometry << endl; // PEPMap data length
-	        for( size_t i = 0; i < len_compressed_geometry; ++i ) { // Geometry map data
-	          ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
-	        }
-	        ofs << dec << endl;
+
+        //
+        // Send Geometry data 2 (for silhouette) to stdout
+        {
+            // Compress geometry map
+            uLongf len_compressed_geometry_2 = len_compress_buf_geometry;
+            compress( compress_buf_geometry
+                    , &len_compressed_geometry_2
+                    , geometry_2.data
+                    , len_compress_buf_geometry );
+            cout << "Compressed the geometry_2 map: size=" << len_compress_buf_geometry << " -> " << len_compressed_geometry_2 << "[bytes]" << endl;
+
+	        // Send geometry_2 map to stdout
+            if( flgStdOutGeometryMap ) {
+	            cout << "<Geometry2>" << endl // Header
+                     << camInfo.serialNumber << endl // Serial Number
+                     << timeStamp << endl // Time stamp             
+                     << geometry_2.cols << endl // Width
+                     << geometry_2.rows << endl // Height
+                     << len_compressed_geometry_2 << endl; // PEPMap data length
+	            for( size_t i = 0; i < len_compressed_geometry_2; ++i ) { // geometry_2 map data
+	              cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+	            }
+	            cout << dec << endl;
+            }
+
+            // Save geometry_2 map to the file
+            if( flgSavePEPMap ) {
+	            ofs << "<Geometry2>" << endl // Header
+                     << camInfo.serialNumber << endl // Serial Number
+                     << timeStamp << endl // Time stamp             
+                     << geometry_2.cols << endl // Width
+                     << geometry_2.rows << endl // Height
+                     << len_compressed_geometry_2 << endl; // PEPMap data length
+	            for( size_t i = 0; i < len_compressed_geometry_2; ++i ) { // geometry_2 map data
+	              ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+	            }
+	            ofs << dec << endl;
+            }
         }
 
         if( flgWindow ) {
@@ -1047,6 +1098,7 @@ void execute( int start_frame = 0 )
 
     //delete [] buffer;
     delete [] compress_buf;
+    delete [] compress_buf_geometry;
 }
 
 bool load_extrinsic_parameters()
@@ -1489,6 +1541,8 @@ int main( int argc, char *argv[] )
             strVideoFile = string( argv[ ++i ] );
         } else if( strOpt == "--save-pepmap" ) {
             flgSavePEPMap = true;
+        } else if( strOpt == "--save-camimage" ) {
+            flgSaveCamImage = true;
         } else if( strOpt == "--no-stdout-pepmap" ) {
             flgStdOutPEPMap = false;
         } else if( strOpt == "--no-stdout-camimage" ) {
