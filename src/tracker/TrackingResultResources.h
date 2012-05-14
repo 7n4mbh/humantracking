@@ -25,6 +25,7 @@ private:
     std::deque<PEPMapInfo> bufPEPMap;
     std::map<unsigned long long, CameraImageInfo> bufCameraImage;
     std::map<unsigned long long, GeometryMapInfo> bufGeometry;
+    std::map<unsigned long long, GeometryMapInfo> bufGeometry2;
     std::map<unsigned long long, std::map<int,cv::Point2d> > trackingResult;
     std::map<unsigned long long, std::multimap<int,cv::Point2d> > trackingResultExt;
     std::string strResultFilename, strResultPEPMapVideoFilename, strResultCameraVideoFilename;
@@ -49,6 +50,7 @@ public:
     void AddPEPMapInfo( PEPMapInfo& pepmap );
     void AddCameraImageInfo( CameraImageInfo& cam_image );
     void AddGeometryMapInfo( GeometryMapInfo& geometry );
+    void AddGeometryMap2Info( GeometryMapInfo& geometry2 );
     bool EnableViewWindow();
     bool TerminateViewWindow();
     void UpdateView();

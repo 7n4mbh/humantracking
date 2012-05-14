@@ -208,6 +208,24 @@ void TrackingResultResources::AddGeometryMapInfo( GeometryMapInfo& geometry )
 #endif
 }
 
+void TrackingResultResources::AddGeometryMap2Info( GeometryMapInfo& geometry2 )
+{
+#ifdef WINDOWS_OS
+    EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_lock( &mutex );
+#endif
+
+    bufGeometry2[ geometry2.timeStamp ] = geometry2;
+
+#ifdef WINDOWS_OS
+    LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_unlock( &mutex );
+#endif
+}
 
 bool TrackingResultResources::EnableViewWindow()
 {
@@ -296,11 +314,12 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 {
     TrackingResultResources* pTrackingResultResources = (TrackingResultResources*)p_tracking_result_resources;
     Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
-    Mat geometry;
+    Mat geometry, geometry2;
     Mat img_occupancy( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
     Mat img_display_tmp( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     Mat img_display( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     Mat img_cam_display;
+    Mat img_silhouette( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8UC3 );
     char buf[ SIZE_BUFFER ];
 
     deque< map<int,Point2d> > result_buffer;
@@ -457,6 +476,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                     }
                 }
 
+                memset( img_silhouette.data, 0, img_silhouette.rows * img_silhouette.cols * 3 );
+
                 map<unsigned long long,CameraImageInfo>::iterator itCamImageInfo = pTrackingResultResources->bufCameraImage.find( pepmap.timeStamp );
                 if( itCamImageInfo != pTrackingResultResources->bufCameraImage.end() ) {
                     //img_cam_display.create( itCamImageInfo->second.height, itCamImageInfo->second.width, CV_8UC3 );
@@ -484,12 +505,45 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                         , &len_uncompressed
                         , (const Bytef*)&buff[ 0 ]
                         , itGeometryInfo->second.data.size() / 2 );
+                        
+                        map<unsigned long long,GeometryMapInfo>::iterator itGeometry2Info = pTrackingResultResources->bufGeometry2.find( pepmap.timeStamp );
+                        bool flgGeometry2Available = false;
+                        if( itGeometry2Info != pTrackingResultResources->bufGeometry2.end() ) {
+                            vector<uchar> buff2( itGeometry2Info->second.data.size() / 2 );
+                            char a[ 3 ]; a[ 2 ] = '\0';
+                            for( int j = 0; j < buff2.size(); ++j ) {
+                                a[ 0 ] = itGeometry2Info->second.data[ j * 2 ];
+                                a[ 1 ] = itGeometry2Info->second.data[ j * 2 + 1 ];
+                                buff2[ j ] = strtol( a, NULL, 16 );
+                            }
+                            geometry2.create(  itGeometry2Info->second.height, itGeometry2Info->second.width, CV_16U );
+                            uLongf len_uncompressed = itGeometry2Info->second.height * itGeometry2Info->second.width * 2;
+                            uncompress( geometry2.data
+                            , &len_uncompressed
+                            , (const Bytef*)&buff2[ 0 ]
+                            , itGeometry2Info->second.data.size() / 2 );
+
+                            flgGeometry2Available = true;
+                        }
+
                         for( int x = 0; x < geometry.cols; ++x ) {
                             for( int y = 0; y < geometry.rows; ++y ) {
                                 const int keyval = geometry.at<unsigned short>( y, x );
                                 map<int,int>::iterator itID;
                                 if( ( itID = geometry_to_ID.find( keyval ) ) != geometry_to_ID.end() ) {
                                     line( img_cam_display, Point( x, y ), Point( x, y ), color_table[ itID->second % sizeColorTable ], 1 );
+                                    if( /*flgGeometry2Available &&*/ itID->second == 1 ) {
+                                        const int keyval2 = geometry2.at<unsigned short>( y, x );
+                                        if( keyval2 > 0 ) {
+                                            const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette.cols;
+                                            const int row_on_silhouette = ( keyval2 - 1 ) / img_silhouette.cols;
+                                            line( img_silhouette
+                                                , Point( col_on_silhouette, row_on_silhouette )
+                                                , Point( col_on_silhouette, row_on_silhouette )
+                                                , color_table[ itID->second % sizeColorTable ]
+                                                , 1 );
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -497,6 +551,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                     }
 
                     imshow( "Camera", img_cam_display );
+                    imshow( "Silhouette", img_silhouette );
                     pTrackingResultResources->cameraVideoWriter.write( img_cam_display );
                 }
 
@@ -535,6 +590,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                                                                  , pTrackingResultResources->bufCameraImage.lower_bound( time_pepmap )  );
                 pTrackingResultResources->bufGeometry.erase( pTrackingResultResources->bufGeometry.begin()
                                                                  , pTrackingResultResources->bufGeometry.lower_bound( time_pepmap )  );
+                pTrackingResultResources->bufGeometry2.erase( pTrackingResultResources->bufGeometry2.begin()
+                                                                 , pTrackingResultResources->bufGeometry2.lower_bound( time_pepmap )  );
                 pTrackingResultResources->trackingResult.erase( pTrackingResultResources->trackingResult.begin() );
 
 		//cout << " -> erase()" << endl;

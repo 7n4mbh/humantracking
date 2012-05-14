@@ -825,10 +825,12 @@ void execute( int start_frame = 0 )
                             geometry.at<unsigned short>( y, x ) = row * occupancy.cols + col + 1;
                             
                             row = (int)( occupancy_2.rows - scale_m2px * pv_z );
-                            //if( row >= 0 && row < occupancy_2.rows && col >= 0 && col < occupancy_2.cols ) {
-                            //    occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
-                            //}
-                            geometry_2.at<unsigned short>( y, x ) = row * occupancy_2.cols + col + 1;
+                            if( row >= 0 && row < occupancy_2.rows && col >= 0 && col < occupancy_2.cols ) {
+                                occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
+                                geometry_2.at<unsigned short>( y, x ) = row * occupancy_2.cols + col + 1;
+                            } else {
+                                geometry_2.at<unsigned short>( y, x ) = 0;
+                            }
 
                             //col = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) );
                             //if( row >= 0 && row < occupancy_3.rows && col >= 0 && col < occupancy_3.cols ) {
@@ -1033,9 +1035,9 @@ void execute( int start_frame = 0 )
             resize( img_occupancy, img_display2, img_display2.size() );
             imshow( "Occupancy Map", img_display2 );
 
-            //occupancy_2.convertTo( img_occupancy, CV_8U );
-            //resize( img_occupancy, img_display2, img_display2.size() );
-            //imshow( "Occupancy Map 2", img_display2 );
+            occupancy_2.convertTo( img_occupancy, CV_8U );
+            resize( img_occupancy, img_display2, img_display2.size() );
+            imshow( "Occupancy Map 2", img_display2 );
 
             //occupancy_3.convertTo( img_occupancy, CV_8U );
             //resize( img_occupancy, img_display2, img_display2.size() );

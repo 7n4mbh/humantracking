@@ -706,6 +706,15 @@ int pepmapfile_mode( string strVideoFile )
                 >> size
                 >> geometry.data;
             resTracking.AddGeometryMapInfo( geometry );
+       } else if( str.find( "<Geometry2>" ) != str.npos ) {
+            int size;
+            ifs >> geometry.serialNumber
+                >> geometry.timeStamp
+                >> geometry.width
+                >> geometry.height
+                >> size
+                >> geometry.data;
+            resTracking.AddGeometryMap2Info( geometry );
        }
 
     }
