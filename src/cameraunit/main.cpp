@@ -1625,13 +1625,14 @@ void record( int width, int height )
     ostringstream oss;
     oss << strPath << camInfo.serialNumber;
 
-    ofstream ofs( oss.str() + ".txt" );
-
     VideoWriter video;
-    if( !video.open( oss.str() + ".avi", -1/*CV_FOURCC('X','V','I','D')*/, 10, Size( width, height ) ) ) {
+    if( !video.open( oss.str() + ".avi", CV_FOURCC('X','V','I','D'), 10, Size( width, height ) ) ) {
         cerr << "Couldn't open " <<  oss.str() << "." <<  endl;
         exit( 1 );
     }
+
+    oss << ".txt";
+    ofstream ofs( oss.str().c_str() );
 
     // Configure Format7
     Format7ImageSettings imageSettings;
