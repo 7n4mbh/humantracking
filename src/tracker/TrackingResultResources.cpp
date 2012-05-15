@@ -38,7 +38,7 @@ TrackingResultResources::~TrackingResultResources()
 #endif
 }
 
-void TrackingResultResources::init( std::string result_filename, std::string result_pepmapvideo_filename, std::string result_cameravideo_filename, Viewer* p_viewer )
+void TrackingResultResources::init( std::string result_filename, std::string result_pepmapvideo_filename, std::string result_cameravideo_filename, std::string silhouette_path, Viewer* p_viewer )
 {
     bufPEPMap.clear();
     trackingResult.clear();
@@ -50,6 +50,7 @@ void TrackingResultResources::init( std::string result_filename, std::string res
     strResultFilename = result_filename;
     strResultPEPMapVideoFilename = result_pepmapvideo_filename;
     strResultCameraVideoFilename = result_cameravideo_filename;
+    strSilhouettePath = silhouette_path;
     pViewer = p_viewer;
     ofstream ofs( strResultFilename.c_str() );
     if( !pepmapVideoWriter.open( strResultPEPMapVideoFilename, CV_FOURCC('X','V','I','D'), 40, Size( (int)( roi_width * 80 ), (int)( roi_height * 80 ) ) ) ) {
@@ -60,6 +61,7 @@ void TrackingResultResources::init( std::string result_filename, std::string res
       cerr << "Couldn't open " << strResultCameraVideoFilename << "." <<  endl;
       exit( 1 );
     }
+    silhouetteVideoWriter.clear();
 }
 
 void TrackingResultResources::clear()
@@ -71,6 +73,7 @@ void TrackingResultResources::clear()
     posHumanStill.clear();
     cntStill.clear();
     ofstream ofs( strResultFilename.c_str() );
+    silhouetteVideoWriter.clear();
 }
 
 bool TrackingResultResources::hasDataToDisplay()
@@ -319,7 +322,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
     Mat img_display_tmp( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     Mat img_display( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     Mat img_cam_display;
-    Mat img_silhouette( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8UC3 );
+    Mat img_silhouette_display( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8UC3 );
     char buf[ SIZE_BUFFER ];
 
     deque< map<int,Point2d> > result_buffer;
@@ -476,7 +479,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                     }
                 }
 
-                memset( img_silhouette.data, 0, img_silhouette.rows * img_silhouette.cols * 3 );
+                memset( img_silhouette_display.data, 0, img_silhouette_display.rows * img_silhouette_display.cols * 3 );
 
                 map<unsigned long long,CameraImageInfo>::iterator itCamImageInfo = pTrackingResultResources->bufCameraImage.find( pepmap.timeStamp );
                 if( itCamImageInfo != pTrackingResultResources->bufCameraImage.end() ) {
@@ -526,18 +529,30 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                             flgGeometry2Available = true;
                         }
 
+                        map<int,Mat> img_silhouette;
                         for( int x = 0; x < geometry.cols; ++x ) {
                             for( int y = 0; y < geometry.rows; ++y ) {
                                 const int keyval = geometry.at<unsigned short>( y, x );
                                 map<int,int>::iterator itID;
                                 if( ( itID = geometry_to_ID.find( keyval ) ) != geometry_to_ID.end() ) {
                                     line( img_cam_display, Point( x, y ), Point( x, y ), color_table[ itID->second % sizeColorTable ], 1 );
-                                    if( /*flgGeometry2Available &&*/ itID->second == 1 ) {
+                                    if( flgGeometry2Available/* && itID->second == 1*/ ) {
                                         const int keyval2 = geometry2.at<unsigned short>( y, x );
                                         if( keyval2 > 0 ) {
-                                            const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette.cols;
-                                            const int row_on_silhouette = ( keyval2 - 1 ) / img_silhouette.cols;
-                                            line( img_silhouette
+                                            //const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette_display.cols;
+                                            //const int row_on_silhouette = ( keyval2 - 1 ) / img_silhouette_display.cols;
+                                            //line( img_silhouette_display
+                                            //    , Point( col_on_silhouette, row_on_silhouette )
+                                            //    , Point( col_on_silhouette, row_on_silhouette )
+                                            //    , color_table[ itID->second % sizeColorTable ]
+                                            //    , 1 );
+                                            if( img_silhouette.find( itID->second ) == img_silhouette.end() ) {
+                                                img_silhouette[ itID->second ].create( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8UC3 );
+                                                memset( img_silhouette[ itID->second ].data, 0, img_silhouette[ itID->second ].cols * img_silhouette[ itID->second ].rows * 3 );
+                                            }
+                                            const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette[ itID->second ].cols;
+                                            const int row_on_silhouette = ( keyval2 - 1 ) / img_silhouette[ itID->second ].cols;
+                                            line( img_silhouette[ itID->second ]
                                                 , Point( col_on_silhouette, row_on_silhouette )
                                                 , Point( col_on_silhouette, row_on_silhouette )
                                                 , color_table[ itID->second % sizeColorTable ]
@@ -548,10 +563,27 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                             }
                         }
 
+                        for( map<int,Mat>::iterator itImgSilhouette = img_silhouette.begin(); itImgSilhouette != img_silhouette.end(); ++itImgSilhouette ) {
+                            const int id = itImgSilhouette->first;
+                            ostringstream oss;
+                            oss << pTrackingResultResources->strSilhouettePath << id << "_" << pepmap.timeStamp << ".avi";
+                            //imwrite( oss.str(), itImgSilhouette->second ); 
+                            if( pTrackingResultResources->silhouetteVideoWriter.find( id ) == pTrackingResultResources->silhouetteVideoWriter.end() ) {
+                                pTrackingResultResources->silhouetteVideoWriter[ id ].open( oss.str()
+                                                                                          , CV_FOURCC('X','V','I','D')
+                                                                                          , 10
+                                                                                          , Size( itImgSilhouette->second.cols, itImgSilhouette->second.rows ) );
+                            }
+                            pTrackingResultResources->silhouetteVideoWriter[ id ].write( itImgSilhouette->second );
+                        }
+
+                        if( img_silhouette.find( 1 ) != img_silhouette.end() ) {
+                            img_silhouette_display = img_silhouette[ 1 ];
+                        }
                     }
 
                     imshow( "Camera", img_cam_display );
-                    imshow( "Silhouette", img_silhouette );
+                    imshow( "Silhouette", img_silhouette_display );
                     pTrackingResultResources->cameraVideoWriter.write( img_cam_display );
                 }
 

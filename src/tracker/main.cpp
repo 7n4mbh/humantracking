@@ -755,7 +755,13 @@ int main( int argc, char *argv[] )
     load_pepmap_config();
     load_track_parameters( strPath, strTrackingConfigFile );
 
-    resTracking.init( strPath + "result.txt", strPath + "result_pepmap.avi", strPath + "result_camera.avi", &viewer );
+#ifdef WINDOWS_OS
+    const string strSilhouettePath = strPath + "result_silhouette\\";
+#endif
+#ifdef LINUX_OS
+    const string strSilhouettePath = strPath + "result_silhouette/";
+#endif
+    resTracking.init( strPath + "result.txt", strPath + "result_pepmap.avi", strPath + "result_camera.avi", strPath + "result_silhouette\\", &viewer );
     viewer.exec();
 
     if( !flgPEPMapFile ) {

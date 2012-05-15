@@ -28,11 +28,12 @@ private:
     std::map<unsigned long long, GeometryMapInfo> bufGeometry2;
     std::map<unsigned long long, std::map<int,cv::Point2d> > trackingResult;
     std::map<unsigned long long, std::multimap<int,cv::Point2d> > trackingResultExt;
-    std::string strResultFilename, strResultPEPMapVideoFilename, strResultCameraVideoFilename;
+    std::string strResultFilename, strResultPEPMapVideoFilename, strResultCameraVideoFilename, strSilhouettePath;
     std::map<int,cv::Point2d> posHumanStill;
     std::map<int,unsigned long> cntStill;
     Viewer* pViewer;
     cv::VideoWriter pepmapVideoWriter, cameraVideoWriter;
+    std::map<int,cv::VideoWriter> silhouetteVideoWriter;
 #ifdef WINDOWS_OS
     HANDLE hThread;
     DWORD ThreadId;
@@ -54,7 +55,7 @@ public:
     bool EnableViewWindow();
     bool TerminateViewWindow();
     void UpdateView();
-    void init( std::string result_filename, std::string result_pepmapvideo_filename, std::string result_cameravideo_filename, Viewer* p_viewer );
+    void init( std::string result_filename, std::string result_pepmapvideo_filename, std::string result_cameravideo_filename, std::string silhouette_path, Viewer* p_viewer );
     void clear();
     void SetDelayUpdate( int delay_update );
     int GetDelayUpdate();
