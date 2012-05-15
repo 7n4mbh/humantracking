@@ -471,7 +471,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                             for( int row_on_pepmap = max( _row_on_pepmap - 2, 0 ); row_on_pepmap < min( _row_on_pepmap + 2, occupancy.rows - 1 ); ++row_on_pepmap ) {
                                 int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * col_on_pepmap );
                                 int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * row_on_pepmap );
-                                int keyval = col_on_pepmap * occupancy.rows + row_on_pepmap + 1;
+                                //int keyval = col_on_pepmap * occupancy.rows + row_on_pepmap + 1;
+                                int keyval = row_on_pepmap * occupancy.cols + col_on_pepmap + 1;
                                 rectangle( img_display, Point( row - scale_height / 2, col - scale_width / 2 ), Point( row + scale_height / 2, col + scale_width / 2 ), color_table[ itHuman->first % sizeColorTable ], CV_FILLED );
                                 geometry_to_ID[ keyval ] = itHuman->first;
                             }

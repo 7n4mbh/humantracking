@@ -768,6 +768,7 @@ void execute( int start_frame = 0 )
     pthread_t thread;
     pthread_create(&thread , NULL , KeyInThread , NULL);
 #endif
+    int frame = 0; // debug. # of frames should be obtained by video.get( CV_CAP_PROP_FRAMES ).
     for( ; ; ) {
         // Exit when 'q' and enter keys are hit.
         if( flgWindow ) {
@@ -784,8 +785,9 @@ void execute( int start_frame = 0 )
             if( !grab_from_video( &image ) ) {
                 break;
             }
-            int frame = video.get( CV_CAP_PROP_POS_FRAMES );
+            //int frame = video.get( CV_CAP_PROP_POS_FRAMES );
             timeStamp = frame_to_timestamp[ frame ];
+            ++frame; // debug. should be removed later.
             if( flgCompatible ) {
                 // The old version of capturing program stores time stamp using GetSystemTimeAsFileTime().
                 // Conversion is required.
