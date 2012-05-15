@@ -587,6 +587,89 @@ void grab_from_bumblebee( Mat* pDst, unsigned long long* p_time_stamp = NULL )
     }
 }
 
+void grab_from_bumblebee_color( Mat* pDst, unsigned long long* p_time_stamp = NULL )
+{
+    Error err;
+    Image rawImage;
+    unsigned char* buffer;
+
+    err = bumblebee.RetrieveBuffer( &rawImage );
+    if( err != PGRERROR_OK ) {
+        PrintError( err );
+        return;
+    }
+    
+#ifdef WINDOWS_OS
+    FILETIME ft;
+    unsigned __int64 tmpres = 0;
+    time_t _sec, _usec;
+    GetSystemTimeAsFileTime( &ft );
+    tmpres |= ft.dwHighDateTime;
+    tmpres <<= 32;
+    tmpres |= ft.dwLowDateTime;
+    tmpres /= 10;
+    tmpres -= DELTA_EPOCH_IN_MICROSECS; 
+    _sec = tmpres / 1000000ULL;
+    _usec = tmpres % 1000000ULL;
+    cout << "Time Stamp: " << _sec << "." << _usec;
+    if( p_time_stamp ) {
+      *p_time_stamp = (unsigned long long)tmpres;
+      cout << endl << " -> " << *p_time_stamp 
+                << ", " << ctime( &_sec ) << endl;
+        
+    }
+#endif
+#ifdef LINUX_OS
+    timeval tv;
+    gettimeofday( &tv, NULL );
+    cout << "Time Stamp: " << tv.tv_sec << "." << tv.tv_usec;
+    if( p_time_stamp ) {
+      *p_time_stamp = (unsigned long long)tv.tv_sec * 1000000ULL + (unsigned long long)tv.tv_usec;
+      cout << endl << " -> " << *p_time_stamp 
+                << ", " << ctime( &tv.tv_sec ) << endl;
+        
+    }
+    cout << endl;
+#endif
+
+    pDst->create( iMaxRows, iMaxCols * 2, CV_8UC4 );
+    buffer = new unsigned char[ iMaxCols * 2 * iMaxRows ];
+    Image deinterlacedImage( iMaxRows
+                           , iMaxCols * 2
+                           , iMaxCols * 2
+                           , buffer
+                           , iMaxCols * 2 * iMaxRows
+                           , PIXEL_FORMAT_RAW8
+                           , GBRG );
+    Image convertedImage( pDst->data, 4 * iMaxCols * 2 * iMaxRows );
+
+    // de-interlace
+    // ## Should be optimized for faster processing
+    for( int x = 0; x < iMaxCols; ++x ) {
+        for( int y = 0; y < iMaxRows; ++y ) {
+            const unsigned char* data = rawImage.GetData();
+            if( deinterlace_mode == 0 ) {
+	            // left
+	            buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
+	            // right
+	            buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
+            } else {
+                // left
+                buffer[ x + iMaxCols * 2 * y ] = data[ 2 * x + 1 + iMaxCols * 2 * y ];
+                // right
+                buffer[ iMaxCols + x + iMaxCols * 2 * y ] = data[ 2 * x + iMaxCols * 2 * y ];
+            }
+        }
+    }
+
+    err = deinterlacedImage.Convert( PIXEL_FORMAT_BGRU, &convertedImage );
+    if( err != PGRERROR_OK ) {
+        PrintError( err );
+        exit( 1 );
+    }
+}
+
+
 bool grab_from_video( Mat* pDst )
 {
     Mat tmp;
@@ -819,14 +902,14 @@ void execute( int start_frame = 0 )
                             float pv_x = point_planview.at<float>( 0, 0 ), pv_y = point_planview.at<float>( 1, 0 ), pv_z = point_planview.at<float>( 2, 0 );
                             row = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) );
                             col = (int)( scale_m2px * ( ( pv_y - roi_y ) + roi_width / 2.0f ) );
-                            if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
+                            if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols /*&& pv_z < 2.0*/ ) {
                                 occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
                             }
                             geometry.at<unsigned short>( y, x ) = row * occupancy.cols + col + 1;
                             
                             row = (int)( occupancy_2.rows - scale_m2px * pv_z );
                             if( row >= 0 && row < occupancy_2.rows && col >= 0 && col < occupancy_2.cols ) {
-                                occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
+                                //occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
                                 geometry_2.at<unsigned short>( y, x ) = row * occupancy_2.cols + col + 1;
                             } else {
                                 geometry_2.at<unsigned short>( y, x ) = 0;
@@ -853,6 +936,7 @@ void execute( int start_frame = 0 )
             //        occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
             //    }
             //}
+
             for( int row = 0; row < occupancy.rows; ++row ) {
                 for( int col = 0; col < occupancy.cols; ++col ) {
                     if( occupancy.at<unsigned short>( row, col ) < 50 ) {
@@ -1035,9 +1119,9 @@ void execute( int start_frame = 0 )
             resize( img_occupancy, img_display2, img_display2.size() );
             imshow( "Occupancy Map", img_display2 );
 
-            occupancy_2.convertTo( img_occupancy, CV_8U );
-            resize( img_occupancy, img_display2, img_display2.size() );
-            imshow( "Occupancy Map 2", img_display2 );
+            //occupancy_2.convertTo( img_occupancy, CV_8U );
+            //resize( img_occupancy, img_display2, img_display2.size() );
+            //imshow( "Occupancy Map 2", img_display2 );
 
             //occupancy_3.convertTo( img_occupancy, CV_8U );
             //resize( img_occupancy, img_display2, img_display2.size() );
@@ -1528,6 +1612,91 @@ void capture()
     delete [] buffer;
 }
 
+void record( int width, int height )
+{
+    Error err;
+
+    if( flgVideoFile ) {
+        return;
+    }
+
+    string strPath, strName, strNoextName;
+    getfilename( strVideoFile, &strPath, &strName, &strNoextName );
+    ostringstream oss;
+    oss << strPath << camInfo.serialNumber;
+
+    ofstream ofs( oss.str() + ".txt" );
+
+    VideoWriter video;
+    if( !video.open( oss.str() + ".avi", -1/*CV_FOURCC('X','V','I','D')*/, 10, Size( width, height ) ) ) {
+        cerr << "Couldn't open " <<  oss.str() << "." <<  endl;
+        exit( 1 );
+    }
+
+    // Configure Format7
+    Format7ImageSettings imageSettings;
+    imageSettings.width = iMaxCols;
+    imageSettings.height = iMaxRows;
+    imageSettings.offsetX = 0;
+    imageSettings.offsetY = 0;
+    imageSettings.mode = MODE_3;
+    imageSettings.pixelFormat= PIXEL_FORMAT_RAW16;
+    err = bumblebee.SetFormat7Configuration( &imageSettings, 100.0f );
+    if( err != PGRERROR_OK ) {
+        PrintError( err );
+        exit( 1 );
+    }
+
+    // Start capturing images
+    err = bumblebee.StartCapture();
+    if( err != PGRERROR_OK ) {
+        PrintError( err );
+        exit( 1 );
+    }
+
+    Mat image, image_tmp, image_record;
+    unsigned long long timeStamp;
+
+    flgEscape = false;
+#ifdef WINDOWS_OS
+    DWORD idThread;
+    HANDLE hThread = CreateThread( NULL, 0, KeyInThread, NULL, NULL, &idThread );
+#else
+    pthread_t thread;
+    pthread_create(&thread , NULL , KeyInThread , NULL);
+#endif
+    for( ; ; ) {
+        if( flgWindow ) {
+            (void)cvWaitKey( 1 );
+        }
+        if( flgEscape ) {
+            break;
+        }
+
+        // Retrieve an image
+	    grab_from_bumblebee_color( &image, &timeStamp );
+
+        image_tmp.create( image.rows, image.cols, CV_8UC3 );
+        image_record.create( height, width, CV_8UC3 );
+        cvtColor( image, image_tmp, CV_BGRA2BGR );
+        resize( image_tmp, image_record, image_record.size() );
+        video.write( image_record );
+        ofs << timeStamp << endl;
+        if( flgWindow ) {
+            imshow( "Camera", image_record );
+        }
+    }
+
+    err = bumblebee.StopCapture();
+    destroyWindow( "Camera" );
+
+#ifdef WINDOWS_OS
+    WaitForSingleObject( hThread, INFINITE );
+#else
+    pthread_join(thread , NULL);
+#endif
+}
+
 int main( int argc, char *argv[] )
 {
     bool ret;
@@ -1668,6 +1837,8 @@ int main( int argc, char *argv[] )
             show_background();
         } else if( strCmd[ 0 ] == "update" ) {
             update_background( 20 );
+        } else if( strCmd[ 0 ] == "record" ) {
+            record( 1280, 480 );
         } else if( strCmd[ 0 ] == "quit" || strCmd[ 0 ] == "exit" ) {
             break;
         } else {
