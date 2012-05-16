@@ -15,6 +15,8 @@
 
 #include "../humantracking.h"
 
+#include "CalculationProcessLogger.h"
+
 #ifdef WINDOWS_OS
 #include <conio.h>
 #include "FrameRateCounter.h"
@@ -423,11 +425,12 @@ bool SetStereoParameters( int width, int height ) {
 
     // With Linux, Set # of thread to one in order to avoid a segmentation 
     // falut at triclopsStereo(), which seems a bug in the triclopsSDK.
-#ifdef LINUX_OS
+    cout << endl;
     int maxThreadCount;
     te = triclopsGetMaxThreadCount( triclops, &maxThreadCount );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetMaxThreadCount()", te );
     cout << " The maximum number of threads(old): " << maxThreadCount << endl;
+#ifdef LINUX_OS
     te = triclopsSetMaxThreadCount( triclops, 1 );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetMaxThreadCount()", te );
     te = triclopsGetMaxThreadCount( triclops, &maxThreadCount );
@@ -698,6 +701,16 @@ void execute( int start_frame = 0 )
     int width = stereo_width, height = stereo_height;
     Error err;
 
+    CalculationProcessLogger logCalc;
+    {
+        string strPath, strName, strNoextName;
+        getfilename( strVideoFile, &strPath, &strName, &strNoextName );
+        ostringstream oss;
+        oss << strPath << camInfo.serialNumber << ".log";
+        logCalc.init( oss.str() );
+    }
+    
+
     if( !flgVideoFile ) {
         // Configure Format7
         Format7ImageSettings imageSettings;
@@ -778,6 +791,8 @@ void execute( int start_frame = 0 )
             break;
         }
 
+        logCalc.start();
+
         // Retrieve an image
         if( !flgVideoFile ) {
 	        grab_from_bumblebee( &image, &timeStamp );
@@ -820,6 +835,10 @@ void execute( int start_frame = 0 )
         //    imshow( "image", img_display2 );
         //}
 
+        logCalc.set_timestamp( timeStamp );
+
+        logCalc.stereo_processing( CalculationProcessLogger::Start );
+
         // Stereo Processing
         clock_t t = clock();
         stereo( &depthImage16, image );
@@ -849,6 +868,8 @@ void execute( int start_frame = 0 )
             }
         }
 
+        logCalc.stereo_processing( CalculationProcessLogger::End );
+
         //TriclopsImage3d* pImage3d;
         //te = triclopsCreateImage3d( triclops, &pImage3d );
         //te = triclopsExtractImage3d( triclops, pImage3d );
@@ -875,6 +896,8 @@ void execute( int start_frame = 0 )
         //    currentBlob->FillBlob( &imgd, CV_RGB(255,0,0));
         //}
         //imshow( "Blob", matimg );
+
+        logCalc.makingmaps( CalculationProcessLogger::Start );
 
         // 
         // Create an occupancy map with foreground data
@@ -948,22 +971,28 @@ void execute( int start_frame = 0 )
             }
         }
 
+        logCalc.makingmaps( CalculationProcessLogger::End );
+
+        logCalc.send_occupancy( CalculationProcessLogger::Start );
+
         // Compress occupancy map
+        unsigned long long t_start_compress;
+        t_start_compress = getTimeStamp();
         uLongf len_compressed = len_compress_buf;
         compress( compress_buf
                 , &len_compressed
                 , occupancy.data
                 , len_compress_buf );
-        cout << "Compressed the occupancy map: size=" << len_compress_buf << " -> " << len_compressed << "[bytes]" << endl;
+        cout << "Compressed the occupancy map: size=" << len_compress_buf << " -> " << len_compressed << "[bytes] (" << getTimeStamp() - t_start_compress << "us)" << endl;
 
             
         // test code for checking compression validity, where the occupancy maps are restored with the compressed data.
-        uLongf len_uncompressed = len_compress_buf;
-        uncompress( occupancy.data
-                    , &len_uncompressed
-                    , compress_buf
-                    , len_compressed );
-        cout << "(Test Code!)Unompressed the occupancy map: size=" << len_compressed << " -> " << len_uncompressed << "[bytes]" << endl;
+        //uLongf len_uncompressed = len_compress_buf;
+        //uncompress( occupancy.data
+        //            , &len_uncompressed
+        //            , compress_buf
+        //            , len_compressed );
+        //cout << "(Test Code!)Unompressed the occupancy map: size=" << len_compressed << " -> " << len_uncompressed << "[bytes]" << endl;
 
 	    // Send PEPMap data to stdout
         if( flgStdOutPEPMap ) {
@@ -988,11 +1017,15 @@ void execute( int start_frame = 0 )
 	        }
 	        ofs << dec << endl;
         }
+        
+        logCalc.send_occupancy( CalculationProcessLogger::End );
 
+        logCalc.send_camimage( CalculationProcessLogger::Start );
 
 	    // Send grabbed image to stdout
 
         // JPEG compression of the grabbed image
+        t_start_compress = getTimeStamp();
         vector<uchar> buff;//buffer for coding
         vector<int> param = vector<int>(2);
         param[0]=CV_IMWRITE_JPEG_QUALITY;
@@ -1006,7 +1039,7 @@ void execute( int start_frame = 0 )
         imencode(".jpg",img_camera,buff,param);
         //cout<<"coded file size(jpg)"<<buff.size()<<endl;//fit buff size automatically.
         //Mat jpegimage = imdecode(Mat(buff),CV_LOAD_IMAGE_COLOR);        
-        cout << "Compressed the camera image: size=" << buff.size() << "[bytes]" << endl;
+        cout << "Compressed the camera image: size=" << buff.size() << "[bytes] (" << getTimeStamp() - t_start_compress << "us)" << endl;
 
         if( flgStdOutCamImage ) {
             cout << "<CameraImage>" << endl // Header
@@ -1029,22 +1062,27 @@ void execute( int start_frame = 0 )
                  << img_camera.rows << endl // Height
                  << buff.size() << endl; // data length
 	        for( size_t i = 0; i < buff.size(); ++i ) { // PEPMap data
-	          ofs << hex << setw(2) << setfill( '0' ) << (int)buff[ i ];
+	            //ofs << hex << setw(2) << setfill( '0' ) << (int)buff[ i ];
+                ofs << (char)buff[ i ];
 	        }
 	        ofs << dec << endl;
         }
 
+        logCalc.send_camimage( CalculationProcessLogger::End );
+
+        logCalc.send_geometry( CalculationProcessLogger::Start );
 
         //
         // Send Geometry data to stdout
         {
             // Compress geometry map
+            t_start_compress = getTimeStamp();
             uLongf len_compressed_geometry = len_compress_buf_geometry;
             compress( compress_buf_geometry
                     , &len_compressed_geometry
                     , geometry.data
                     , len_compress_buf_geometry );
-            cout << "Compressed the geometry map: size=" << len_compress_buf_geometry << " -> " << len_compressed_geometry << "[bytes]" << endl;
+            cout << "Compressed the geometry map: size=" << len_compress_buf_geometry << " -> " << len_compressed_geometry << "[bytes] (" << getTimeStamp() - t_start_compress << "us)" << endl;
 
 	        // Send Geometry map to stdout
             if( flgStdOutGeometryMap ) {
@@ -1055,7 +1093,7 @@ void execute( int start_frame = 0 )
                      << geometry.rows << endl // Height
                      << len_compressed_geometry << endl; // PEPMap data length
 	            for( size_t i = 0; i < len_compressed_geometry; ++i ) { // Geometry map data
-	              cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+	                cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
 	            }
 	            cout << dec << endl;
             }
@@ -1069,23 +1107,28 @@ void execute( int start_frame = 0 )
                      << geometry.rows << endl // Height
                      << len_compressed_geometry << endl; // PEPMap data length
 	            for( size_t i = 0; i < len_compressed_geometry; ++i ) { // Geometry map data
-	              ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+	                //ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+                    ofs << (char)compress_buf_geometry[ i ];
 	            }
 	            ofs << dec << endl;
             }
         }
 
+        logCalc.send_geometry( CalculationProcessLogger::End );
+
+        logCalc.send_geometry2( CalculationProcessLogger::Start );
 
         //
         // Send Geometry data 2 (for silhouette) to stdout
         {
             // Compress geometry map
+            t_start_compress = getTimeStamp();
             uLongf len_compressed_geometry_2 = len_compress_buf_geometry;
             compress( compress_buf_geometry
                     , &len_compressed_geometry_2
                     , geometry_2.data
                     , len_compress_buf_geometry );
-            cout << "Compressed the geometry_2 map: size=" << len_compress_buf_geometry << " -> " << len_compressed_geometry_2 << "[bytes]" << endl;
+            cout << "Compressed the geometry_2 map: size=" << len_compress_buf_geometry << " -> " << len_compressed_geometry_2 << "[bytes] (" << getTimeStamp() - t_start_compress << "us)" << endl;
 
 	        // Send geometry_2 map to stdout
             if( flgStdOutGeometryMap ) {
@@ -1096,7 +1139,7 @@ void execute( int start_frame = 0 )
                      << geometry_2.rows << endl // Height
                      << len_compressed_geometry_2 << endl; // PEPMap data length
 	            for( size_t i = 0; i < len_compressed_geometry_2; ++i ) { // geometry_2 map data
-	              cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+	                cout << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
 	            }
 	            cout << dec << endl;
             }
@@ -1110,11 +1153,14 @@ void execute( int start_frame = 0 )
                      << geometry_2.rows << endl // Height
                      << len_compressed_geometry_2 << endl; // PEPMap data length
 	            for( size_t i = 0; i < len_compressed_geometry_2; ++i ) { // geometry_2 map data
-	              ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+	                //ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+                    ofs << (char)compress_buf_geometry[ i ];
 	            }
 	            ofs << dec << endl;
             }
         }
+
+        logCalc.send_geometry2( CalculationProcessLogger::End );
 
         if( flgWindow ) {
             occupancy.convertTo( img_occupancy, CV_8U );
@@ -1162,6 +1208,8 @@ void execute( int start_frame = 0 )
 
         //     imshow( "histogram", histImg );
         //}
+
+        logCalc.end_and_output2file();
 
         if( flgWindow ) {
             img_depth.convertTo( img_display, CV_8U, 25.0, 0.0 );

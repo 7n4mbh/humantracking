@@ -154,6 +154,7 @@
     <ClCompile Include="ClusterTrajectories.cpp" />
     <ClCompile Include="ExtendTrajectories.cpp" />
     <ClCompile Include="ExtractLUM.cpp" />
+    <ClCompile Include="GestureRecognition.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MakeLUMSlice.cpp" />
     <ClCompile Include="PlotCalculationProcess.cpp" />
@@ -166,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraUnit.h" />
+    <ClInclude Include="GestureRecognition.h" />
     <ClInclude Include="LinearUniformMotion.h" />
     <ClInclude Include="PersonTrackingCommon.h" />
     <ClInclude Include="PosXYT.h" />

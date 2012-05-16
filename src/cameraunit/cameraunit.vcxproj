@@ -19,10 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CalculationProcessLogger.cpp" />
     <ClCompile Include="FrameRateCounter.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CalculationProcessLogger.h" />
     <ClInclude Include="FrameRateCounter.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
