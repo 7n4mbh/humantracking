@@ -902,7 +902,7 @@ void execute( int start_frame = 0 )
                             point_planview =  H * xvec ;
                             //point_foreground.push_back( Point3f( point_planview.at<float>( 0, 0 ), point_planview.at<float>( 1, 0 ), point_planview.at<float>( 2, 0 ) ) );
                             float pv_x = point_planview.at<float>( 0, 0 ), pv_y = point_planview.at<float>( 1, 0 ), pv_z = point_planview.at<float>( 2, 0 );
-                            row = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) );
+                            row = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_height / 2.0f ) );
                             col = (int)( scale_m2px * ( ( pv_y - roi_y ) + roi_width / 2.0f ) );
                             if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols /*&& pv_z < 2.0*/ ) {
                                 occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;

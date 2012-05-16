@@ -249,8 +249,8 @@ void AddPEPMapToSampler( const cv::Mat& occupancy
                 //pos.t = pPEPMap->GetTime();
                 //pos.value = value;
                 //pos.ID = id;
-                pos.x = roi_x - roi_width / 2.0f + (float)row / scale_m2px;
-                pos.y = roi_y - roi_height / 2.0f + (float)col / scale_m2px;
+                pos.x = roi_x - roi_height / 2.0f + (float)row / scale_m2px;
+                pos.y = roi_y - roi_width / 2.0f + (float)col / scale_m2px;
                 pos.t = time_stamp;
                 pos.value = value;
                 pos.ID = 1;//id;

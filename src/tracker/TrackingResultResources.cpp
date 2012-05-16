@@ -441,11 +441,11 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 int old_col, old_row;
                 for( map< int, vector<Point2d> >::iterator itHuman = trajectory_to_draw.begin(); itHuman != trajectory_to_draw.end(); ++itHuman ) {
                     for( vector<Point2d>::iterator it = itHuman->second.begin(); it != itHuman->second.end(); ++it ) {
-                        int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( it->x - roi_x ) + roi_width / 2.0f ) );
-                        int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( it->y - roi_y ) + roi_height / 2.0f ) );
-                        circle( img_display, Point( row, col ), 3, color_table[ itHuman->first % sizeColorTable ], -1 );
+                        int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( it->x - roi_x ) + roi_height / 2.0f ) );
+                        int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( it->y - roi_y ) + roi_width / 2.0f ) );
+                        circle( img_display, Point( col, row ), 3, color_table[ itHuman->first % sizeColorTable ], -1 );
                         if( it != itHuman->second.begin() ) {
-                            line( img_display, Point( row, col ), Point( old_row, old_col ), color_table[ itHuman->first % sizeColorTable ], 6 );
+                            line( img_display, Point( col, row ), Point( old_col, old_row ), color_table[ itHuman->first % sizeColorTable ], 6 );
                         }
                         old_col = col;
                         old_row = row;
@@ -453,9 +453,9 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 
 		            if( pTrackingResultResources->cntStill.find( itHuman->first ) != pTrackingResultResources->cntStill.end() ) {
                         if( pTrackingResultResources->cntStill[ itHuman->first ] > 30 ) {
-	                        int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( pTrackingResultResources->posHumanStill[ itHuman->first ].x - roi_x ) + roi_width / 2.0f ) );
-	                        int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( pTrackingResultResources->posHumanStill[ itHuman->first ].y - roi_y ) + roi_height / 2.0f ) );
-	                        circle( img_display, Point( row, col ), ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * 0.5 * scale_m2px, color_table[ itHuman->first % sizeColorTable ], 2 );
+	                        int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * scale_m2px * ( ( pTrackingResultResources->posHumanStill[ itHuman->first ].x - roi_x ) + roi_height / 2.0f ) );
+	                        int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * scale_m2px * ( ( pTrackingResultResources->posHumanStill[ itHuman->first ].y - roi_y ) + roi_width / 2.0f ) );
+	                        circle( img_display, Point( col, row ), ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * 0.5 * scale_m2px, color_table[ itHuman->first % sizeColorTable ], 2 );
                         }
 		            }
                 }
@@ -465,15 +465,15 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 map<int,int> geometry_to_ID;
                 if( itRegionHuman != pTrackingResultResources->trackingResultExt.end() ) {
                     for( multimap<int,Point2d>::iterator itHuman = itRegionHuman->second.begin(); itHuman != itRegionHuman->second.end(); ++itHuman ) {
-                        int _col_on_pepmap = scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_width / 2.0f );
-                        int _row_on_pepmap = scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_height / 2.0f );
+                        int _row_on_pepmap = scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_height / 2.0f );
+                        int _col_on_pepmap = scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_width / 2.0f );
                         for( int col_on_pepmap = max( _col_on_pepmap - 2, 0 ); col_on_pepmap < min( _col_on_pepmap + 2, occupancy.cols - 1 ); ++col_on_pepmap ) {
                             for( int row_on_pepmap = max( _row_on_pepmap - 2, 0 ); row_on_pepmap < min( _row_on_pepmap + 2, occupancy.rows - 1 ); ++row_on_pepmap ) {
-                                int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * col_on_pepmap );
                                 int row = (int)( ( (float)img_display.size().height / (float)img_display_tmp.size().height ) * row_on_pepmap );
+                                int col = (int)( ( (float)img_display.size().width / (float)img_display_tmp.size().width ) * col_on_pepmap );
                                 //int keyval = col_on_pepmap * occupancy.rows + row_on_pepmap + 1;
                                 int keyval = row_on_pepmap * occupancy.cols + col_on_pepmap + 1;
-                                rectangle( img_display, Point( row - scale_height / 2, col - scale_width / 2 ), Point( row + scale_height / 2, col + scale_width / 2 ), color_table[ itHuman->first % sizeColorTable ], CV_FILLED );
+                                rectangle( img_display, Point( col - scale_width / 2, row - scale_height / 2 ), Point( col + scale_width / 2, row + scale_height / 2 ), color_table[ itHuman->first % sizeColorTable ], CV_FILLED );
                                 geometry_to_ID[ keyval ] = itHuman->first;
                             }
                         }
@@ -548,7 +548,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                                             //    , color_table[ itID->second % sizeColorTable ]
                                             //    , 1 );
                                             if( img_silhouette.find( itID->second ) == img_silhouette.end() ) {
-                                                img_silhouette[ itID->second ].create( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8UC3 );
+                                                img_silhouette[ itID->second ].create( (int)( scale_m2px * 2.0 ), (int)( scale_m2px * roi_height ), CV_8UC3 );
                                                 memset( img_silhouette[ itID->second ].data, 0, img_silhouette[ itID->second ].cols * img_silhouette[ itID->second ].rows * 3 );
                                             }
                                             const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette[ itID->second ].cols;
