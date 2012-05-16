@@ -2,6 +2,7 @@
 
 #include "../humantracking.h"
 #include "TrackingResultResources.h"
+#include "GestureRecognition.h"
 
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
@@ -316,6 +317,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 #endif
 {
     TrackingResultResources* pTrackingResultResources = (TrackingResultResources*)p_tracking_result_resources;
+    GestureRecognition gesture;
+    gesture.init( pTrackingResultResources->strSilhouettePath );
     Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
     Mat geometry, geometry2;
     Mat img_occupancy( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
@@ -576,6 +579,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                                                                                           , Size( itImgSilhouette->second.cols, itImgSilhouette->second.rows ) );
                             }
                             pTrackingResultResources->silhouetteVideoWriter[ id ].write( itImgSilhouette->second );
+                            gesture.SetSilhouette( id, pepmap.timeStamp, itImgSilhouette->second );
                         }
 
                         if( img_silhouette.find( 1 ) != img_silhouette.end() ) {
