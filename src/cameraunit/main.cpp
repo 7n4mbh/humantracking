@@ -880,7 +880,7 @@ void execute( int start_frame = 0 )
         // Create an occupancy map with foreground data
         // （ベクトル計算で高速化の余地あり）
         Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
-        Mat occupancy_2 = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+        Mat occupancy_2 = Mat::zeros( (int)( 3.0 * scale_m2px ), (int)( roi_height * scale_m2px ), CV_16U );
         Mat occupancy_3 = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
         Mat geometry = Mat::zeros( height, width, CV_16U );
         Mat geometry_2 = Mat::zeros( height, width, CV_16U );
