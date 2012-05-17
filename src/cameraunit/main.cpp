@@ -925,14 +925,15 @@ void execute( int start_frame = 0 )
                             point_planview =  H * xvec ;
                             //point_foreground.push_back( Point3f( point_planview.at<float>( 0, 0 ), point_planview.at<float>( 1, 0 ), point_planview.at<float>( 2, 0 ) ) );
                             float pv_x = point_planview.at<float>( 0, 0 ), pv_y = point_planview.at<float>( 1, 0 ), pv_z = point_planview.at<float>( 2, 0 );
-                            row = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_height / 2.0f ) );
-                            col = (int)( scale_m2px * ( ( pv_y - roi_y ) + roi_width / 2.0f ) );
+                            row = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_height / 2.0f ) ); // X axis is projected on the vertical axis of the occupancy map.
+                            col = (int)( scale_m2px * ( ( pv_y - roi_y ) + roi_width / 2.0f ) ); // Y axis is projected on the horizontal axis of the occupancy map.
                             if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols /*&& pv_z < 2.0*/ ) {
                                 occupancy.at<unsigned short>( row, col ) = occupancy.at<unsigned short>( row, col ) + 1;
                             }
                             geometry.at<unsigned short>( y, x ) = row * occupancy.cols + col + 1;
                             
-                            row = (int)( occupancy_2.rows - scale_m2px * pv_z );
+                            col = row; // X axis is projected on the horizontal axis of the geometry map2.
+                            row = (int)( occupancy_2.rows - scale_m2px * pv_z ); // Z axis is projeted on the vertical axis of the geometry map2.
                             if( row >= 0 && row < occupancy_2.rows && col >= 0 && col < occupancy_2.cols ) {
                                 //occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
                                 geometry_2.at<unsigned short>( y, x ) = row * occupancy_2.cols + col + 1;
