@@ -27,7 +27,7 @@ void GestureRecognition::SetSilhouette( int id, unsigned long long timeStamp, co
 {
     if( ofs.find( id ) == ofs.end() ) {
         ostringstream oss;
-        oss << strRecognitionResultPath << "id" << "_gesture.txt";
+        oss << strRecognitionResultPath << id << "_gesture.txt";
         ofs[ id ].open( oss.str().c_str() );
         if( !ofs[ id ].is_open() ) {
               cerr << "Couldn't open " << oss.str() <<  endl;
@@ -49,7 +49,7 @@ void GestureRecognition::SetSilhouette( int id, unsigned long long timeStamp, co
                 mean_y += y;
             }
         }
-        if( row_highest != 0 && nPixels[ y ] > 0 ) {
+        if( row_highest == 0 && nPixels[ y ] > 0 ) {
             row_highest = y;
         }
     }

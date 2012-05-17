@@ -1062,8 +1062,8 @@ void execute( int start_frame = 0 )
                  << img_camera.rows << endl // Height
                  << buff.size() << endl; // data length
 	        for( size_t i = 0; i < buff.size(); ++i ) { // PEPMap data
-	            //ofs << hex << setw(2) << setfill( '0' ) << (int)buff[ i ];
-                ofs << (char)buff[ i ];
+	            ofs << hex << setw(2) << setfill( '0' ) << (int)buff[ i ];
+                //ofs << (char)buff[ i ];
 	        }
 	        ofs << dec << endl;
         }
@@ -1107,8 +1107,8 @@ void execute( int start_frame = 0 )
                      << geometry.rows << endl // Height
                      << len_compressed_geometry << endl; // PEPMap data length
 	            for( size_t i = 0; i < len_compressed_geometry; ++i ) { // Geometry map data
-	                //ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
-                    ofs << (char)compress_buf_geometry[ i ];
+	                ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+                    //ofs << (char)compress_buf_geometry[ i ];
 	            }
 	            ofs << dec << endl;
             }
@@ -1153,8 +1153,8 @@ void execute( int start_frame = 0 )
                      << geometry_2.rows << endl // Height
                      << len_compressed_geometry_2 << endl; // PEPMap data length
 	            for( size_t i = 0; i < len_compressed_geometry_2; ++i ) { // geometry_2 map data
-	                //ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
-                    ofs << (char)compress_buf_geometry[ i ];
+	                ofs << hex << setw(2) << setfill( '0' ) << (int)compress_buf_geometry[ i ];
+                    //ofs << (char)compress_buf_geometry[ i ];
 	            }
 	            ofs << dec << endl;
             }
