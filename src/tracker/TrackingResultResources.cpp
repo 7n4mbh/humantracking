@@ -578,8 +578,15 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                                                                                           , 10
                                                                                           , Size( itImgSilhouette->second.cols, itImgSilhouette->second.rows ) );
                             }
-                            pTrackingResultResources->silhouetteVideoWriter[ id ].write( itImgSilhouette->second );
                             gesture.SetSilhouette( id, pepmap.timeStamp, itImgSilhouette->second );
+                            if( gesture.status[ 1 ] ) {
+                                rectangle( itImgSilhouette->second
+                                            , Point( 0, 0 )
+                                            , Point( 10, 10 )
+                                            , color_table[ 1 % sizeColorTable ]
+                                            , CV_FILLED );
+                            }
+                            pTrackingResultResources->silhouetteVideoWriter[ id ].write( itImgSilhouette->second );
                         }
 
                         if( img_silhouette.find( 1 ) != img_silhouette.end() ) {

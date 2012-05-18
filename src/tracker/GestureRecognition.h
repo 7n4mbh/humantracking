@@ -15,6 +15,9 @@
 #include "opencv/highgui.h"
 
 class GestureRecognition {
+public:
+    std::map<int,int> status;
+
 private:
     std::string strRecognitionResultPath;
     std::map<int,std::ofstream> ofs;

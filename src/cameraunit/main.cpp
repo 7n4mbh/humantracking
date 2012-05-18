@@ -74,6 +74,7 @@ int iMaxCols = 1280, iMaxRows = 960;
 int stereo_width = 512, stereo_height = 384;
 //int stereo_width = 640, stereo_height = 480;
 Mat img_background( stereo_height, stereo_width, CV_32F );
+Mat img_background_cam( stereo_height, stereo_width, CV_32F );
 Mat H( 3, 4, CV_32F );
 
 volatile bool flgEscape;
@@ -469,7 +470,7 @@ void PrintImageInformation( Image& image )
          << ", BayerTileFormat = " << image.GetBayerTileFormat();// << "(" << GBRG << ")" 
 }
 
-void stereo( TriclopsImage16* pDst/*Mat* pDst*/, const Mat& src/*TriclopsInput& triclopsInput*/ )
+void stereo( TriclopsImage16* pDst/*Mat* pDst*/, Mat* pDstRefImg, const Mat& src/*TriclopsInput& triclopsInput*/ )
 {
     TriclopsError te;
     TriclopsInput triclopsInput;
@@ -518,6 +519,15 @@ void stereo( TriclopsImage16* pDst/*Mat* pDst*/, const Mat& src/*TriclopsInput& 
                 TriCam_REFERENCE, 
                 pDst );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetImage16()", te );
+
+    if( pDstRefImg ) {
+        TriclopsImage rectifiedImage;
+        te = triclopsGetImage( triclops, TriImg_RECTIFIED, TriCam_REFERENCE, &rectifiedImage );
+        _HANDLE_TRICLOPS_ERROR( "triclopsGetImage()", te );
+
+        pDstRefImg->create( rectifiedImage.nrows, rectifiedImage.ncols, CV_8U );
+        memcpy( pDstRefImg->data, rectifiedImage.data, rectifiedImage.rowinc * rectifiedImage.nrows );
+    }
 }
 
 void grab_from_bumblebee( Mat* pDst, unsigned long long* p_time_stamp = NULL )
@@ -841,7 +851,7 @@ void execute( int start_frame = 0 )
 
         // Stereo Processing
         clock_t t = clock();
-        stereo( &depthImage16, image );
+        stereo( &depthImage16, &img_camera, image );
         cout << (double)( clock() - t ) / (double)CLOCKS_PER_SEC << "[sec]" << endl;
         cout << "done." << endl << flush;
 
@@ -914,7 +924,9 @@ void execute( int start_frame = 0 )
             Mat point_planview( 3, 1, CV_32F );
             for( int x = 0; x < img_depth.cols; ++x ) {
                 for( int y  = 0; y < img_depth.rows; ++y ) {
-                    if( abs( img_depth.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
+                    //if( abs( img_depth.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
+                    if( abs( (int)img_camera.at<unsigned char>( y, x ) - (int)img_background_cam.at<unsigned char>( y, x ) ) < 20
+                        || abs( img_depth.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
                         img_depth.at<float>( y, x ) = 0.0f;
                         geometry.at<unsigned short>( y, x ) = 0;
                     } else {
@@ -965,7 +977,7 @@ void execute( int start_frame = 0 )
 
             for( int row = 0; row < occupancy.rows; ++row ) {
                 for( int col = 0; col < occupancy.cols; ++col ) {
-                    if( occupancy.at<unsigned short>( row, col ) < 50 ) {
+                    if( occupancy.at<unsigned short>( row, col ) < 10/*50*/ ) {
                         occupancy.at<unsigned short>( row, col ) = 0;
                     }
                 }
@@ -1032,8 +1044,8 @@ void execute( int start_frame = 0 )
         param[0]=CV_IMWRITE_JPEG_QUALITY;
         param[1]=70;//default(95) 0-100
 
-        Mat imgCamRight = image( Range::all(), Range(1, image.cols / 2 + 1 ) );
-        resize( imgCamRight, img_camera, img_camera.size() );
+        //Mat imgCamRight = image( Range::all(), Range(1, image.cols / 2 + 1 ) );
+        //resize( imgCamRight, img_camera, img_camera.size() );
         //imshow( "Camera", img_camera );
 
  
@@ -1342,6 +1354,17 @@ bool load_background()
 
     ifs.close();
 
+    oss.str( "" );
+    oss.clear();
+#ifdef LINUX_OS
+    oss << "/home/kumalab/project/HumanTracking/bin/";
+#endif
+    oss << "background" << camInfo.serialNumber << ".bmp";
+    img_background_cam = imread( oss.str().c_str() );
+    if( img_background_cam.data == NULL ) {
+        return false;
+    }
+
     return true;
 }
 
@@ -1357,7 +1380,7 @@ bool save_background()
 
     ofs.open( oss.str().c_str(), ios::out | ios::binary | ios::trunc );
     if( !ofs ) {
-        cout << "Error occured in saving the background image." << endl;
+        cout << "Error occured in saving the background depth image." << endl;
         return false;
     }
 
@@ -1365,6 +1388,17 @@ bool save_background()
     ofs.write( (char*)img_background.data, img_background.rows * rowinc ); 
 
     ofs.close();
+
+    oss.str( "" );
+    oss.clear();
+#ifdef LINUX_OS
+    oss << "/home/kumalab/project/HumanTracking/bin/";
+#endif
+    oss << "background" << camInfo.serialNumber << ".bmp";
+    if( !imwrite( oss.str().c_str(), img_background_cam ) ) {
+        cout << "Error occured in saving the background image." << endl;
+        return false;
+    }
 
     return true;
 }
@@ -1374,7 +1408,8 @@ void show_background()
     if( flgWindow ) {
         Mat img_display( img_background.size(), CV_8U );
         img_background.convertTo( img_display, CV_8U, 25.0, 0.0 );
-        imshow( "background image", img_display );  
+        imshow( "background depth image", img_display );  
+        imshow( "background image", img_background_cam );
 
         while( 1 ) {
             // Exit when ESC is hit.
@@ -1385,6 +1420,7 @@ void show_background()
         }
 
         destroyWindow( "background image" );
+        destroyWindow( "background depth image" );
     }
 }
 
@@ -1449,7 +1485,7 @@ void update_background( int nFrame )
 
         // Stereo Processing
         clock_t t = clock();
-        stereo( &depthImage16, image/*triclopsInput*/ );
+        stereo( &depthImage16, &img_background_cam, image/*triclopsInput*/ );
         cout << (double)( clock() - t ) / (double)CLOCKS_PER_SEC << "[sec]" << endl;
         cout << "done." << endl << flush;
 
