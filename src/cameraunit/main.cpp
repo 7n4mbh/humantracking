@@ -1820,6 +1820,7 @@ void calibrate()
     TriclopsImage16 depthImage16;
     Mat img_camera( height, width, CV_8U );
     int stage = 0;
+    const int width_pattern = 4, height_pattern = 7;
 
     for( ; stage < 2; ) {
         cout << "Set the calibration pattern at ";
@@ -1845,7 +1846,6 @@ void calibrate()
         clock_t t = clock();
         stereo( &depthImage16, &img_camera, image );
 
-        const int width_pattern = 4, height_pattern = 7;
         Size patternsize( width_pattern, height_pattern );
         vector<Point2f> corners; // 2D positions of the detected corners
         vector<Point3f> corners3d;  // 3D positions of the detected corners
@@ -1884,7 +1884,8 @@ void calibrate()
             float ref_x, ref_y, ref_z;
             ref_x = (float)( i / width_pattern ) * 0.135f;
             ref_y = (float)( i % width_pattern ) * 0.135f;
-            ref_z = ( stage == 0 ) ? 0.5f : 0.8f; // Measurement required            
+            ref_z = ( stage == 0 ) ? 0.5f : 0.8f; // Measurement required      
+            corners3d_w.push_back( Point3f( ref_x, ref_y, ref_z ) );
         }
         drawChessboardCorners( img_camera, patternsize, Mat( corners ), true );
         ++stage;
@@ -1893,6 +1894,25 @@ void calibrate()
     cout << endl;
 
     // Calculate extrinsic parameters
+    Mat A( 3 * corners3d_w.size(), 12, CV_32F );
+    Mat b( 3 * corners3d_w.size(), 1, CV_32F );
+    Mat p;
+
+    for( int i = 0; i < corners3d_w.size(); ++i ) {
+        const int row = 3 * i;
+        A.at<float>( row, 0 ) = A.at<float>( row + 1, 3 ) = A.at<float>( row + 2, 6 ) = corners3d_cam[ i ].x;
+        A.at<float>( row, 1 ) = A.at<float>( row + 1, 4 ) = A.at<float>( row + 2, 7 ) = corners3d_cam[ i ].y;
+        A.at<float>( row, 2 ) = A.at<float>( row + 1, 5 ) = A.at<float>( row + 2, 8 ) = corners3d_cam[ i ].z;
+        A.at<float>( row, 9 ) = A.at<float>( row + 1, 10 ) = A.at<float>( row + 2, 11 ) = 1.0f;
+
+        b.at<float>( row, 0 ) = corners3d_w[ i ].x;
+        b.at<float>( row + 1, 0 ) = corners3d_w[ i ].y;
+        b.at<float>( row + 2, 0 ) = corners3d_w[ i ].z;
+    }
+
+    solve( A, b, p, DECOMP_SVD );
+
+    H.create( 3, 4, CV_32F );
 
     ofstream ofs;
     string strPath, strName, strNoextName;
@@ -1900,6 +1920,20 @@ void calibrate()
     ostringstream oss;
     oss << strPath << "Extrinsic" << camInfo.serialNumber << ".txt";
     ofs.open( oss.str().c_str() );
+    ofs << ( H.at<float>( 0, 0 ) = p.at<float>( 0,  0 ) ) << " "
+        << ( H.at<float>( 0, 1 ) = p.at<float>( 1,  0 ) ) << " "
+        << ( H.at<float>( 0, 2 ) = p.at<float>( 2,  0 ) ) << " "
+        << ( H.at<float>( 0, 3 ) = p.at<float>( 9,  0 ) ) * 1.0e3 << endl
+        << ( H.at<float>( 1, 0 ) = p.at<float>( 3,  0 ) ) << " "
+        << ( H.at<float>( 1, 1 ) = p.at<float>( 4,  0 ) ) << " "
+        << ( H.at<float>( 1, 2 ) = p.at<float>( 5,  0 ) ) << " "
+        << ( H.at<float>( 1, 3 ) = p.at<float>( 10, 0 ) ) * 1.0e3 << endl
+        << ( H.at<float>( 2, 0 ) = p.at<float>( 6,  0 ) ) << " "
+        << ( H.at<float>( 2, 1 ) = p.at<float>( 7,  0 ) ) << " "
+        << ( H.at<float>( 2, 2 ) = p.at<float>( 8,  0 ) ) << " "
+        << ( H.at<float>( 2, 3 ) = p.at<float>( 11, 0 ) ) * 1.0e3 << endl;
+    
+    ofs.close();
 
 }
 
