@@ -1785,6 +1785,124 @@ void record( int width, int height )
 #endif
 }
 
+void calibrate()
+{
+    int width = stereo_width, height = stereo_height;
+    Error err;
+
+    if( !flgVideoFile ) {
+        // Configure Format7
+        Format7ImageSettings imageSettings;
+        imageSettings.width = iMaxCols;
+        imageSettings.height = iMaxRows;
+        imageSettings.offsetX = 0;
+        imageSettings.offsetY = 0;
+        imageSettings.mode = MODE_3;
+        imageSettings.pixelFormat= PIXEL_FORMAT_RAW16;
+        err = bumblebee.SetFormat7Configuration( &imageSettings, 100.0f );
+        if( err != PGRERROR_OK ) {
+            PrintError( err );
+            exit( 1 );
+        }
+
+        // Start capturing images
+        err = bumblebee.StartCapture();
+        if( err != PGRERROR_OK ) {
+            PrintError( err );
+            exit( 1 );
+        }
+    }
+
+    vector<Point3f> corners3d_cam; // 3D positions of the corners (Camera Coordinate)
+    vector<Point3f> corners3d_w; // 3D positions of the corners (World Coordinate)
+
+    Mat image;
+    TriclopsImage16 depthImage16;
+    Mat img_camera( height, width, CV_8U );
+    int stage = 0;
+
+    for( ; stage < 2; ) {
+        cout << "Set the calibration pattern at ";
+        if( stage == 0 ) {
+            cout << "the lower plane";
+        } else {
+            cout << "the higher plane";
+        }
+        cout << ", and press any key." << endl;
+        cvWaitKey( 0 );
+
+        // Retrieve an image
+        if( !flgVideoFile ) {
+	        grab_from_bumblebee( &image );
+        } else {
+            if( !grab_from_video( &image ) ) {
+                cerr << "Error occured in grabbing an image from the video file. Abort." << endl;
+                return;
+            }
+        }
+
+        // Stereo Processing
+        clock_t t = clock();
+        stereo( &depthImage16, &img_camera, image );
+
+        const int width_pattern = 4, height_pattern = 7;
+        Size patternsize( width_pattern, height_pattern );
+        vector<Point2f> corners; // 2D positions of the detected corners
+        vector<Point3f> corners3d;  // 3D positions of the detected corners
+        unsigned short disparity;
+        float xx, yy, zz;
+
+        if( findChessboardCorners( img_camera, patternsize, corners ) ) {
+            bool flgAllCornersAvailable = true;
+            for( vector<Point2f>::iterator it = corners.begin(); it != corners.end(); ++it ) {
+                cout << "  " << it->x << ", " << it->y;
+                disparity = *(unsigned short*)((unsigned char*)depthImage16.data + depthImage16.rowinc * (int)(it->y) + (int)(it->x) * 2 );
+                triclopsRCD16ToXYZ( triclops, (int)it->y, (int)it->x, disparity, &xx, &yy, &zz );
+                if( disparity >= 0xff00 ) {
+                    zz = 0.0f;
+                    xx = 0.0f;
+                    yy = 0.0f;
+                    flgAllCornersAvailable = false;
+                }
+
+                corners3d.push_back( Point3f( xx, yy, zz ) );
+                cout << " -> " << xx << ", " << yy << ", " << zz;
+            }
+
+            if( !flgAllCornersAvailable ) {
+                cout << "No depth information measured at (a) corner(s). Try again." << endl;
+                continue;
+            }
+        } else {
+            cout << "No corners detected. Try again." << endl;
+            continue;
+        }
+
+        // Corner detection succeeded.
+        corners3d_cam.insert( corners3d_cam.end(), corners3d.begin(), corners3d.end() );
+        for( int i = 0; i < width_pattern * height_pattern; ++i ) {
+            float ref_x, ref_y, ref_z;
+            ref_x = (float)( i / width_pattern ) * 0.135f;
+            ref_y = (float)( i % width_pattern ) * 0.135f;
+            ref_z = ( stage == 0 ) ? 0.5f : 0.8f; // Measurement required            
+        }
+        drawChessboardCorners( img_camera, patternsize, Mat( corners ), true );
+        ++stage;
+    }
+
+    cout << endl;
+
+    // Calculate extrinsic parameters
+
+    ofstream ofs;
+    string strPath, strName, strNoextName;
+    getfilename( strVideoFile, &strPath, &strName, &strNoextName );
+    ostringstream oss;
+    oss << strPath << "Extrinsic" << camInfo.serialNumber << ".txt";
+    ofs.open( oss.str().c_str() );
+
+}
+
 int main( int argc, char *argv[] )
 {
     bool ret;
