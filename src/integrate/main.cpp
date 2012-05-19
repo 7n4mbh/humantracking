@@ -127,6 +127,21 @@ int main( int argc, char *argv[] )
                     << cam_image[ idx_min ].height << endl
                     << size << endl
                     << cam_image[ idx_min ].data << endl;   
+            } else if( str.find( "<DisparityMap>" ) != str.npos ) {
+                int size;
+                ifs[ idx_min ] >> geometry[ idx_min ].serialNumber 
+                               >> geometry[ idx_min ].timeStamp 
+                               >> geometry[ idx_min ].width
+                               >> geometry[ idx_min ].height
+                               >> size 
+                               >> geometry[ idx_min ].data;
+                ofs << "<DisparityMap>" << endl
+                    << geometry[ idx_min ].serialNumber << endl
+                    << geometry[ idx_min ].timeStamp << endl
+                    << geometry[ idx_min ].width << endl
+                    << geometry[ idx_min ].height << endl
+                    << size << endl
+                    << geometry[ idx_min ].data << endl;
             } else if( str.find( "<Geometry>" ) != str.npos ) {
                 int size;
                 ifs[ idx_min ] >> geometry[ idx_min ].serialNumber 

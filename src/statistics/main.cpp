@@ -45,13 +45,13 @@ int main( int argc, char *argv[] )
         cerr << "Couldn't open " << oss.str() << "." << endl;
         exit( 1 );
     }
-    ofs << "total_size, pepmap_size, camimage_size, geometry_size, geometry2_size" << endl;
+    ofs << "total_size, pepmap_size, disparity_size, camimage_size, geometry_size, geometry2_size" << endl;
 
-    int total_size, pepmap_size, camimage_size, geometry_size, geometry2_size;
+    int total_size, pepmap_size, disparity_size, camimage_size, geometry_size, geometry2_size;
     string str, str_serialNumber, str_timeStamp, str_width, str_height, str_datasize, str_data;
 
     while( !ifs.eof() ) {
-        int _pepmap_size = 0, _camimage_size = 0, _geometry_size = 0, _geometry2_size = 0;
+        int _pepmap_size = 0, _disparity_size = 0, _camimage_size = 0, _geometry_size = 0, _geometry2_size = 0;
         ifs >> str;
 		if( str.find( "<PEPMap>" ) != str.npos ) {
             ifs >> str_serialNumber 
@@ -61,6 +61,20 @@ int main( int argc, char *argv[] )
             _pepmap_size = str.length() 
                  + str_serialNumber.length()
                  + str_timeStamp.length()
+                 + str_datasize.length()
+                 + str_data.length();
+        } else if( str.find( "<DisparityMap>" ) != str.npos ) {
+            ifs >> str_serialNumber 
+                >> str_timeStamp 
+                >> str_width
+                >> str_height
+                >> str_datasize 
+                >> str_data;
+            _disparity_size = str.length() 
+                 + str_serialNumber.length()
+                 + str_timeStamp.length()
+                 + str_width.length()
+                 + str_height.length()
                  + str_datasize.length()
                  + str_data.length();
         } else if( str.find( "<CameraImage>" ) != str.npos ) {
@@ -114,22 +128,24 @@ int main( int argc, char *argv[] )
         if( flgFirst ) {
             time_start = timeStamp;
             time_until = timeStamp + 1000000ULL;
-            total_size = pepmap_size = camimage_size = geometry_size = geometry2_size = 0;
+            total_size = pepmap_size = disparity_size = camimage_size = geometry_size = geometry2_size = 0;
             flgFirst = false;
         }
 
         if( timeStamp >= time_until ) {
             ofs << total_size << ", "
                 << pepmap_size << ", "
+                << disparity_size << ", "
                 << camimage_size << ", "
                 << geometry_size << ", "
                 << geometry2_size << endl;
-            total_size = pepmap_size = camimage_size = geometry_size = geometry2_size = 0;
+            total_size = pepmap_size = disparity_size = camimage_size = geometry_size = geometry2_size = 0;
             time_until += 1000000ULL;
         }
 
-        total_size += _pepmap_size + _camimage_size + _geometry_size + _geometry2_size;
+        total_size += _pepmap_size + _disparity_size + _camimage_size + _geometry_size + _geometry2_size;
         pepmap_size += _pepmap_size;
+        disparity_size += _disparity_size;
         camimage_size += _camimage_size;
         geometry_size += _geometry_size;
         geometry2_size += _geometry2_size;

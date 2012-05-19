@@ -22,6 +22,7 @@ void CalculationProcessLogger::init( const std::string& filename )
         << ", Process Time of Stereo Processing"
         << ", Process Time of Making Maps"
         << ", Process Time of Sending an Occupancy Map"
+        << ", Process Time of Sending a Disparity Map"
         << ", Process Time of Sending a Camera image"
         << ", Process Time of Sending a Geometry Map"
         << ", Process Time of Sending a Geometry Map2"
@@ -33,6 +34,7 @@ void CalculationProcessLogger::start()
     t_process_of_stereo_processing = t_start_of_stereo_processing = t_end_of_stereo_processing = 0;
     t_process_of_makingmaps = t_start_of_makingmaps = t_end_of_makingmaps = 0;
     t_process_of_send_occupancy = t_start_of_send_occupancy = t_end_of_send_occupancy = 0;
+    t_process_of_send_disparity = t_start_of_send_disparity = t_end_of_send_disparity = 0;
     t_process_of_send_camimage = t_start_of_send_camimage = t_end_of_send_camimage = 0;
     t_process_of_send_geometry = t_start_of_send_geometry = t_end_of_send_geometry = 0;
     t_process_of_send_geometry2 = t_start_of_send_geometry2 = t_end_of_send_geometry2 = 0;
@@ -52,6 +54,7 @@ void CalculationProcessLogger::end_and_output2file()
         << t_process_of_stereo_processing << ", "
         << t_process_of_makingmaps << ", "
         << t_process_of_send_occupancy << ", "
+        << t_process_of_send_disparity << ", "
         << t_process_of_send_camimage << ", "
         << t_process_of_send_geometry << ", "
         << t_process_of_send_geometry2 << endl;
@@ -89,6 +92,16 @@ void CalculationProcessLogger::send_occupancy( CalculationProcessLogger::Event e
     } else if( evt == CalculationProcessLogger::End ) {
         t_end_of_send_occupancy = getTimeStamp();
         t_process_of_send_occupancy += t_end_of_send_occupancy - t_start_of_send_occupancy;
+    }
+}
+
+void CalculationProcessLogger::send_disparity( CalculationProcessLogger::Event evt )
+{
+    if( evt == CalculationProcessLogger::Start ) {
+        t_start_of_send_disparity = getTimeStamp();
+    } else if( evt == CalculationProcessLogger::End ) {
+        t_end_of_send_disparity = getTimeStamp();
+        t_process_of_send_disparity += t_end_of_send_disparity - t_start_of_send_disparity;
     }
 }
 
