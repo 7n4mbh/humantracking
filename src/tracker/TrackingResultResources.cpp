@@ -16,6 +16,8 @@ extern float roi_width, roi_height;
 extern float roi_x, roi_y;
 extern float scale_m2px;
 
+//#define USE_DISPARITYMAP
+
 TrackingResultResources::TrackingResultResources()
 {
     bRunThread = false;
@@ -174,6 +176,25 @@ void TrackingResultResources::AddPEPMapInfo( PEPMapInfo& pepmap )
 #endif
 }
 
+void TrackingResultResources::AddDisparityMapInfo( GeometryMapInfo& disparity )
+{
+#ifdef WINDOWS_OS
+    EnterCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_lock( &mutex );
+#endif
+
+    bufDisparityMap[ disparity.timeStamp ] = disparity;
+
+#ifdef WINDOWS_OS
+    LeaveCriticalSection( &cs );
+#endif
+#ifdef LINUX_OS
+    pthread_mutex_unlock( &mutex );
+#endif
+}
+
 void TrackingResultResources::AddCameraImageInfo( CameraImageInfo& cam_image )
 {
 #ifdef WINDOWS_OS
@@ -320,12 +341,13 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
     GestureRecognition gesture;
     gesture.init( pTrackingResultResources->strSilhouettePath );
     Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
-    Mat geometry, geometry2;
+    Mat disparitymap, geometry, geometry2;
     Mat img_occupancy( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
     Mat img_display_tmp( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     Mat img_display( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     Mat img_cam_display;
     Mat img_silhouette_display( (int)( scale_m2px * 3.0 ), (int)( scale_m2px * roi_height ), CV_8UC3 );
+    Mat img_silhouette_save( (int)( scale_m2px * 3.0 ), (int)( scale_m2px * roi_height ), CV_8UC3 );
     char buf[ SIZE_BUFFER ];
 
     deque< map<int,Point2d> > result_buffer;
@@ -497,6 +519,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                     }
                     img_cam_display = imdecode(Mat(buff),CV_LOAD_IMAGE_COLOR); 
 
+#ifndef USE_DISPARITYMAP
                     map<unsigned long long,GeometryMapInfo>::iterator itGeometryInfo = pTrackingResultResources->bufGeometry.find( pepmap.timeStamp );
                     if( itGeometryInfo != pTrackingResultResources->bufGeometry.end() ) {
                         vector<uchar> buff( itGeometryInfo->second.data.size() / 2 );
@@ -532,7 +555,40 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 
                             flgGeometry2Available = true;
                         }
+#else
+                    // The code below is for making geometry maps from disparity map.
+                    // The code is on the way.
+                    map<unsigned long long,GeometryMapInfo>::iterator itDisparityMapInfo = pTrackingResultResources->bufDisparityMap.find( pepmap.timeStamp );
+                    if( itDisparityMapInfo != pTrackingResultResources->bufDisparityMap.end() ) {
+                        // Extract data
+                        vector<uchar> buff( itDisparityMapInfo->second.data.size() / 2 );
+                        char a[ 3 ]; a[ 2 ] = '\0';
+                        for( int j = 0; j < buff.size(); ++j ) {
+                            a[ 0 ] = itDisparityMapInfo->second.data[ j * 2 ];
+                            a[ 1 ] = itDisparityMapInfo->second.data[ j * 2 + 1 ];
+                            buff[ j ] = strtol( a, NULL, 16 );
+                        }
+                        disparitymap.create( itDisparityMapInfo->second.height, itDisparityMapInfo->second.width, CV_16U );
+                        uLongf len_uncompressed = itDisparityMapInfo->second.height * itDisparityMapInfo->second.width * 2;
+                        uncompress( disparitymap.data
+                        , &len_uncompressed
+                        , (const Bytef*)&buff[ 0 ]
+                        , itDisparityMapInfo->second.data.size() / 2 );
 
+                        // Make Geometry Maps
+                        unsigned short disparity;
+                        float xx, yy, zz;
+                        geometry.create( disparitymap.rows, disparitymap.cols, CV_16U );
+                        for( int x = 0; x < disparitymap.cols; ++x ) {
+                            for( int y  = 0; y < disparitymap.rows; ++y ) {
+                                disparity = disparitymap.at<unsigned short>( y, x );
+                                if( disparity < 0xff00 ) {
+                                    triclopsRCD16ToXYZ( triclops, y, x, disparity, &xx, &yy, &zz );
+                                }
+                            }
+                        }
+                        flgGeometry2Available = true;
+#endif
                         map<int,Mat> img_silhouette;
                         for( int x = 0; x < geometry.cols; ++x ) {
                             for( int y = 0; y < geometry.rows; ++y ) {
@@ -569,24 +625,42 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 
                         for( map<int,Mat>::iterator itImgSilhouette = img_silhouette.begin(); itImgSilhouette != img_silhouette.end(); ++itImgSilhouette ) {
                             const int id = itImgSilhouette->first;
-                            ostringstream oss;
-                            oss << pTrackingResultResources->strSilhouettePath << id << "_" << pepmap.timeStamp << ".avi";
-                            //imwrite( oss.str(), itImgSilhouette->second ); 
                             if( pTrackingResultResources->silhouetteVideoWriter.find( id ) == pTrackingResultResources->silhouetteVideoWriter.end() ) {
+                                ostringstream oss;
+                                oss << pTrackingResultResources->strSilhouettePath << id << ".avi";
                                 pTrackingResultResources->silhouetteVideoWriter[ id ].open( oss.str()
                                                                                           , CV_FOURCC('X','V','I','D')
                                                                                           , 10
-                                                                                          , Size( itImgSilhouette->second.cols, itImgSilhouette->second.rows ) );
+                                                                                          , Size( itImgSilhouette->second.cols, itImgSilhouette->second.rows * 2 ) );
                             }
-                            gesture.SetSilhouette( id, pepmap.timeStamp, itImgSilhouette->second );
-                            if( gesture.status[ 1 ] ) {
-                                rectangle( itImgSilhouette->second
-                                            , Point( 0, 0 )
-                                            , Point( 10, 10 )
-                                            , color_table[ 1 % sizeColorTable ]
-                                            , CV_FILLED );
+                            gesture.set_silhouette( id, pepmap.timeStamp, itImgSilhouette->second );
+                            if( pepmap.serialNumber == 7420008 ) {
+                                gesture.recognize( id, pepmap.timeStamp );
+                                if( id == 1 ) {
+                                    if( gesture.status[ 1 ] ) {
+                                        rectangle( itImgSilhouette->second
+                                                    , Point( 0, 0 )
+                                                    , Point( 10, 10 )
+                                                    , color_table[ 1 % sizeColorTable ]
+                                                    , CV_FILLED );
+                                    }
+                                }
+                                Mat silhouette_sythesized = gesture.get_silhouette( id );
+                                for( int x = 0; x < itImgSilhouette->second.cols; ++x ) {
+                                    for( int y = 0; y < itImgSilhouette->second.rows; ++y ) {
+                                        img_silhouette_save.at<Vec3b>( y, x )[ 0 ] = itImgSilhouette->second.at<Vec3b>( y, x )[ 0 ];
+                                        img_silhouette_save.at<Vec3b>( y, x )[ 1 ] = itImgSilhouette->second.at<Vec3b>( y, x )[ 1 ];
+                                        img_silhouette_save.at<Vec3b>( y, x )[ 2 ] = itImgSilhouette->second.at<Vec3b>( y, x )[ 2 ];
+
+                                        img_silhouette_save.at<Vec3b>( itImgSilhouette->second.rows + y, x )[ 0 ]
+                                        = img_silhouette_save.at<Vec3b>( itImgSilhouette->second.rows + y, x )[ 1 ]
+                                        = img_silhouette_save.at<Vec3b>( itImgSilhouette->second.rows + y, x )[ 2 ]
+                                        = silhouette_sythesized.at<unsigned char>( y, x );                                        
+                                    }
+                                }
+                                pTrackingResultResources->silhouetteVideoWriter[ id ].write( img_silhouette_save );
+                                gesture.clear_silhouette( id );
                             }
-                            pTrackingResultResources->silhouetteVideoWriter[ id ].write( itImgSilhouette->second );
                         }
 
                         if( img_silhouette.find( 1 ) != img_silhouette.end() ) {
@@ -636,6 +710,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                                                                  , pTrackingResultResources->bufGeometry.lower_bound( time_pepmap )  );
                 pTrackingResultResources->bufGeometry2.erase( pTrackingResultResources->bufGeometry2.begin()
                                                                  , pTrackingResultResources->bufGeometry2.lower_bound( time_pepmap )  );
+                pTrackingResultResources->bufDisparityMap.erase( pTrackingResultResources->bufDisparityMap.begin()
+                                                                 , pTrackingResultResources->bufDisparityMap.lower_bound( time_pepmap )  );
                 pTrackingResultResources->trackingResult.erase( pTrackingResultResources->trackingResult.begin() );
 
 		//cout << " -> erase()" << endl;

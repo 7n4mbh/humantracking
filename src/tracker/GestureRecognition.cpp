@@ -23,8 +23,39 @@ void GestureRecognition::init( std::string recognition_result_path )
 }
 
 
-void GestureRecognition::SetSilhouette( int id, unsigned long long timeStamp, const cv::Mat& silhouette )
+void GestureRecognition::set_silhouette( int id, unsigned long long timeStamp, const cv::Mat& silhouette )
 {
+    if( this->silhouette[ id ].size() != silhouette.size() ) {
+        this->silhouette[ id ] = Mat::zeros( silhouette.size(), CV_8U );
+    }
+
+    for( int y = 0; y < silhouette.rows; ++y ) {
+        for( int x = 0; x < silhouette.cols; ++x ) {
+            if( ( silhouette.at<Vec3b>( y, x )[ 0 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 1 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 2 ] != 0 ) ) {
+                this->silhouette[ id ].at<unsigned char>( y, x ) |= 255;
+            }
+        }
+    }
+}
+
+Mat GestureRecognition::get_silhouette( int id )
+{
+    return silhouette[ id ];
+}
+
+void GestureRecognition::clear_silhouette( int id )
+{
+    memset( silhouette[ id ].data, 0, silhouette[ id ].rows * silhouette[ id ].cols );
+}
+
+
+
+void GestureRecognition::recognize( int id, unsigned long long timeStamp )
+{
+    if( silhouette.find( id ) == silhouette.end() ) {
+        return;
+    }
+
     if( ofs.find( id ) == ofs.end() ) {
         ostringstream oss;
         oss << strRecognitionResultPath << id << "_gesture.txt";
@@ -36,15 +67,16 @@ void GestureRecognition::SetSilhouette( int id, unsigned long long timeStamp, co
         ofs[ id ] << "timeStamp, mean_x, mean_y, row_highest, nAllPixels, nUpperPixels, nLowerPixels, nUpperLeftPixels, nUpperRightPixels" << endl; 
     }
 
-    vector<int> nPixels_row( silhouette.rows );
+    vector<int> nPixels_row( silhouette[ id ].rows );
     int row_highest = 0;
-    int col_left = silhouette.cols - 1, col_right = 0;
+    int col_left = silhouette[ id ].cols - 1, col_right = 0;
     int mean_x = 0, mean_y = 0;
 
-    for( int y = 0; y < silhouette.rows; ++y ) {
+    for( int y = 0; y < silhouette[ id ].rows; ++y ) {
         nPixels_row[ y ] = 0;
-        for( int x = 0; x < silhouette.cols; ++x ) {
-            if( ( silhouette.at<Vec3b>( y, x )[ 0 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 1 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 2 ] != 0 ) ) {
+        for( int x = 0; x < silhouette[ id ].cols; ++x ) {
+            //if( ( silhouette[ id ].at<Vec3b>( y, x )[ 0 ] != 0 ) || ( silhouette[ id ].at<Vec3b>( y, x )[ 1 ] != 0 ) || ( silhouette[ id ].at<Vec3b>( y, x )[ 2 ] != 0 ) ) {
+            if( silhouette[ id ].at<unsigned char>( y, x ) != 0 ) {
                 ++nPixels_row[ y ];
                 mean_x += x;
                 mean_y += y;
@@ -65,8 +97,9 @@ void GestureRecognition::SetSilhouette( int id, unsigned long long timeStamp, co
 
     int nPixels_leftupper = 0;
     for( int x = col_left; x < ( col_left + col_right ) / 2; ++x ) {
-        for( int y = row_highest; y < ( silhouette.rows + row_highest ) / 2; ++y ) {
-            if( ( silhouette.at<Vec3b>( y, x )[ 0 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 1 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 2 ] != 0 ) ) {
+        for( int y = row_highest; y < ( silhouette[ id ].rows + row_highest ) / 2; ++y ) {
+            //if( ( silhouette.at<Vec3b>( y, x )[ 0 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 1 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 2 ] != 0 ) ) {
+            if( silhouette[ id ].at<unsigned char>( y, x ) != 0 ) {
                 ++nPixels_leftupper;
             }
         }
@@ -74,8 +107,9 @@ void GestureRecognition::SetSilhouette( int id, unsigned long long timeStamp, co
 
     int nPixels_rightupper = 0;
     for( int x = ( col_left + col_right ) / 2; x <= col_right; ++x ) {
-        for( int y = row_highest; y < ( silhouette.rows + row_highest ) / 2; ++y ) {
-            if( ( silhouette.at<Vec3b>( y, x )[ 0 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 1 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 2 ] != 0 ) ) {
+        for( int y = row_highest; y < ( silhouette[ id ].rows + row_highest ) / 2; ++y ) {
+            //if( ( silhouette.at<Vec3b>( y, x )[ 0 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 1 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 2 ] != 0 ) ) {
+            if( silhouette[ id ].at<unsigned char>( y, x ) != 0 ) {
                 ++nPixels_rightupper;
             }
         }
@@ -84,9 +118,9 @@ void GestureRecognition::SetSilhouette( int id, unsigned long long timeStamp, co
     const int nAllPixels = std::accumulate( nPixels_row.begin(), nPixels_row.end(), 0 );
     mean_x /= nAllPixels;
     mean_y /= nAllPixels;
-    mean_y = silhouette.rows - mean_y;
+    mean_y = silhouette[ id ].rows - mean_y;
 
-    const int nUpperPixels = std::accumulate( nPixels_row.begin(), nPixels_row.begin() + ( silhouette.rows + row_highest ) / 2, 0 );
+    const int nUpperPixels = std::accumulate( nPixels_row.begin(), nPixels_row.begin() + ( silhouette[ id ].rows + row_highest ) / 2, 0 );
     const int nLowerPixels = nAllPixels - nUpperPixels;
 
 

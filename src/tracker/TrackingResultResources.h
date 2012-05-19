@@ -23,6 +23,7 @@ private:
     int nUpdateViewRequest;
     int delayUpdate;
     std::deque<PEPMapInfo> bufPEPMap;
+    std::map<unsigned long long, GeometryMapInfo> bufDisparityMap;
     std::map<unsigned long long, CameraImageInfo> bufCameraImage;
     std::map<unsigned long long, GeometryMapInfo> bufGeometry;
     std::map<unsigned long long, GeometryMapInfo> bufGeometry2;
@@ -49,6 +50,7 @@ public:
     virtual ~TrackingResultResources();
     void AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result, const std::map<unsigned long long, std::multimap<int,cv::Point2d> >& ext_result );
     void AddPEPMapInfo( PEPMapInfo& pepmap );
+    void AddDisparityMapInfo( GeometryMapInfo& disparity );
     void AddCameraImageInfo( CameraImageInfo& cam_image );
     void AddGeometryMapInfo( GeometryMapInfo& geometry );
     void AddGeometryMap2Info( GeometryMapInfo& geometry2 );
