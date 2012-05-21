@@ -929,7 +929,8 @@ void execute( int start_frame = 0 )
             for( int x = 0; x < img_depth.cols; ++x ) {
                 for( int y  = 0; y < img_depth.rows; ++y ) {
                     //if( abs( img_depth.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
-                    if( abs( (int)img_camera.at<unsigned char>( y, x ) - (int)img_background_cam.at<unsigned char>( y, x ) ) < 20
+                    int a, b;
+                    if( abs( ( a = (int)img_camera.at<unsigned char>( y, x ) ) - ( b = (int)img_background_cam.at<unsigned char>( y, x ) ) ) < 20
                         || abs( img_depth.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
                         img_depth.at<float>( y, x ) = 0.0f;
                         geometry.at<unsigned short>( y, x ) = 0;
@@ -1420,7 +1421,8 @@ bool load_background()
     oss << "/home/kumalab/project/HumanTracking/bin/";
 #endif
     oss << "background" << camInfo.serialNumber << ".bmp";
-    img_background_cam = imread( oss.str().c_str() );
+    Mat _img_background_cam = imread( oss.str().c_str() );
+    cvtColor( _img_background_cam, img_background_cam, CV_BGR2GRAY );
     if( img_background_cam.data == NULL ) {
         return false;
     }
