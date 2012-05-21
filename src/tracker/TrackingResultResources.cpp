@@ -347,7 +347,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
     Mat img_display( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     Mat img_cam_display;
     Mat img_silhouette_display( (int)( scale_m2px * 3.0 ), (int)( scale_m2px * roi_height ), CV_8UC3 );
-    Mat img_silhouette_save( (int)( scale_m2px * 3.0 ), (int)( scale_m2px * roi_height ), CV_8UC3 );
+    Mat img_silhouette_save( (int)( scale_m2px * 3.0 ) * 2, (int)( scale_m2px * roi_height ), CV_8UC3 );
     char buf[ SIZE_BUFFER ];
 
     deque< map<int,Point2d> > result_buffer;
@@ -507,6 +507,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 
                 memset( img_silhouette_display.data, 0, img_silhouette_display.rows * img_silhouette_display.cols * 3 );
 
+                bool flgCamImageAvailable = false;
                 map<unsigned long long,CameraImageInfo>::iterator itCamImageInfo = pTrackingResultResources->bufCameraImage.find( pepmap.timeStamp );
                 if( itCamImageInfo != pTrackingResultResources->bufCameraImage.end() ) {
                     //img_cam_display.create( itCamImageInfo->second.height, itCamImageInfo->second.width, CV_8UC3 );
@@ -518,156 +519,161 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                         buff[ j ] = strtol( a, NULL, 16 );
                     }
                     img_cam_display = imdecode(Mat(buff),CV_LOAD_IMAGE_COLOR); 
+                    flgCamImageAvailable = true;
+                }
 
 #ifndef USE_DISPARITYMAP
-                    map<unsigned long long,GeometryMapInfo>::iterator itGeometryInfo = pTrackingResultResources->bufGeometry.find( pepmap.timeStamp );
-                    if( itGeometryInfo != pTrackingResultResources->bufGeometry.end() ) {
-                        vector<uchar> buff( itGeometryInfo->second.data.size() / 2 );
-                        char a[ 3 ]; a[ 2 ] = '\0';
-                        for( int j = 0; j < buff.size(); ++j ) {
-                            a[ 0 ] = itGeometryInfo->second.data[ j * 2 ];
-                            a[ 1 ] = itGeometryInfo->second.data[ j * 2 + 1 ];
-                            buff[ j ] = strtol( a, NULL, 16 );
-                        }
-                        geometry.create(  itGeometryInfo->second.height, itGeometryInfo->second.width, CV_16U );
-                        uLongf len_uncompressed = itGeometryInfo->second.height * itGeometryInfo->second.width * 2;
-                        uncompress( geometry.data
-                        , &len_uncompressed
-                        , (const Bytef*)&buff[ 0 ]
-                        , itGeometryInfo->second.data.size() / 2 );
+                map<unsigned long long,GeometryMapInfo>::iterator itGeometryInfo = pTrackingResultResources->bufGeometry.find( pepmap.timeStamp );
+                if( itGeometryInfo != pTrackingResultResources->bufGeometry.end() ) {
+                    vector<uchar> buff( itGeometryInfo->second.data.size() / 2 );
+                    char a[ 3 ]; a[ 2 ] = '\0';
+                    for( int j = 0; j < buff.size(); ++j ) {
+                        a[ 0 ] = itGeometryInfo->second.data[ j * 2 ];
+                        a[ 1 ] = itGeometryInfo->second.data[ j * 2 + 1 ];
+                        buff[ j ] = strtol( a, NULL, 16 );
+                    }
+                    geometry.create(  itGeometryInfo->second.height, itGeometryInfo->second.width, CV_16U );
+                    uLongf len_uncompressed = itGeometryInfo->second.height * itGeometryInfo->second.width * 2;
+                    uncompress( geometry.data
+                    , &len_uncompressed
+                    , (const Bytef*)&buff[ 0 ]
+                    , itGeometryInfo->second.data.size() / 2 );
                         
-                        map<unsigned long long,GeometryMapInfo>::iterator itGeometry2Info = pTrackingResultResources->bufGeometry2.find( pepmap.timeStamp );
-                        bool flgGeometry2Available = false;
-                        if( itGeometry2Info != pTrackingResultResources->bufGeometry2.end() ) {
-                            vector<uchar> buff2( itGeometry2Info->second.data.size() / 2 );
-                            char a[ 3 ]; a[ 2 ] = '\0';
-                            for( int j = 0; j < buff2.size(); ++j ) {
-                                a[ 0 ] = itGeometry2Info->second.data[ j * 2 ];
-                                a[ 1 ] = itGeometry2Info->second.data[ j * 2 + 1 ];
-                                buff2[ j ] = strtol( a, NULL, 16 );
-                            }
-                            geometry2.create(  itGeometry2Info->second.height, itGeometry2Info->second.width, CV_16U );
-                            uLongf len_uncompressed = itGeometry2Info->second.height * itGeometry2Info->second.width * 2;
-                            uncompress( geometry2.data
-                            , &len_uncompressed
-                            , (const Bytef*)&buff2[ 0 ]
-                            , itGeometry2Info->second.data.size() / 2 );
-
-                            flgGeometry2Available = true;
-                        }
-#else
-                    // The code below is for making geometry maps from disparity map.
-                    // The code is on the way.
-                    map<unsigned long long,GeometryMapInfo>::iterator itDisparityMapInfo = pTrackingResultResources->bufDisparityMap.find( pepmap.timeStamp );
-                    if( itDisparityMapInfo != pTrackingResultResources->bufDisparityMap.end() ) {
-                        // Extract data
-                        vector<uchar> buff( itDisparityMapInfo->second.data.size() / 2 );
+                    map<unsigned long long,GeometryMapInfo>::iterator itGeometry2Info = pTrackingResultResources->bufGeometry2.find( pepmap.timeStamp );
+                    bool flgGeometry2Available = false;
+                    if( itGeometry2Info != pTrackingResultResources->bufGeometry2.end() ) {
+                        vector<uchar> buff2( itGeometry2Info->second.data.size() / 2 );
                         char a[ 3 ]; a[ 2 ] = '\0';
-                        for( int j = 0; j < buff.size(); ++j ) {
-                            a[ 0 ] = itDisparityMapInfo->second.data[ j * 2 ];
-                            a[ 1 ] = itDisparityMapInfo->second.data[ j * 2 + 1 ];
-                            buff[ j ] = strtol( a, NULL, 16 );
+                        for( int j = 0; j < buff2.size(); ++j ) {
+                            a[ 0 ] = itGeometry2Info->second.data[ j * 2 ];
+                            a[ 1 ] = itGeometry2Info->second.data[ j * 2 + 1 ];
+                            buff2[ j ] = strtol( a, NULL, 16 );
                         }
-                        disparitymap.create( itDisparityMapInfo->second.height, itDisparityMapInfo->second.width, CV_16U );
-                        uLongf len_uncompressed = itDisparityMapInfo->second.height * itDisparityMapInfo->second.width * 2;
-                        uncompress( disparitymap.data
+                        geometry2.create(  itGeometry2Info->second.height, itGeometry2Info->second.width, CV_16U );
+                        uLongf len_uncompressed = itGeometry2Info->second.height * itGeometry2Info->second.width * 2;
+                        uncompress( geometry2.data
                         , &len_uncompressed
-                        , (const Bytef*)&buff[ 0 ]
-                        , itDisparityMapInfo->second.data.size() / 2 );
+                        , (const Bytef*)&buff2[ 0 ]
+                        , itGeometry2Info->second.data.size() / 2 );
 
-                        // Make Geometry Maps
-                        unsigned short disparity;
-                        float xx, yy, zz;
-                        geometry.create( disparitymap.rows, disparitymap.cols, CV_16U );
-                        for( int x = 0; x < disparitymap.cols; ++x ) {
-                            for( int y  = 0; y < disparitymap.rows; ++y ) {
-                                disparity = disparitymap.at<unsigned short>( y, x );
-                                if( disparity < 0xff00 ) {
-                                    triclopsRCD16ToXYZ( triclops, y, x, disparity, &xx, &yy, &zz );
-                                }
-                            }
-                        }
                         flgGeometry2Available = true;
+                    }
+#else
+                // The code below is for making geometry maps from disparity map.
+                // The code is on the way.
+                map<unsigned long long,GeometryMapInfo>::iterator itDisparityMapInfo = pTrackingResultResources->bufDisparityMap.find( pepmap.timeStamp );
+                if( itDisparityMapInfo != pTrackingResultResources->bufDisparityMap.end() ) {
+                    // Extract data
+                    vector<uchar> buff( itDisparityMapInfo->second.data.size() / 2 );
+                    char a[ 3 ]; a[ 2 ] = '\0';
+                    for( int j = 0; j < buff.size(); ++j ) {
+                        a[ 0 ] = itDisparityMapInfo->second.data[ j * 2 ];
+                        a[ 1 ] = itDisparityMapInfo->second.data[ j * 2 + 1 ];
+                        buff[ j ] = strtol( a, NULL, 16 );
+                    }
+                    disparitymap.create( itDisparityMapInfo->second.height, itDisparityMapInfo->second.width, CV_16U );
+                    uLongf len_uncompressed = itDisparityMapInfo->second.height * itDisparityMapInfo->second.width * 2;
+                    uncompress( disparitymap.data
+                    , &len_uncompressed
+                    , (const Bytef*)&buff[ 0 ]
+                    , itDisparityMapInfo->second.data.size() / 2 );
+
+                    // Make Geometry Maps
+                    unsigned short disparity;
+                    float xx, yy, zz;
+                    geometry.create( disparitymap.rows, disparitymap.cols, CV_16U );
+                    for( int x = 0; x < disparitymap.cols; ++x ) {
+                        for( int y  = 0; y < disparitymap.rows; ++y ) {
+                            disparity = disparitymap.at<unsigned short>( y, x );
+                            if( disparity < 0xff00 ) {
+                                triclopsRCD16ToXYZ( triclops, y, x, disparity, &xx, &yy, &zz );
+                            }
+                        }
+                    }
+                    flgGeometry2Available = true;
 #endif
-                        map<int,Mat> img_silhouette;
-                        for( int x = 0; x < geometry.cols; ++x ) {
-                            for( int y = 0; y < geometry.rows; ++y ) {
-                                const int keyval = geometry.at<unsigned short>( y, x );
-                                map<int,int>::iterator itID;
-                                if( ( itID = geometry_to_ID.find( keyval ) ) != geometry_to_ID.end() ) {
+                    map<int,Mat> img_silhouette;
+                    for( int x = 0; x < geometry.cols; ++x ) {
+                        for( int y = 0; y < geometry.rows; ++y ) {
+                            const int keyval = geometry.at<unsigned short>( y, x );
+                            map<int,int>::iterator itID;
+                            if( ( itID = geometry_to_ID.find( keyval ) ) != geometry_to_ID.end() ) {
+                                if( flgCamImageAvailable ) {
                                     line( img_cam_display, Point( x, y ), Point( x, y ), color_table[ itID->second % sizeColorTable ], 1 );
-                                    if( flgGeometry2Available/* && itID->second == 1*/ ) {
-                                        const int keyval2 = geometry2.at<unsigned short>( y, x );
-                                        if( keyval2 > 0 ) {
-                                            //const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette_display.cols;
-                                            //const int row_on_silhouette = ( keyval2 - 1 ) / img_silhouette_display.cols;
-                                            //line( img_silhouette_display
-                                            //    , Point( col_on_silhouette, row_on_silhouette )
-                                            //    , Point( col_on_silhouette, row_on_silhouette )
-                                            //    , color_table[ itID->second % sizeColorTable ]
-                                            //    , 1 );
-                                            if( img_silhouette.find( itID->second ) == img_silhouette.end() ) {
-                                                img_silhouette[ itID->second ].create( (int)( scale_m2px * 3.0 ), (int)( scale_m2px * roi_height ), CV_8UC3 );
-                                                memset( img_silhouette[ itID->second ].data, 0, img_silhouette[ itID->second ].cols * img_silhouette[ itID->second ].rows * 3 );
-                                            }
-                                            const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette[ itID->second ].cols;
-                                            const int row_on_silhouette = ( keyval2 - 1 ) / img_silhouette[ itID->second ].cols;
-                                            line( img_silhouette[ itID->second ]
-                                                , Point( col_on_silhouette, row_on_silhouette )
-                                                , Point( col_on_silhouette, row_on_silhouette )
-                                                , color_table[ itID->second % sizeColorTable ]
-                                                , 1 );
+                                }
+                                if( flgGeometry2Available/* && itID->second == 1*/ ) {
+                                    const int keyval2 = geometry2.at<unsigned short>( y, x );
+                                    if( keyval2 > 0 ) {
+                                        //const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette_display.cols;
+                                        //const int row_on_silhouette = ( keyval2 - 1 ) / img_silhouette_display.cols;
+                                        //line( img_silhouette_display
+                                        //    , Point( col_on_silhouette, row_on_silhouette )
+                                        //    , Point( col_on_silhouette, row_on_silhouette )
+                                        //    , color_table[ itID->second % sizeColorTable ]
+                                        //    , 1 );
+                                        if( img_silhouette.find( itID->second ) == img_silhouette.end() ) {
+                                            img_silhouette[ itID->second ].create( (int)( scale_m2px * 3.0 ), (int)( scale_m2px * roi_height ), CV_8UC3 );
+                                            memset( img_silhouette[ itID->second ].data, 0, img_silhouette[ itID->second ].cols * img_silhouette[ itID->second ].rows * 3 );
                                         }
+                                        const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette[ itID->second ].cols;
+                                        const int row_on_silhouette = ( keyval2 - 1 ) / img_silhouette[ itID->second ].cols;
+                                        line( img_silhouette[ itID->second ]
+                                            , Point( col_on_silhouette, row_on_silhouette )
+                                            , Point( col_on_silhouette, row_on_silhouette )
+                                            , color_table[ itID->second % sizeColorTable ]
+                                            , 1 );
                                     }
                                 }
                             }
-                        }
-
-                        for( map<int,Mat>::iterator itImgSilhouette = img_silhouette.begin(); itImgSilhouette != img_silhouette.end(); ++itImgSilhouette ) {
-                            const int id = itImgSilhouette->first;
-                            if( pTrackingResultResources->silhouetteVideoWriter.find( id ) == pTrackingResultResources->silhouetteVideoWriter.end() ) {
-                                ostringstream oss;
-                                oss << pTrackingResultResources->strSilhouettePath << id << ".avi";
-                                pTrackingResultResources->silhouetteVideoWriter[ id ].open( oss.str()
-                                                                                          , CV_FOURCC('X','V','I','D')
-                                                                                          , 10
-                                                                                          , Size( itImgSilhouette->second.cols, itImgSilhouette->second.rows * 2 ) );
-                            }
-                            gesture.set_silhouette( id, pepmap.timeStamp, itImgSilhouette->second );
-                            if( pepmap.serialNumber == 7420008 ) {
-                                gesture.recognize( id, pepmap.timeStamp );
-                                if( id == 1 ) {
-                                    if( gesture.status[ 1 ] ) {
-                                        rectangle( itImgSilhouette->second
-                                                    , Point( 0, 0 )
-                                                    , Point( 10, 10 )
-                                                    , color_table[ 1 % sizeColorTable ]
-                                                    , CV_FILLED );
-                                    }
-                                }
-                                Mat silhouette_sythesized = gesture.get_silhouette( id );
-                                for( int x = 0; x < itImgSilhouette->second.cols; ++x ) {
-                                    for( int y = 0; y < itImgSilhouette->second.rows; ++y ) {
-                                        img_silhouette_save.at<Vec3b>( y, x )[ 0 ] = itImgSilhouette->second.at<Vec3b>( y, x )[ 0 ];
-                                        img_silhouette_save.at<Vec3b>( y, x )[ 1 ] = itImgSilhouette->second.at<Vec3b>( y, x )[ 1 ];
-                                        img_silhouette_save.at<Vec3b>( y, x )[ 2 ] = itImgSilhouette->second.at<Vec3b>( y, x )[ 2 ];
-
-                                        img_silhouette_save.at<Vec3b>( itImgSilhouette->second.rows + y, x )[ 0 ]
-                                        = img_silhouette_save.at<Vec3b>( itImgSilhouette->second.rows + y, x )[ 1 ]
-                                        = img_silhouette_save.at<Vec3b>( itImgSilhouette->second.rows + y, x )[ 2 ]
-                                        = silhouette_sythesized.at<unsigned char>( y, x );                                        
-                                    }
-                                }
-                                pTrackingResultResources->silhouetteVideoWriter[ id ].write( img_silhouette_save );
-                                gesture.clear_silhouette( id );
-                            }
-                        }
-
-                        if( img_silhouette.find( 1 ) != img_silhouette.end() ) {
-                            img_silhouette_display = img_silhouette[ 1 ];
                         }
                     }
 
+                    for( map<int,Mat>::iterator itImgSilhouette = img_silhouette.begin(); itImgSilhouette != img_silhouette.end(); ++itImgSilhouette ) {
+                        const int id = itImgSilhouette->first;
+                        if( pTrackingResultResources->silhouetteVideoWriter.find( id ) == pTrackingResultResources->silhouetteVideoWriter.end() ) {
+                            ostringstream oss;
+                            oss << pTrackingResultResources->strSilhouettePath << id << ".avi";
+                            pTrackingResultResources->silhouetteVideoWriter[ id ].open( oss.str()
+                                                                                        , CV_FOURCC('X','V','I','D')
+                                                                                        , 10
+                                                                                        , Size( itImgSilhouette->second.cols, itImgSilhouette->second.rows * 2 ) );
+                        }
+                        gesture.set_silhouette( id, pepmap.timeStamp, itImgSilhouette->second );
+                        if( pepmap.serialNumber == 7420008 ) {
+                            gesture.recognize( id, pepmap.timeStamp );
+                            if( id == 1 ) {
+                                if( gesture.status[ 1 ] ) {
+                                    rectangle( itImgSilhouette->second
+                                                , Point( 0, 0 )
+                                                , Point( 10, 10 )
+                                                , color_table[ 1 % sizeColorTable ]
+                                                , CV_FILLED );
+                                }
+                            }
+                            Mat silhouette_sythesized = gesture.get_silhouette( id );
+                            for( int x = 0; x < itImgSilhouette->second.cols; ++x ) {
+                                for( int y = 0; y < itImgSilhouette->second.rows; ++y ) {
+                                    img_silhouette_save.at<Vec3b>( y, x )[ 0 ] = itImgSilhouette->second.at<Vec3b>( y, x )[ 0 ];
+                                    img_silhouette_save.at<Vec3b>( y, x )[ 1 ] = itImgSilhouette->second.at<Vec3b>( y, x )[ 1 ];
+                                    img_silhouette_save.at<Vec3b>( y, x )[ 2 ] = itImgSilhouette->second.at<Vec3b>( y, x )[ 2 ];
+
+                                    img_silhouette_save.at<Vec3b>( itImgSilhouette->second.rows + y, x )[ 0 ]
+                                    = img_silhouette_save.at<Vec3b>( itImgSilhouette->second.rows + y, x )[ 1 ]
+                                    = img_silhouette_save.at<Vec3b>( itImgSilhouette->second.rows + y, x )[ 2 ]
+                                    = silhouette_sythesized.at<unsigned char>( y, x );                                        
+                                }
+                            }
+                            pTrackingResultResources->silhouetteVideoWriter[ id ].write( img_silhouette_save );
+                            gesture.clear_silhouette( id );
+                        }
+                    }
+
+                    if( img_silhouette.find( 1 ) != img_silhouette.end() ) {
+                        img_silhouette_display = img_silhouette[ 1 ];
+                    }
+                }
+
+                if( flgCamImageAvailable ) {
                     imshow( "Camera", img_cam_display );
                     imshow( "Silhouette", img_silhouette_display );
                     pTrackingResultResources->cameraVideoWriter.write( img_cam_display );
