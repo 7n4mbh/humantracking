@@ -1323,7 +1323,9 @@ bool load_extrinsic_parameters()
 
     ostringstream oss;
 #ifdef LINUX_OS
-    oss << "/home/kumalab/project/HumanTracking/bin/";
+    if( strPath == "" ) {
+        oss << "/home/kumalab/project/HumanTracking/bin/";
+    }
 #endif
     oss << strPath << "Extrinsic" << camInfo.serialNumber << ".txt";
     ifs.open( oss.str().c_str() );
@@ -1360,7 +1362,9 @@ bool load_pepmap_config()
 
     ostringstream oss;
 #ifdef LINUX_OS
-    oss << "/home/kumalab/project/HumanTracking/bin/";
+    if( strPath == "" ) {
+        oss << "/home/kumalab/project/HumanTracking/bin/";
+    }
 #endif
     oss << strPath << "pepmap.cfg";
 
