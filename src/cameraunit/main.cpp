@@ -1426,7 +1426,9 @@ bool load_background()
 #endif
     oss << "background" << camInfo.serialNumber << ".bmp";
     Mat _img_background_cam = imread( oss.str().c_str() );
-    cvtColor( _img_background_cam, img_background_cam, CV_BGR2GRAY );
+    if( _img_background_cam.channels() == 3 ) {
+        cvtColor( _img_background_cam, img_background_cam, CV_BGR2GRAY );
+    }
     if( img_background_cam.data == NULL ) {
         return false;
     }
