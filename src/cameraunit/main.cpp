@@ -1898,7 +1898,9 @@ void calibrate()
             cout << "the higher plane";
         }
         cout << ", and press any key." << endl;
-        cvWaitKey( 0 );
+        //while( cvWaitKey( 1 ) == -1 );
+	string str_tmp;
+	cin >> str_tmp;
 
         // Retrieve an image
         if( !flgVideoFile ) {
@@ -1910,9 +1912,12 @@ void calibrate()
             }
         }
 
+	cout << "  Image retrieved." << endl;
+
         // Stereo Processing
         clock_t t = clock();
         stereo( &depthImage16, &img_camera, image );
+	//imshow( "Camera", img_camera );
 
         Size patternsize( width_pattern, height_pattern );
         vector<Point2f> corners; // 2D positions of the detected corners
@@ -1934,7 +1939,7 @@ void calibrate()
                 }
 
                 corners3d.push_back( Point3f( xx, yy, zz ) );
-                cout << " -> " << xx << ", " << yy << ", " << zz;
+                cout << " -> " << xx << ", " << yy << ", " << zz << endl;
             }
 
             if( !flgAllCornersAvailable ) {
@@ -1947,15 +1952,19 @@ void calibrate()
         }
 
         // Corner detection succeeded.
+	cout << endl;
         corners3d_cam.insert( corners3d_cam.end(), corners3d.begin(), corners3d.end() );
         for( int i = 0; i < width_pattern * height_pattern; ++i ) {
             float ref_x, ref_y, ref_z;
-            ref_x = (float)( i / width_pattern ) * 0.135f;
-            ref_y = (float)( i % width_pattern ) * 0.135f;
-            ref_z = ( stage == 0 ) ? 0.5f : 0.8f; // Measurement required      
+            ref_x = 0.135f * (float)( height_pattern - 1 ) - (float)( i / width_pattern ) * 0.135f;
+            ref_y = 0.135f * (float)( width_pattern - 1 ) - (float)( i % width_pattern ) * 0.135f;
+            ref_z = ( stage == 0 ) ? 0.75f : 0.75f + 0.725; // Measurement required      
             corners3d_w.push_back( Point3f( ref_x, ref_y, ref_z ) );
+	    cout << "  " << ref_x << ", " << ref_y << ", " << ref_z << endl;
         }
         drawChessboardCorners( img_camera, patternsize, Mat( corners ), true );
+	imshow( "Corners", img_camera );
+	cvWaitKey( 1000 );
         ++stage;
     }
 
@@ -2272,8 +2281,8 @@ int main( int argc, char *argv[] )
         //    update_background( 20 );
         //} else if( strCmd[ 0 ] == "background" ) {
         //    show_background();
-        //} else if( strCmd[ 0 ] == "calibrate" ) {
-        //    calibration();
+        } else if( strCmd[ 0 ] == "calibrate" ) {
+            calibrate();
         } else if( strCmd[ 0 ] == "capture" ) {
             capture();
         } else if( strCmd[ 0 ] == "background" ) {
