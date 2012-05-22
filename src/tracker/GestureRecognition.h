@@ -20,7 +20,7 @@ public:
 
 private:
     std::string strRecognitionResultPath;
-    std::map<int,std::ofstream> ofs;
+    std::map<int,std::ofstream*> ofs;
     std::map<int,cv::Mat> silhouette;
 
 public:

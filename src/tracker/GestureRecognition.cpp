@@ -59,12 +59,13 @@ void GestureRecognition::recognize( int id, unsigned long long timeStamp )
     if( ofs.find( id ) == ofs.end() ) {
         ostringstream oss;
         oss << strRecognitionResultPath << id << "_gesture.txt";
-        ofs[ id ].open( oss.str().c_str() );
-        if( !ofs[ id ].is_open() ) {
+	ofs[ id ] = new ofstream( oss.str().c_str() );
+        //ofs[ id ].open( oss.str().c_str() );
+        if( !ofs[ id ]->is_open() ) {
               cerr << "Couldn't open " << oss.str() <<  endl;
               exit( 1 );
         }
-        ofs[ id ] << "timeStamp, mean_x, mean_y, row_highest, nAllPixels, nUpperPixels, nLowerPixels, nUpperLeftPixels, nUpperRightPixels" << endl; 
+        *ofs[ id ] << "timeStamp, mean_x, mean_y, row_highest, nAllPixels, nUpperPixels, nLowerPixels, nUpperLeftPixels, nUpperRightPixels" << endl; 
     }
 
     vector<int> nPixels_row( silhouette[ id ].rows );
@@ -124,7 +125,7 @@ void GestureRecognition::recognize( int id, unsigned long long timeStamp )
     const int nLowerPixels = nAllPixels - nUpperPixels;
 
 
-    ofs[ id ] << timeStamp << ", "
+    *ofs[ id ] << timeStamp << ", "
               << mean_x << ", "
               << mean_y << ", "
               << row_highest << ", "
@@ -134,7 +135,7 @@ void GestureRecognition::recognize( int id, unsigned long long timeStamp )
               << nPixels_leftupper << ", "
               << nPixels_rightupper << endl;
 
-    ofs[ id ] << flush;
+    *ofs[ id ] << flush;
 
     status[ id ] = ( (float)nPixels_rightupper / (float)( nPixels_leftupper + nPixels_rightupper ) > 0.61f );
 }
