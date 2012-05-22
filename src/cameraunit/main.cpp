@@ -2005,6 +2005,135 @@ void calibrate()
 
 }
 
+void findcorners( int width, int height )
+{
+    Error err;
+    string strPath, strName, strNoextName;
+
+    if( flgVideoFile ) {
+        getfilename( strVideoFile, &strPath, &strName, &strNoextName );
+    }
+
+    ostringstream oss;
+#ifdef LINUX_OS
+    if( strPath == "" ) {
+        oss << "/home/kumalab/project/HumanTracking/bin/";
+    }
+#endif
+    oss << strPath << "corners" << camInfo.serialNumber << ".txt";
+    ofstream ofs( oss.str().c_str() );
+
+    if( !ofs.is_open() ) {
+        cerr << "Error occured in creating " << oss.str() << ".";
+        exit( 1 );
+    }
+
+    // Configure Format7
+    Format7ImageSettings imageSettings;
+    imageSettings.width = iMaxCols;
+    imageSettings.height = iMaxRows;
+    imageSettings.offsetX = 0;
+    imageSettings.offsetY = 0;
+    imageSettings.mode = MODE_3;
+    imageSettings.pixelFormat= PIXEL_FORMAT_RAW16;
+    err = bumblebee.SetFormat7Configuration( &imageSettings, 100.0f );
+    if( err != PGRERROR_OK ) {
+        PrintError( err );
+        exit( 1 );
+    }
+
+    // Start capturing images
+    err = bumblebee.StartCapture();
+    if( err != PGRERROR_OK ) {
+        PrintError( err );
+        exit( 1 );
+    }
+
+    Mat image;
+    TriclopsImage16 depthImage16;
+    Mat img_camera( height, width, CV_8U );
+    Mat img_save( height, width, CV_8UC3 );
+    int cnt = 0;
+    const int width_pattern = 4, height_pattern = 7;
+
+    for( ; ; ) {
+        cout << "# " << cnt << ". Hit Enter Key. Put 'end' to exit the command." << endl;
+        string strtmp;
+        cin >> strtmp;
+        if( strtmp == "end" ) {
+            break;
+        }
+
+        // Retrieve an image
+	    grab_from_bumblebee( &image );
+
+        // Stereo Processing
+        clock_t t = clock();
+        stereo( &depthImage16, &img_camera, image );
+
+        Size patternsize( width_pattern, height_pattern );
+        vector<Point2f> corners; // 2D positions of the detected corners
+        vector<Point3f> corners3d;  // 3D positions of the detected corners
+        unsigned short disparity;
+        float xx, yy, zz;
+
+        if( findChessboardCorners( img_camera, patternsize, corners ) ) {
+            bool flgAllCornersAvailable = true;
+            for( vector<Point2f>::iterator it = corners.begin(); it != corners.end(); ++it ) {
+                cout << "  " << it->x << ", " << it->y;
+                disparity = *(unsigned short*)((unsigned char*)depthImage16.data + depthImage16.rowinc * (int)(it->y) + (int)(it->x) * 2 );
+                triclopsRCD16ToXYZ( triclops, (int)it->y, (int)it->x, disparity, &xx, &yy, &zz );
+                if( disparity >= 0xff00 ) {
+                    zz = 0.0f;
+                    xx = 0.0f;
+                    yy = 0.0f;
+                    flgAllCornersAvailable = false;
+                }
+
+                corners3d.push_back( Point3f( xx, yy, zz ) );
+                cout << " -> " << xx << ", " << yy << ", " << zz;
+            }
+
+            if( !flgAllCornersAvailable ) {
+                cout << "No depth information measured at (a) corner(s). Try again." << endl;
+                continue;
+            }
+        } else {
+            cout << "No corners detected. Try again." << endl;
+            continue;
+        }
+
+        // Corner detection succeeded.
+        for( int i = 0; i < width_pattern * height_pattern; ++i ) {
+            ofs << corners[ i ].x << ", "
+                << corners[ i ].y << ", "
+                << corners3d[ i ].x << ", "
+                << corners3d[ i ].y << ", "
+                << corners3d[ i ].z << endl;
+            cout << corners[ i ].x << ", "
+                 << corners[ i ].y << ", "
+                 << corners3d[ i ].x << ", "
+                 << corners3d[ i ].y << ", "
+                 << corners3d[ i ].z << endl;
+        }
+        ofs << endl;
+        cout << endl;
+
+        cvtColor( img_camera, img_save, CV_GRAY2BGR );
+        drawChessboardCorners( img_save, patternsize, Mat( corners ), true );
+        ostringstream oss;
+        oss << strPath << "corners" << camInfo.serialNumber << "_" << cnt << ".png";
+        imwrite( oss.str(), img_save );
+        imshow( "Detected Corners", img_save );
+        
+        ++cnt;
+    }
+
+    destroyWindow( "Detected Corners" );
+    
+    err = bumblebee.StopCapture();
+}
+
 int main( int argc, char *argv[] )
 {
     bool ret;
@@ -2153,6 +2282,8 @@ int main( int argc, char *argv[] )
             update_background( 20 );
         } else if( strCmd[ 0 ] == "record" ) {
             record( 1280, 480 );
+        } else if( strCmd[ 0 ] == "record" ) {
+            findcorners( stereo_width, stereo_height );
         } else if( strCmd[ 0 ] == "quit" || strCmd[ 0 ] == "exit" ) {
             break;
         } else {
