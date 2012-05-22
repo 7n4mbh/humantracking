@@ -1611,7 +1611,7 @@ void update_background( int nFrame )
     //delete [] buffer;
 }
 
-void capture()
+void capture( Mat* pDst = NULL)
 {
     Error err;
 
@@ -1746,6 +1746,10 @@ void capture()
     te = triclopsGetImage( triclops, TriImg_RECTIFIED, TriCam_REFERENCE, &rectifiedImage );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetImage()", te );
     memcpy( img_display2.data, rectifiedImage.data, rectifiedImage.rowinc * rectifiedImage.nrows );
+
+    if( pDst ) {
+        *pDst = img_display2;
+    }
 
     imwrite( "image.png", img_display2 );
 
@@ -2037,6 +2041,7 @@ void findcorners( int width, int height )
         exit( 1 );
     }
 
+
     // Configure Format7
     Format7ImageSettings imageSettings;
     imageSettings.width = iMaxCols;
@@ -2058,6 +2063,8 @@ void findcorners( int width, int height )
         exit( 1 );
     }
 
+    SetStereoParameters( width = iMaxCols, height = iMaxRows );
+
     Mat image;
     TriclopsImage16 depthImage16;
     Mat img_camera( height, width, CV_8U );
@@ -2066,11 +2073,14 @@ void findcorners( int width, int height )
     const int width_pattern = 4, height_pattern = 7;
 
     for( ; ; ) {
-        cout << "# " << cnt << ". Hit Enter Key. Put 'end' to exit the command." << endl;
+        cout << "# " << cnt << ". 'test' to check a camera image, 'end' to exit the command. Any other string to execute." << endl;
         string strtmp;
         cin >> strtmp;
+        bool flgTest = false;
         if( strtmp == "end" ) {
             break;
+        } else if( strtmp == "test" ) {
+            flgTest = true;
         }
 
         // Retrieve an image
@@ -2114,11 +2124,13 @@ void findcorners( int width, int height )
 
         // Corner detection succeeded.
         for( int i = 0; i < width_pattern * height_pattern; ++i ) {
-            ofs << corners[ i ].x << ", "
-                << corners[ i ].y << ", "
-                << corners3d[ i ].x << ", "
-                << corners3d[ i ].y << ", "
-                << corners3d[ i ].z << endl;
+            if( !flgTest ) {
+                ofs << corners[ i ].x << ", "
+                    << corners[ i ].y << ", "
+                    << corners3d[ i ].x << ", "
+                    << corners3d[ i ].y << ", "
+                    << corners3d[ i ].z << endl;
+            }
             cout << corners[ i ].x << ", "
                  << corners[ i ].y << ", "
                  << corners3d[ i ].x << ", "
@@ -2134,6 +2146,7 @@ void findcorners( int width, int height )
         oss << strPath << "corners" << camInfo.serialNumber << "_" << cnt << ".png";
         imwrite( oss.str(), img_save );
         imshow( "Detected Corners", img_save );
+        cvWaitKey( 500 );
         
         ++cnt;
     }
@@ -2141,6 +2154,8 @@ void findcorners( int width, int height )
     destroyWindow( "Detected Corners" );
     
     err = bumblebee.StopCapture();
+
+    SetStereoParameters( stereo_width, stereo_height );
 }
 
 int main( int argc, char *argv[] )

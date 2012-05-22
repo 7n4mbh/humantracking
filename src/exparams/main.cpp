@@ -86,9 +86,10 @@ int main( int argc, char *argv[] )
     const int nCorners = base.size();
 
     // Calculate the transform matrix H
-    Mat H( 4, 4, CV_32F ), base_H_cam( 4, 4, CV_32F );
-    Mat A( 3 * nCorners, 12, CV_32F );
-    Mat b( 3 * nCorners, 1, CV_32F );
+    Mat H = Mat::zeros( 4, 4, CV_32F );
+    Mat base_H_cam = Mat::zeros( 4, 4, CV_32F );
+    Mat A = Mat::zeros( 3 * nCorners, 12, CV_32F );
+    Mat b = Mat::zeros( 3 * nCorners, 1, CV_32F );
     Mat p;
     {
         for( int i = 0; i < nCorners; ++i ) {
