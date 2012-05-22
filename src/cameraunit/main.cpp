@@ -2291,7 +2291,7 @@ int main( int argc, char *argv[] )
             update_background( 20 );
         } else if( strCmd[ 0 ] == "record" ) {
             record( 1280, 480 );
-        } else if( strCmd[ 0 ] == "record" ) {
+        } else if( strCmd[ 0 ] == "findcorners" ) {
             findcorners( stereo_width, stereo_height );
         } else if( strCmd[ 0 ] == "quit" || strCmd[ 0 ] == "exit" ) {
             break;
