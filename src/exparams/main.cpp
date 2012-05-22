@@ -27,7 +27,7 @@ int main( int argc, char *argv[] )
     strBaseCamCornersFile = argv[ 2 ];
     strCornersFile = argv[ 3 ];
 
-    Mat w_H_base( 3, 4, CV_32F ); 
+    Mat w_H_base( 4, 4, CV_32F ); 
     // load extrinsic parameters of the base camera
     {
         ifstream ifs( strExParamsFileForBaseCam );
@@ -55,7 +55,7 @@ int main( int argc, char *argv[] )
             exit( 1 );
         }
         while( !ifs.eof() ) {
-            int u, v;
+            float u, v;
             float x, y, z;
             ifs >> u >> v >> x >> y >> z;
             base.push_back( Point3f( x, y, z ) );
@@ -71,7 +71,7 @@ int main( int argc, char *argv[] )
             exit( 1 );
         }
         while( !ifs.eof() ) {
-            int u, v;
+            float u, v;
             float x, y, z;
             ifs >> u >> v >> x >> y >> z;
             camera.push_back( Point3f( x, y, z ) );
@@ -122,6 +122,20 @@ int main( int argc, char *argv[] )
     base_H_cam.at<float>( 3, 1 ) = 0.0f;
     base_H_cam.at<float>( 3, 2 ) = 0.0f;
     base_H_cam.at<float>( 3, 3 ) = 1.0f;
+
+    cout << "p:" << endl;
+    cout << p.at<float>( 0, 0 ) << ", "
+         << p.at<float>( 1, 0 ) << ", "
+         << p.at<float>( 2, 0 ) << ", "
+         << p.at<float>( 9, 0 ) << endl
+         << p.at<float>( 3, 0 ) << ", "
+         << p.at<float>( 4, 0 ) << ", "
+         << p.at<float>( 5, 0 ) << ", "
+         << p.at<float>( 10, 0 ) << endl
+         << p.at<float>( 6, 0 ) << ", "
+         << p.at<float>( 7, 0 ) << ", "
+         << p.at<float>( 8, 0 ) << ", "
+         << p.at<float>( 11, 0 ) << endl;
 
     H = w_H_base * base_H_cam;
 
