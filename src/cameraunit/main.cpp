@@ -2089,7 +2089,7 @@ void findcorners( int width, int height )
         if( findChessboardCorners( img_camera, patternsize, corners ) ) {
             bool flgAllCornersAvailable = true;
             for( vector<Point2f>::iterator it = corners.begin(); it != corners.end(); ++it ) {
-                cout << "  " << it->x << ", " << it->y;
+	      //cout << "  " << it->x << ", " << it->y;
                 disparity = *(unsigned short*)((unsigned char*)depthImage16.data + depthImage16.rowinc * (int)(it->y) + (int)(it->x) * 2 );
                 triclopsRCD16ToXYZ( triclops, (int)it->y, (int)it->x, disparity, &xx, &yy, &zz );
                 if( disparity >= 0xff00 ) {
@@ -2100,7 +2100,7 @@ void findcorners( int width, int height )
                 }
 
                 corners3d.push_back( Point3f( xx, yy, zz ) );
-                cout << " -> " << xx << ", " << yy << ", " << zz;
+                //cout << " -> " << xx << ", " << yy << ", " << zz;
             }
 
             if( !flgAllCornersAvailable ) {
