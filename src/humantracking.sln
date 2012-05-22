@@ -16,6 +16,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "viewer", "viewer\viewer.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "statistics", "statistics\statistics.vcxproj", "{42F3BFC7-8817-443D-B30B-0B0E5EDAA80D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "exparams", "exparams\exparams.vcxproj", "{57FAAB92-1F17-42A2-BECD-1C7D7F1EF6CA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -60,6 +62,13 @@ Global
 		{42F3BFC7-8817-443D-B30B-0B0E5EDAA80D}.Release|Win32.ActiveCfg = Release|Win32
 		{42F3BFC7-8817-443D-B30B-0B0E5EDAA80D}.Release|Win32.Build.0 = Release|Win32
 		{42F3BFC7-8817-443D-B30B-0B0E5EDAA80D}.Release|x64.ActiveCfg = Release|Win32
+		{57FAAB92-1F17-42A2-BECD-1C7D7F1EF6CA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{57FAAB92-1F17-42A2-BECD-1C7D7F1EF6CA}.Debug|Win32.Build.0 = Debug|Win32
+		{57FAAB92-1F17-42A2-BECD-1C7D7F1EF6CA}.Debug|x64.ActiveCfg = Debug|Win32
+		{57FAAB92-1F17-42A2-BECD-1C7D7F1EF6CA}.Release|Win32.ActiveCfg = Release|Win32
+		{57FAAB92-1F17-42A2-BECD-1C7D7F1EF6CA}.Release|Win32.Build.0 = Release|Win32
+		{57FAAB92-1F17-42A2-BECD-1C7D7F1EF6CA}.Release|x64.ActiveCfg = Release|x64
+		{57FAAB92-1F17-42A2-BECD-1C7D7F1EF6CA}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
