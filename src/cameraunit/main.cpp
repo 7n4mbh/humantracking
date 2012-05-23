@@ -2073,14 +2073,21 @@ void findcorners( int width, int height )
     const int width_pattern = 4, height_pattern = 7;
 
     for( ; ; ) {
-        cout << "# " << cnt << ". 'test' to check a camera image, 'end' to exit the command. Any other string to execute." << endl;
+        cout << "# " << cnt << ". 'test' to check a camera image, 'end' to exit the command. 'f0', 'f1' and 'f2' to change the flags. Any other string to execute." << endl;
         string strtmp;
         cin >> strtmp;
         bool flgTest = false;
+        int flags = CV_CALIB_CB_ADAPTIVE_THRESH + CV_CALIB_CB_NORMALIZE_IMAGE;
         if( strtmp == "end" ) {
             break;
         } else if( strtmp == "test" ) {
             flgTest = true;
+        } else if( strtmp == "f0" ) {
+            flags = 0;
+        } else if( strtmp == "f0" ) {
+            flags = CV_CALIB_CB_ADAPTIVE_THRESH;
+        } else if( strtmp == "f0" ) {
+            flags = CV_CALIB_CB_NORMALIZE_IMAGE;
         }
 
         // Retrieve an image
@@ -2101,7 +2108,7 @@ void findcorners( int width, int height )
         unsigned short disparity;
         float xx, yy, zz;
 
-        if( findChessboardCorners( img_camera, patternsize, corners ) ) {
+        if( findChessboardCorners( img_camera, patternsize, corners, flags ) ) {
             bool flgAllCornersAvailable = true;
             for( vector<Point2f>::iterator it = corners.begin(); it != corners.end(); ++it ) {
                 it->x *= (float)width / (float)iMaxCols;
