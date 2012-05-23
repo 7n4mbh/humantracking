@@ -185,7 +185,9 @@ void TrackingResultResources::AddDisparityMapInfo( GeometryMapInfo& disparity )
     pthread_mutex_lock( &mutex );
 #endif
 
-    bufDisparityMap[ disparity.timeStamp ] = disparity;
+    ostringstream oss;
+    oss << disparity.timeStamp << "_" << disparity.serialNumber;
+    bufDisparityMap[ oss.str().c_str()/*disparity.timeStamp*/ ] = disparity;
 
 #ifdef WINDOWS_OS
     LeaveCriticalSection( &cs );
@@ -204,7 +206,9 @@ void TrackingResultResources::AddCameraImageInfo( CameraImageInfo& cam_image )
     pthread_mutex_lock( &mutex );
 #endif
 
-    bufCameraImage[ cam_image.timeStamp ] = cam_image;
+    ostringstream oss;
+    oss << cam_image.timeStamp << "_" << cam_image.serialNumber;
+    bufCameraImage[ oss.str()/*cam_image.timeStamp*/ ] = cam_image;
 
 #ifdef WINDOWS_OS
     LeaveCriticalSection( &cs );
@@ -223,7 +227,9 @@ void TrackingResultResources::AddGeometryMapInfo( GeometryMapInfo& geometry )
     pthread_mutex_lock( &mutex );
 #endif
 
-    bufGeometry[ geometry.timeStamp ] = geometry;
+    ostringstream oss;
+    oss << geometry.timeStamp << "_" << geometry.serialNumber;
+    bufGeometry[ oss.str()/*geometry.timeStamp*/ ] = geometry;
 
 #ifdef WINDOWS_OS
     LeaveCriticalSection( &cs );
@@ -242,7 +248,9 @@ void TrackingResultResources::AddGeometryMap2Info( GeometryMapInfo& geometry2 )
     pthread_mutex_lock( &mutex );
 #endif
 
-    bufGeometry2[ geometry2.timeStamp ] = geometry2;
+    ostringstream oss;
+    oss << geometry2.timeStamp << "_" << geometry2.serialNumber;
+    bufGeometry2[ oss.str()/*geometry2.timeStamp*/ ] = geometry2;
 
 #ifdef WINDOWS_OS
     LeaveCriticalSection( &cs );
@@ -508,7 +516,9 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 memset( img_silhouette_display.data, 0, img_silhouette_display.rows * img_silhouette_display.cols * 3 );
 
                 bool flgCamImageAvailable = false;
-                map<unsigned long long,CameraImageInfo>::iterator itCamImageInfo = pTrackingResultResources->bufCameraImage.find( pepmap.timeStamp );
+                ostringstream oss;
+                oss << pepmap.timeStamp << "_" << pepmap.serialNumber;
+                map<string,CameraImageInfo>::iterator itCamImageInfo = pTrackingResultResources->bufCameraImage.find( oss.str()/*pepmap.timeStamp*/ );
                 if( itCamImageInfo != pTrackingResultResources->bufCameraImage.end() ) {
                     //img_cam_display.create( itCamImageInfo->second.height, itCamImageInfo->second.width, CV_8UC3 );
                     vector<uchar> buff( itCamImageInfo->second.data.size() / 2 );
@@ -523,7 +533,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 }
 
 #ifndef USE_DISPARITYMAP
-                map<unsigned long long,GeometryMapInfo>::iterator itGeometryInfo = pTrackingResultResources->bufGeometry.find( pepmap.timeStamp );
+                map<string,GeometryMapInfo>::iterator itGeometryInfo = pTrackingResultResources->bufGeometry.find( oss.str()/*pepmap.timeStamp*/ );
                 if( itGeometryInfo != pTrackingResultResources->bufGeometry.end() ) {
                     vector<uchar> buff( itGeometryInfo->second.data.size() / 2 );
                     char a[ 3 ]; a[ 2 ] = '\0';
@@ -539,7 +549,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                     , (const Bytef*)&buff[ 0 ]
                     , itGeometryInfo->second.data.size() / 2 );
                         
-                    map<unsigned long long,GeometryMapInfo>::iterator itGeometry2Info = pTrackingResultResources->bufGeometry2.find( pepmap.timeStamp );
+                    map<string,GeometryMapInfo>::iterator itGeometry2Info = pTrackingResultResources->bufGeometry2.find( oss.str()/*pepmap.timeStamp*/ );
                     bool flgGeometry2Available = false;
                     if( itGeometry2Info != pTrackingResultResources->bufGeometry2.end() ) {
                         vector<uchar> buff2( itGeometry2Info->second.data.size() / 2 );
@@ -708,16 +718,18 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                 pthread_mutex_lock( &pTrackingResultResources->mutex );
 #endif
                 const unsigned long long time_pepmap = pTrackingResultResources->trackingResult.begin()->first;
+                ostringstream oss;
+                oss << time_pepmap;
                 pTrackingResultResources->trackingResultExt.erase( pTrackingResultResources->trackingResultExt.begin()
                                                                  , pTrackingResultResources->trackingResultExt.lower_bound( time_pepmap )  );
                 pTrackingResultResources->bufCameraImage.erase( pTrackingResultResources->bufCameraImage.begin()
-                                                                 , pTrackingResultResources->bufCameraImage.lower_bound( time_pepmap )  );
+                                                                 , pTrackingResultResources->bufCameraImage.lower_bound( oss.str()/*time_pepmap*/ )  );
                 pTrackingResultResources->bufGeometry.erase( pTrackingResultResources->bufGeometry.begin()
-                                                                 , pTrackingResultResources->bufGeometry.lower_bound( time_pepmap )  );
+                                                                 , pTrackingResultResources->bufGeometry.lower_bound( oss.str()/*time_pepmap*/ )  );
                 pTrackingResultResources->bufGeometry2.erase( pTrackingResultResources->bufGeometry2.begin()
-                                                                 , pTrackingResultResources->bufGeometry2.lower_bound( time_pepmap )  );
+                                                                 , pTrackingResultResources->bufGeometry2.lower_bound( oss.str()/*time_pepmap*/ )  );
                 pTrackingResultResources->bufDisparityMap.erase( pTrackingResultResources->bufDisparityMap.begin()
-                                                                 , pTrackingResultResources->bufDisparityMap.lower_bound( time_pepmap )  );
+                                                                 , pTrackingResultResources->bufDisparityMap.lower_bound( oss.str()/*time_pepmap*/ )  );
                 pTrackingResultResources->trackingResult.erase( pTrackingResultResources->trackingResult.begin() );
 
 		//cout << " -> erase()" << endl;
