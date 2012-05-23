@@ -14,7 +14,7 @@ using namespace cv;
 
 extern float roi_width, roi_height;
 extern float roi_x, roi_y;
-extern float scale_m2px;
+extern float scale_m2px, scale_m2px_silhouette;
 
 //#define USE_DISPARITYMAP
 
@@ -354,8 +354,8 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
     Mat img_display_tmp( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     Mat img_display( (int)( roi_height * 80 ), (int)( roi_width * 80 ), CV_8UC3 );
     Mat img_cam_display;
-    Mat img_silhouette_display( (int)( scale_m2px * 3.0 ), (int)( scale_m2px * roi_height ), CV_8UC3 );
-    Mat img_silhouette_save( (int)( scale_m2px * 3.0 ) * 2, (int)( scale_m2px * roi_height ), CV_8UC3 );
+    Mat img_silhouette_display( (int)( scale_m2px_silhouette * 3.0 ), (int)( scale_m2px_silhouette * roi_height ), CV_8UC3 );
+    Mat img_silhouette_save( (int)( scale_m2px_silhouette * 3.0 ) * 2, (int)( scale_m2px_silhouette * roi_height ), CV_8UC3 );
     char buf[ SIZE_BUFFER ];
 
     deque< map<int,Point2d> > result_buffer;
@@ -611,7 +611,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                                 if( flgCamImageAvailable ) {
                                     line( img_cam_display, Point( x, y ), Point( x, y ), color_table[ itID->second % sizeColorTable ], 1 );
                                 }
-                                if( flgGeometry2Available/* && itID->second == 1*/ ) {
+                                if( flgGeometry2Available /* && itID->second == 1*/ ) {
                                     const int keyval2 = geometry2.at<unsigned short>( y, x );
                                     if( keyval2 > 0 ) {
                                         //const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette_display.cols;
@@ -622,7 +622,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                                         //    , color_table[ itID->second % sizeColorTable ]
                                         //    , 1 );
                                         if( img_silhouette.find( itID->second ) == img_silhouette.end() ) {
-                                            img_silhouette[ itID->second ].create( (int)( scale_m2px * 3.0 ), (int)( scale_m2px * roi_height ), CV_8UC3 );
+                                            img_silhouette[ itID->second ].create( (int)( scale_m2px_silhouette * 3.0 ), (int)( scale_m2px_silhouette * roi_height ), CV_8UC3 );
                                             memset( img_silhouette[ itID->second ].data, 0, img_silhouette[ itID->second ].cols * img_silhouette[ itID->second ].rows * 3 );
                                         }
                                         const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette[ itID->second ].cols;
@@ -649,7 +649,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                                                                                         , Size( itImgSilhouette->second.cols, itImgSilhouette->second.rows * 2 ) );
                         }
                         gesture.set_silhouette( id, pepmap.timeStamp, itImgSilhouette->second );
-                        if( pepmap.serialNumber == 7420008 ) {
+                        if( pepmap.serialNumber == 7420005 ) {
                             gesture.recognize( id, pepmap.timeStamp );
                             if( id == 1 ) {
                                 if( gesture.status[ 1 ] ) {

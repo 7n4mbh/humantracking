@@ -84,7 +84,7 @@ volatile bool flgEscape;
 
 float roi_width, roi_height;
 float roi_x, roi_y;
-float scale_m2px;
+float scale_m2px, scale_m2px_silhouette;
 
 #ifdef LINUX_OS
 /*
@@ -954,11 +954,13 @@ void execute( int start_frame = 0 )
                             }
                             geometry.at<unsigned short>( y, x ) = row * occupancy.cols + col + 1;
                             
-                            col = row; // X axis is projected on the horizontal axis of the geometry map2.
-                            row = (int)( occupancy_2.rows - scale_m2px * pv_z ); // Z axis is projeted on the vertical axis of the geometry map2.
-                            if( row >= 0 && row < occupancy_2.rows && col >= 0 && col < occupancy_2.cols ) {
+                            //col = row; // X axis is projected on the horizontal axis of the geometry map2.
+                            //row = (int)( occupancy_2.rows - scale_m2px * pv_z ); // Z axis is projeted on the vertical axis of the geometry map2.
+                            col = (int)( scale_m2px_silhouette * ( ( pv_x - roi_x ) + roi_height / 2.0f ) ); // X axis is projected on the horizontal axis of the geometry map2.
+                            row = (int)( ( 3.0 * scale_m2px_silhouette ) - scale_m2px_silhouette * pv_z ); // Z axis is projeted on the vertical axis of the geometry map2.
+                            if( row >= 0 && row < ( 3.0 * scale_m2px_silhouette ) && col >= 0 && col < ( scale_m2px_silhouette * roi_height ) ) {
                                 //occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
-                                geometry_2.at<unsigned short>( y, x ) = row * occupancy_2.cols + col + 1;
+                                geometry_2.at<unsigned short>( y, x ) = row * ( scale_m2px_silhouette * roi_height ) + col + 1;
                             } else {
                                 geometry_2.at<unsigned short>( y, x ) = 0;
                             }
@@ -1397,6 +1399,7 @@ bool load_pepmap_config()
     roi_x = value[ 2 ];
     roi_y = value[ 3 ];
     scale_m2px = value[ 4 ];
+    scale_m2px_silhouette = scale_m2px * 3.0;
 
     return true;
 }

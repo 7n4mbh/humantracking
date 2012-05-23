@@ -121,7 +121,7 @@ void GestureRecognition::recognize( int id, unsigned long long timeStamp )
     mean_y /= nAllPixels;
     mean_y = silhouette[ id ].rows - mean_y;
 
-    const int nUpperPixels = std::accumulate( nPixels_row.begin(), nPixels_row.begin() + ( silhouette[ id ].rows + row_highest ) / 2, 0 );
+    const int nUpperPixels = std::accumulate( nPixels_row.begin(), nPixels_row.begin() + ( silhouette[ id ].rows + 2 * row_highest ) / 3, 0 );
     const int nLowerPixels = nAllPixels - nUpperPixels;
 
 

@@ -35,7 +35,7 @@ bool flgCommTestMode = false;
 
 float roi_width, roi_height;
 float roi_x, roi_y;
-float scale_m2px;
+float scale_m2px, scale_m2px_silhouette;
 
 map<unsigned int,string> cameraName;
 volatile bool flgRunGetPEPMapThread;
@@ -105,6 +105,7 @@ bool load_pepmap_config()
     roi_x = value[ 2 ];
     roi_y = value[ 3 ];
     scale_m2px = value[ 4 ];
+    scale_m2px_silhouette = scale_m2px * 3.0;
 
     return true;
 }
