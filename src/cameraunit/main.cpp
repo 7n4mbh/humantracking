@@ -2071,22 +2071,22 @@ void findcorners( int width, int height )
     Mat img_save( height, width, CV_8UC3 );
     int cnt = 0;
     const int width_pattern = 4, height_pattern = 7;
+    int flags = CV_CALIB_CB_ADAPTIVE_THRESH + CV_CALIB_CB_NORMALIZE_IMAGE;
 
     for( ; ; ) {
         cout << "# " << cnt << ". 'test' to check a camera image, 'end' to exit the command. 'f0', 'f1' and 'f2' to change the flags. Any other string to execute." << endl;
         string strtmp;
         cin >> strtmp;
         bool flgTest = false;
-        int flags = CV_CALIB_CB_ADAPTIVE_THRESH + CV_CALIB_CB_NORMALIZE_IMAGE;
         if( strtmp == "end" ) {
             break;
         } else if( strtmp == "test" ) {
             flgTest = true;
         } else if( strtmp == "f0" ) {
             flags = 0;
-        } else if( strtmp == "f0" ) {
+        } else if( strtmp == "f1" ) {
             flags = CV_CALIB_CB_ADAPTIVE_THRESH;
-        } else if( strtmp == "f0" ) {
+        } else if( strtmp == "f2" ) {
             flags = CV_CALIB_CB_NORMALIZE_IMAGE;
         }
 
@@ -2168,11 +2168,15 @@ void findcorners( int width, int height )
         drawChessboardCorners( img_save, patternsize, Mat( corners ), true );
         ostringstream oss;
         oss << strPath << "corners" << camInfo.serialNumber << "_" << cnt << ".png";
-        imwrite( oss.str(), img_save );
+	if( !flgTest ) {
+	    imwrite( oss.str(), img_save );
+	}
         imshow( "Detected Corners", img_save );
         cvWaitKey( 500 );
         
-        ++cnt;
+	if( !flgTest ) {
+            ++cnt;
+	}
     }
 
     destroyWindow( "Image" );
