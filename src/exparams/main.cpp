@@ -46,6 +46,8 @@ int main( int argc, char *argv[] )
     w_H_base.at<float>( 3, 0 ) = w_H_base.at<float>( 3, 1 ) = w_H_base.at<float>( 3, 2 ) = 0.0f;
     w_H_base.at<float>( 3, 3 ) = 1.0f;
 
+    char buf[ 1000 ];
+
     // load corner positons of the base camera;
     vector<Point3f> base;
     {
@@ -57,7 +59,22 @@ int main( int argc, char *argv[] )
         while( !ifs.eof() ) {
             float u, v;
             float x, y, z;
-            ifs >> u >> v >> x >> y >> z;
+            ifs.getline( buf, sizeof( buf ) );
+            if( buf[ 0 ] == '\0' ) {
+                continue;
+            }
+
+            string str_tmp;
+            int i = 0;
+            while( buf[ i ] != '\0' ) {
+                if( buf[ i ] != ',' ) {
+                    str_tmp.push_back( buf[ i ] );
+                }
+                ++i;
+            }
+
+            istringstream iss( str_tmp );
+            iss >> u >> v >> x >> y >> z;
             base.push_back( Point3f( x, y, z ) );
         }
     }
@@ -73,7 +90,22 @@ int main( int argc, char *argv[] )
         while( !ifs.eof() ) {
             float u, v;
             float x, y, z;
-            ifs >> u >> v >> x >> y >> z;
+            ifs.getline( buf, sizeof( buf ) );
+            if( buf[ 0 ] == '\0' ) {
+                continue;
+            }
+
+            string str_tmp;
+            int i = 0;
+            while( buf[ i ] != '\0' ) {
+                if( buf[ i ] != ',' ) {
+                    str_tmp.push_back( buf[ i ] );
+                }
+                ++i;
+            }
+
+            istringstream iss( str_tmp );
+            iss >> u >> v >> x >> y >> z;
             camera.push_back( Point3f( x, y, z ) );
         }
     }
