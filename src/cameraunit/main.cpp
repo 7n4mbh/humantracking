@@ -306,7 +306,7 @@ bool SetBumblebeeParameters()
     return true;
 }
 
-bool SetStereoParameters( int width, int height ) {
+bool SetStereoParameters( int width, int height, bool flg_output_msg = true ) {
     TriclopsError te;
 
     //
@@ -318,97 +318,97 @@ bool SetStereoParameters( int width, int height ) {
     TriclopsCameraConfiguration triclopscamconfig;
     te = triclopsGetCameraConfiguration( triclops, &triclopscamconfig );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetCameraConfiguration()", te );  
-    cout << endl;
-    cout << " Base-line setting(old): " << triclopscamconfig << endl;
+    if( flg_output_msg ) cout << endl;
+    if( flg_output_msg ) cout << " Base-line setting(old): " << triclopscamconfig << endl;
     te = triclopsSetCameraConfiguration( triclops, TriCfg_2CAM_HORIZONTAL_NARROW );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetCameraConfiguration()", te );  
     te = triclopsGetCameraConfiguration( triclops, &triclopscamconfig );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetCameraConfiguration()", te );  
-    cout << " Base-line setting(new): " << triclopscamconfig << endl;
-    cout << " Make sure the value is 1 (TriCfg_2CAM_HORIZONTAL_NARROW)" << endl;
+    if( flg_output_msg ) cout << " Base-line setting(new): " << triclopscamconfig << endl;
+    if( flg_output_msg ) cout << " Make sure the value is 1 (TriCfg_2CAM_HORIZONTAL_NARROW)" << endl;
 
     // set rectified resolution to width x height 
     int nrows, ncols;
     te = triclopsGetResolution( triclops, &nrows, &ncols );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetResolution()", te );
-    cout << endl;
-    cout << " Resolution(old): " << ncols << " x " << nrows << endl;
+    if( flg_output_msg ) cout << endl;
+    if( flg_output_msg ) cout << " Resolution(old): " << ncols << " x " << nrows << endl;
     te = triclopsSetResolution( triclops, height, width );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetResolution()", te );
     te = triclopsGetResolution( triclops, &nrows, &ncols );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetResolution()", te );
-    cout << " Resolution(new): " << ncols << " x " << nrows << endl;
+    if( flg_output_msg ) cout << " Resolution(new): " << ncols << " x " << nrows << endl;
 
     // Set disparity range
     int minDisparity, maxDisparity;
     te = triclopsGetDisparity( triclops, &minDisparity, &maxDisparity );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetDisparity()", te );   
-    cout << endl;
-    cout << " Disparity range(old): " << minDisparity << " - " << maxDisparity << endl;
+    if( flg_output_msg ) cout << endl;
+    if( flg_output_msg ) cout << " Disparity range(old): " << minDisparity << " - " << maxDisparity << endl;
     te = triclopsSetDisparity( triclops, 5, 60 );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetDisparity()", te );   
     te = triclopsGetDisparity( triclops, &minDisparity, &maxDisparity );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetDisparity()", te );   
-    cout << " Disparity range(new): " << minDisparity << " - " << maxDisparity << endl;
+    if( flg_output_msg ) cout << " Disparity range(new): " << minDisparity << " - " << maxDisparity << endl;
 
     // Set the window size for stereo matching.
     int size;
     te = triclopsGetStereoMask( triclops, &size );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetStereoMask()", te );   
-    cout << endl;
-    cout << " Window size(old): " << size << endl;
+    if( flg_output_msg ) cout << endl;
+    if( flg_output_msg ) cout << " Window size(old): " << size << endl;
     te = triclopsSetStereoMask( triclops, 11 );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetStereoMask()", te );   
     te = triclopsGetStereoMask( triclops, &size );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetStereoMask()", te );   
-    cout << " Window size(new): " << size << endl;
+    if( flg_output_msg ) cout << " Window size(new): " << size << endl;
 
     // Turn off texture validation
     TriclopsBool on;
     te = triclopsGetTextureValidation( triclops, &on );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetTextureValidation()", te );
-    cout << endl;
-    cout << " Texture Validation(old): " << on << endl;
+    if( flg_output_msg ) cout << endl;
+    if( flg_output_msg ) cout << " Texture Validation(old): " << on << endl;
     te = triclopsSetTextureValidation( triclops, 0 );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetTextureValidation()", te );
     te = triclopsGetTextureValidation( triclops, &on );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetTextureValidation()", te );
-    cout << " Texture Validation(new): " << on << endl;
+    if( flg_output_msg ) cout << " Texture Validation(new): " << on << endl;
 
     // Turn off texture validation
     te = triclopsGetUniquenessValidation( triclops, &on );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetUniquenessValidation()", te );
-    cout << endl;
-    cout << " Uniqueness Validation(old): " << on << endl;
+    if( flg_output_msg ) cout << endl;
+    if( flg_output_msg ) cout << " Uniqueness Validation(old): " << on << endl;
     te = triclopsSetUniquenessValidation( triclops, 0 );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetUniquenessValidation()", te );
     te = triclopsGetUniquenessValidation( triclops, &on );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetUniquenessValidation()", te );
-    cout << " Uniqueness Validation(new): " << on << endl;
+    if( flg_output_msg ) cout << " Uniqueness Validation(new): " << on << endl;
 
     // Turn on sub-pixel interpolation
     te = triclopsGetSubpixelInterpolation( triclops, &on );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetSubpixelInterpolation()", te );
-    cout << endl;
-    cout << " SubpixelInterpolation(old): " << on << endl;
+    if( flg_output_msg ) cout << endl;
+    if( flg_output_msg ) cout << " SubpixelInterpolation(old): " << on << endl;
     te = triclopsSetSubpixelInterpolation( triclops, 1 );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetSubpixelInterpolation()", te );
     te = triclopsGetSubpixelInterpolation( triclops, &on );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetSubpixelInterpolation()", te );
-    cout << " SubpixelInterpolation(new): " << on << endl;
+    if( flg_output_msg ) cout << " SubpixelInterpolation(new): " << on << endl;
 
 
-    cout << endl;
+    if( flg_output_msg ) cout << endl;
     float diff;
     te = triclopsGetSurfaceValidation( triclops, &on );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidation()", te );
-    cout << " Surfafe Validation(old): " << on << endl;
+    if( flg_output_msg ) cout << " Surfafe Validation(old): " << on << endl;
     te = triclopsGetSurfaceValidationDifference( triclops, &diff );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidationDifference()", te );
-    cout << " Maximum disparity difference(old): " << diff << endl;
+    if( flg_output_msg ) cout << " Maximum disparity difference(old): " << diff << endl;
     te = triclopsGetSurfaceValidationSize( triclops, &size );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidationSize()", te );
-    cout << " Surface validation size(old): " << size << endl;
+    if( flg_output_msg ) cout << " Surface validation size(old): " << size << endl;
 
     te = triclopsSetSurfaceValidation( triclops, 1 );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetSurfaceValidation()", te );
@@ -419,27 +419,27 @@ bool SetStereoParameters( int width, int height ) {
 
     te = triclopsGetSurfaceValidation( triclops, &on );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidation()", te );
-    cout << " Surfafe Validation(new): " << on << endl;
+    if( flg_output_msg ) cout << " Surfafe Validation(new): " << on << endl;
     te = triclopsGetSurfaceValidationDifference( triclops, &diff );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidationDifference()", te );
-    cout << " Maximum disparity difference(new): " << diff << endl;
+    if( flg_output_msg ) cout << " Maximum disparity difference(new): " << diff << endl;
     te = triclopsGetSurfaceValidationSize( triclops, &size );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetSurfaceValidationSize()", te );
-    cout << " Surface validation size(new): " << size << endl;
+    if( flg_output_msg ) cout << " Surface validation size(new): " << size << endl;
 
     // With Linux, Set # of thread to one in order to avoid a segmentation 
     // falut at triclopsStereo(), which seems a bug in the triclopsSDK.
-    cout << endl;
+    if( flg_output_msg ) cout << endl;
     int maxThreadCount;
     te = triclopsGetMaxThreadCount( triclops, &maxThreadCount );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetMaxThreadCount()", te );
-    cout << " The maximum number of threads(old): " << maxThreadCount << endl;
+    if( flg_output_msg ) cout << " The maximum number of threads(old): " << maxThreadCount << endl;
 #ifdef LINUX_OS
     te = triclopsSetMaxThreadCount( triclops, 1 );
     _HANDLE_TRICLOPS_ERROR( "triclopsSetMaxThreadCount()", te );
     te = triclopsGetMaxThreadCount( triclops, &maxThreadCount );
     _HANDLE_TRICLOPS_ERROR( "triclopsGetMaxThreadCount()", te );
-    cout << " The maximum number of threads(new): " << maxThreadCount << endl;
+    if( flg_output_msg ) cout << " The maximum number of threads(new): " << maxThreadCount << endl;
 #endif
 
     cout << endl << "Done." << endl;
@@ -508,20 +508,22 @@ void stereo( TriclopsImage16* pDst/*Mat* pDst*/, Mat* pDstRefImg, const Mat& src
         &triclopsInput );
     _HANDLE_TRICLOPS_ERROR( "triclopsBuildRGBTriclopsInput()", te );
             
-            // Preprocessing the image
+    // Preprocessing the image
     te = triclopsRectify( triclops, &triclopsInput );
     _HANDLE_TRICLOPS_ERROR( "triclopsRectify()", te );
 
-    // Do stereo processing
-    te = triclopsStereo( triclops );
-    _HANDLE_TRICLOPS_ERROR( "triclopsStereo()", te );
+    if( pDst ) {
+        // Do stereo processing
+        te = triclopsStereo( triclops );
+        _HANDLE_TRICLOPS_ERROR( "triclopsStereo()", te );
 
-    // Retrieve the interpolated depth image from the context
-    te = triclopsGetImage16( triclops, 
-                TriImg16_DISPARITY, 
-                TriCam_REFERENCE, 
-                pDst );
-    _HANDLE_TRICLOPS_ERROR( "triclopsGetImage16()", te );
+        // Retrieve the interpolated depth image from the context
+        te = triclopsGetImage16( triclops, 
+                    TriImg16_DISPARITY, 
+                    TriCam_REFERENCE, 
+                    pDst );
+        _HANDLE_TRICLOPS_ERROR( "triclopsGetImage16()", te );
+    }
 
     if( pDstRefImg ) {
         TriclopsImage rectifiedImage;
@@ -2063,11 +2065,9 @@ void findcorners( int width, int height )
         exit( 1 );
     }
 
-    SetStereoParameters( width = iMaxCols, height = iMaxRows );
-
     Mat image;
     TriclopsImage16 depthImage16;
-    Mat img_camera( height, width, CV_8U );
+    Mat img_camera( iMaxRows, iMaxCols, CV_8U );
     Mat img_save( height, width, CV_8UC3 );
     int cnt = 0;
     const int width_pattern = 4, height_pattern = 7;
@@ -2088,7 +2088,12 @@ void findcorners( int width, int height )
 
         // Stereo Processing
         clock_t t = clock();
-        stereo( &depthImage16, &img_camera, image );
+        
+        SetStereoParameters( iMaxCols, iMaxRows, false );
+        stereo( NULL, &img_camera, image );
+
+        SetStereoParameters( width, height, false );
+        stereo( &depthImage16, NULL, image );
 
         Size patternsize( width_pattern, height_pattern );
         vector<Point2f> corners; // 2D positions of the detected corners
@@ -2099,7 +2104,9 @@ void findcorners( int width, int height )
         if( findChessboardCorners( img_camera, patternsize, corners ) ) {
             bool flgAllCornersAvailable = true;
             for( vector<Point2f>::iterator it = corners.begin(); it != corners.end(); ++it ) {
-	      //cout << "  " << it->x << ", " << it->y;
+                it->x *= (float)width / (float)iMaxCols;
+                it->y *= (float)height / (float)iMaxRows;
+                //cout << "  " << it->x << ", " << it->y;
                 disparity = *(unsigned short*)((unsigned char*)depthImage16.data + depthImage16.rowinc * (int)(it->y) + (int)(it->x) * 2 );
                 triclopsRCD16ToXYZ( triclops, (int)it->y, (int)it->x, disparity, &xx, &yy, &zz );
                 if( disparity >= 0xff00 ) {
@@ -2115,10 +2122,18 @@ void findcorners( int width, int height )
 
             if( !flgAllCornersAvailable ) {
                 cout << "No depth information measured at (a) corner(s). Try again." << endl;
+                Mat img_camera_small( height, width, CV_8U );
+                resize( img_camera, img_camera_small, img_camera_small.size() ); 
+                imshow( "Image", img_camera_small );
+                cvWaitKey( 300 );
                 continue;
             }
         } else {
             cout << "No corners detected. Try again." << endl;
+            Mat img_camera_small( height, width, CV_8U );
+            resize( img_camera, img_camera_small, img_camera_small.size() ); 
+            imshow( "Image", img_camera_small );
+            cvWaitKey( 300 );
             continue;
         }
 
@@ -2140,7 +2155,9 @@ void findcorners( int width, int height )
         ofs << endl;
         cout << endl;
 
-        cvtColor( img_camera, img_save, CV_GRAY2BGR );
+        Mat img_camera_small( height, width, CV_8U );
+        resize( img_camera, img_camera_small, img_camera_small.size() ); 
+        cvtColor( img_camera_small, img_save, CV_GRAY2BGR );
         drawChessboardCorners( img_save, patternsize, Mat( corners ), true );
         ostringstream oss;
         oss << strPath << "corners" << camInfo.serialNumber << "_" << cnt << ".png";
@@ -2151,11 +2168,12 @@ void findcorners( int width, int height )
         ++cnt;
     }
 
+    destroyWindow( "Image" );
     destroyWindow( "Detected Corners" );
     
     err = bumblebee.StopCapture();
 
-    SetStereoParameters( stereo_width, stereo_height );
+    SetStereoParameters( stereo_width, stereo_height, false );
 }
 
 int main( int argc, char *argv[] )
