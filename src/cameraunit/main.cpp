@@ -1407,12 +1407,19 @@ bool load_pepmap_config()
 bool load_background()
 {
     ifstream ifs;
+    string strPath, strName, strNoextName;
+    
+    if( flgVideoFile ) {
+        getfilename( strVideoFile, &strPath, &strName, &strNoextName );
+    }
 
     ostringstream oss;
 #ifdef LINUX_OS
-    oss << "/home/kumalab/project/HumanTracking/bin/";
+    if( strPath == "" ) {
+        strPath = "/home/kumalab/project/HumanTracking/bin/";
+    }
 #endif
-    oss << "background" << camInfo.serialNumber << ".dat";
+    oss << strPath << "background" << camInfo.serialNumber << ".dat";
     ifs.open( oss.str().c_str(), ios::in | ios::binary );
 
     if( !ifs ) {
@@ -1427,9 +1434,11 @@ bool load_background()
     oss.str( "" );
     oss.clear();
 #ifdef LINUX_OS
-    oss << "/home/kumalab/project/HumanTracking/bin/";
+    if( strPath == "" ) {
+        strPath = "/home/kumalab/project/HumanTracking/bin/";
+    }
 #endif
-    oss << "background" << camInfo.serialNumber << ".bmp";
+    oss << strPath << "background" << camInfo.serialNumber << ".bmp";
     Mat _img_background_cam = imread( oss.str().c_str() );
     if( _img_background_cam.channels() == 3 ) {
         cvtColor( _img_background_cam, img_background_cam, CV_BGR2GRAY );
@@ -1444,12 +1453,20 @@ bool load_background()
 bool save_background()
 {
     ofstream ofs;
+    string strPath, strName, strNoextName;
+
+    if( flgVideoFile ) {
+        getfilename( strVideoFile, &strPath, &strName, &strNoextName );
+    }
 
     ostringstream oss;
 #ifdef LINUX_OS
-    oss << "/home/kumalab/project/HumanTracking/bin/";
+    if( strPath == "" ) {
+        oss << "/home/kumalab/project/HumanTracking/bin/";
+    }
 #endif
-    oss << "background" << camInfo.serialNumber << ".dat";
+    oss << strPath << "background" << camInfo.serialNumber << ".dat";
+    string tmp = oss.str();
 
     ofs.open( oss.str().c_str(), ios::out | ios::binary | ios::trunc );
     if( !ofs ) {
@@ -1465,9 +1482,11 @@ bool save_background()
     oss.str( "" );
     oss.clear();
 #ifdef LINUX_OS
-    oss << "/home/kumalab/project/HumanTracking/bin/";
+    if( strPath == "" ) {
+        strPath = "/home/kumalab/project/HumanTracking/bin/";
+    }
 #endif
-    oss << "background" << camInfo.serialNumber << ".bmp";
+    oss << strPath << "background" << camInfo.serialNumber << ".bmp";
     if( !imwrite( oss.str().c_str(), img_background_cam ) ) {
         cout << "Error occured in saving the background image." << endl;
         return false;
@@ -1497,7 +1516,7 @@ void show_background()
     }
 }
 
-void update_background( int nFrame )
+void update_background( int nFrame, int start_frame = 0 )
 {
     int width = stereo_width, height = stereo_height;
     Error err;
@@ -1523,6 +1542,10 @@ void update_background( int nFrame )
             PrintError( err );
             exit( 1 );
         }
+    }
+
+    if( flgVideoFile ) {
+        video.set( CV_CAP_PROP_POS_FRAMES, start_frame );
     }
 
     //Image rawImage;
@@ -2335,7 +2358,7 @@ int main( int argc, char *argv[] )
         } else if( strCmd[ 0 ] == "background" ) {
             show_background();
         } else if( strCmd[ 0 ] == "update" ) {
-            update_background( 20 );
+            update_background( 20, strCmd.size() == 2 ? atoi( strCmd[ 1 ].c_str() ) : 0 );
         } else if( strCmd[ 0 ] == "record" ) {
             record( 1280, 480 );
         } else if( strCmd[ 0 ] == "findcorners" ) {
