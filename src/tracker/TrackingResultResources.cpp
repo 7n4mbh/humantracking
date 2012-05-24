@@ -602,6 +602,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                     }
                     flgGeometry2Available = true;
 #endif
+                    map<int,Mat> cnt_silhouette;
                     map<int,Mat> img_silhouette;
                     for( int x = 0; x < geometry.cols; ++x ) {
                         for( int y = 0; y < geometry.rows; ++y ) {
@@ -624,14 +625,18 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                                         if( img_silhouette.find( itID->second ) == img_silhouette.end() ) {
                                             img_silhouette[ itID->second ].create( (int)( scale_m2px_silhouette * 3.0 ), (int)( scale_m2px_silhouette * roi_height ), CV_8UC3 );
                                             memset( img_silhouette[ itID->second ].data, 0, img_silhouette[ itID->second ].cols * img_silhouette[ itID->second ].rows * 3 );
+                                            cnt_silhouette[ itID->second ] = Mat::zeros( img_silhouette[ itID->second ].size(), CV_16U );
                                         }
                                         const int col_on_silhouette = ( keyval2 - 1 ) % img_silhouette[ itID->second ].cols;
                                         const int row_on_silhouette = ( keyval2 - 1 ) / img_silhouette[ itID->second ].cols;
-                                        line( img_silhouette[ itID->second ]
-                                            , Point( col_on_silhouette, row_on_silhouette )
-                                            , Point( col_on_silhouette, row_on_silhouette )
-                                            , color_table[ itID->second % sizeColorTable ]
-                                            , 1 );
+
+                                        cnt_silhouette[ itID->second ].at<unsigned short>( row_on_silhouette, col_on_silhouette )
+                                            = cnt_silhouette[ itID->second ].at<unsigned short>( row_on_silhouette, col_on_silhouette ) + 1;
+                                        //line( img_silhouette[ itID->second ]
+                                        //    , Point( col_on_silhouette, row_on_silhouette )
+                                        //    , Point( col_on_silhouette, row_on_silhouette )
+                                        //    , color_table[ itID->second % sizeColorTable ]
+                                        //    , 1 );
                                     }
                                 }
                             }
@@ -640,6 +645,17 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
 
                     for( map<int,Mat>::iterator itImgSilhouette = img_silhouette.begin(); itImgSilhouette != img_silhouette.end(); ++itImgSilhouette ) {
                         const int id = itImgSilhouette->first;
+                        for( int x = 0; x < cnt_silhouette[ id ].cols; ++x ) {
+                            for( int y = 0; y < cnt_silhouette[ id ].rows; ++y ) {
+                                if( cnt_silhouette[ id ].at<unsigned short>( y, x ) > 3 ) {
+                                    line( img_silhouette[ id ]
+                                        , Point( x, y )
+                                        , Point( x, y )
+                                        , color_table[ id ]
+                                        , 1 );
+                                }
+                            }
+                        }
                         if( pTrackingResultResources->silhouetteVideoWriter.find( id ) == pTrackingResultResources->silhouetteVideoWriter.end() ) {
                             ostringstream oss;
                             oss << pTrackingResultResources->strSilhouettePath << id << ".avi";
