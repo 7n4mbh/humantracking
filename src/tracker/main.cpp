@@ -767,7 +767,7 @@ int main( int argc, char *argv[] )
 #ifdef LINUX_OS
     const string strSilhouettePath = strPath + "result_silhouette/";
 #endif
-    resTracking.init( strPath + "result.txt", strPath + "result_pepmap.avi", strPath + "result_camera.avi", strPath + "result_silhouette\\", &viewer );
+    resTracking.init( strPath + "result.txt", strPath + "result_pepmap.avi", strPath + "result_camera.avi", strSilhouettePath, &viewer );
     viewer.exec();
 
     if( !flgPEPMapFile ) {
