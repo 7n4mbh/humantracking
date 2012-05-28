@@ -65,7 +65,7 @@ void GestureRecognition::recognize( int id, unsigned long long timeStamp )
               cerr << "Couldn't open " << oss.str() <<  endl;
               exit( 1 );
         }
-        *ofs[ id ] << "timeStamp, mean_x, mean_y, row_highest, nAllPixels, nUpperPixels, nLowerPixels, nUpperLeftPixels, nUpperRightPixels" << endl; 
+        *ofs[ id ] << "timeStamp, mean_x, mean_y, row_highest, nAllPixels, nUpperPixels, nLowerPixels, nUpperLeftPixels, nUpperRightPixels, balance_LR" << endl; 
     }
 
     vector<int> nPixels_row( silhouette[ id ].rows );
@@ -98,7 +98,7 @@ void GestureRecognition::recognize( int id, unsigned long long timeStamp )
 
     int nPixels_leftupper = 0;
     for( int x = col_left; x < ( col_left + col_right ) / 2; ++x ) {
-        for( int y = row_highest; y < ( silhouette[ id ].rows + row_highest ) / 2; ++y ) {
+        for( int y = row_highest; y < row_highest + 15/*( silhouette[ id ].rows + row_highest ) / 2*/; ++y ) {
             //if( ( silhouette.at<Vec3b>( y, x )[ 0 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 1 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 2 ] != 0 ) ) {
             if( silhouette[ id ].at<unsigned char>( y, x ) != 0 ) {
                 ++nPixels_leftupper;
@@ -108,7 +108,7 @@ void GestureRecognition::recognize( int id, unsigned long long timeStamp )
 
     int nPixels_rightupper = 0;
     for( int x = ( col_left + col_right ) / 2; x <= col_right; ++x ) {
-        for( int y = row_highest; y < ( silhouette[ id ].rows + row_highest ) / 2; ++y ) {
+        for( int y = row_highest; y < row_highest + 15/*( silhouette[ id ].rows + row_highest ) / 2*/; ++y ) {
             //if( ( silhouette.at<Vec3b>( y, x )[ 0 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 1 ] != 0 ) || ( silhouette.at<Vec3b>( y, x )[ 2 ] != 0 ) ) {
             if( silhouette[ id ].at<unsigned char>( y, x ) != 0 ) {
                 ++nPixels_rightupper;
@@ -124,6 +124,12 @@ void GestureRecognition::recognize( int id, unsigned long long timeStamp )
     const int nUpperPixels = std::accumulate( nPixels_row.begin(), nPixels_row.begin() + ( silhouette[ id ].rows + 2 * row_highest ) / 3, 0 );
     const int nLowerPixels = nAllPixels - nUpperPixels;
 
+    float balance_LR;
+    if( nPixels_leftupper + nPixels_rightupper == 0 ) {
+        balance_LR = 0.5f;
+    } else {
+        balance_LR = (float)nPixels_rightupper / (float)( nPixels_leftupper + nPixels_rightupper );
+    }
 
     *ofs[ id ] << timeStamp << ", "
               << mean_x << ", "
@@ -133,9 +139,10 @@ void GestureRecognition::recognize( int id, unsigned long long timeStamp )
               << nUpperPixels << ", "
               << nLowerPixels << ", "
               << nPixels_leftupper << ", "
-              << nPixels_rightupper << endl;
+              << nPixels_rightupper << ", "
+              << balance_LR << endl;
 
     *ofs[ id ] << flush;
 
-    status[ id ] = ( (float)nPixels_rightupper / (float)( nPixels_leftupper + nPixels_rightupper ) > 0.61f );
+    status[ id ] = ( balance_LR > 0.8f );
 }
