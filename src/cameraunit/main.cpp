@@ -990,7 +990,7 @@ void execute( int start_frame = 0 )
 
             for( int row = 0; row < occupancy.rows; ++row ) {
                 for( int col = 0; col < occupancy.cols; ++col ) {
-                    if( occupancy.at<unsigned short>( row, col ) < 10/*50*/ ) {
+                    if( occupancy.at<unsigned short>( row, col ) < /*10*/50 ) {
                         occupancy.at<unsigned short>( row, col ) = 0;
                     }
                 }

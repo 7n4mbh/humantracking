@@ -631,7 +631,7 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                                         const int row_on_silhouette = ( keyval2 - 1 ) / img_silhouette[ itID->second ].cols;
 
                                         cnt_silhouette[ itID->second ].at<unsigned short>( row_on_silhouette, col_on_silhouette )
-                                            = cnt_silhouette[ itID->second ].at<unsigned short>( row_on_silhouette, col_on_silhouette ) + 1;
+                                            = cnt_silhouette[ itID->second ].at<unsigned short>( row_on_silhouette, col_on_silhouette ) + 1.0f;
                                         //line( img_silhouette[ itID->second ]
                                         //    , Point( col_on_silhouette, row_on_silhouette )
                                         //    , Point( col_on_silhouette, row_on_silhouette )
@@ -643,11 +643,13 @@ void* TrackingResultResources::ViewThread( void* p_tracking_result_resources )
                         }
                     }
 
+                    Mat cnt_blurred_silhouette;
                     for( map<int,Mat>::iterator itImgSilhouette = img_silhouette.begin(); itImgSilhouette != img_silhouette.end(); ++itImgSilhouette ) {
                         const int id = itImgSilhouette->first;
-                        for( int x = 0; x < cnt_silhouette[ id ].cols; ++x ) {
-                            for( int y = 0; y < cnt_silhouette[ id ].rows; ++y ) {
-                                if( cnt_silhouette[ id ].at<unsigned short>( y, x ) > 3 ) {
+                        GaussianBlur( cnt_silhouette[ id ], cnt_blurred_silhouette, Size( 5, 5 ), 0.75 );
+                        for( int x = 0; x < cnt_blurred_silhouette.cols/*cnt_silhouette[ id ].cols*/; ++x ) {
+                            for( int y = 0; y < cnt_blurred_silhouette.rows/*cnt_silhouette[ id ].rows*/; ++y ) {
+                                if( cnt_blurred_silhouette.at<unsigned short>( y, x ) > 3/*cnt_silhouette[ id ].at<unsigned short>( y, x ) > 3*/ ) {
                                     line( img_silhouette[ id ]
                                         , Point( x, y )
                                         , Point( x, y )
