@@ -144,5 +144,5 @@ void GestureRecognition::recognize( int id, unsigned long long timeStamp )
 
     *ofs[ id ] << flush;
 
-    status[ id ] = ( balance_LR > 0.8f );
+    status[ id ] = ( balance_LR > 0.91f );
 }
