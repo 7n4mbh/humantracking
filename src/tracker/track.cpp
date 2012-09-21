@@ -14,13 +14,13 @@ using namespace cv;
 extern TrackingProcessLogger logTracking;
 extern Viewer viewer;
 
-PARAM_COMMON commonParam; // $B6&DL%Q%i%a!<%?(B
-PARAM_EXTRACTLUM extractlumParam; // $BEyB.D>@~1?F0Cj=P%Q%i%a!<%?(B
-PARAM_MKTRAJECTORY mktrajectoryParam; // $B50@W:n@.%Q%i%a!<%?(B
-PARAM_CLUSTERING clusteringParam; // $B%/%i%9%?%j%s%0%Q%i%a!<%?(B
-//PARAM_MAKERESULT makeresultParam; // $BDI@W7k2L:n@.%Q%i%a!<%?(B
-PARAM_RENOVATE_TRAJECTORY rnvtrjParam; // $B50@W=$I|%Q%i%a!<%?(B
-PARAM_PLOT plotParam; // $B7W;;2aDx%W%m%C%H%Q%i%a!<%?(B
+PARAM_COMMON commonParam; // ‹¤’Êƒpƒ‰ƒ[ƒ^
+PARAM_EXTRACTLUM extractlumParam; // “™‘¬’¼ü‰^“®’Šoƒpƒ‰ƒ[ƒ^
+PARAM_MKTRAJECTORY mktrajectoryParam; // ‹OÕì¬ƒpƒ‰ƒ[ƒ^
+PARAM_CLUSTERING clusteringParam; // ƒNƒ‰ƒXƒ^ƒŠƒ“ƒOƒpƒ‰ƒ[ƒ^
+//PARAM_MAKERESULT makeresultParam; // ’ÇÕŒ‹‰Êì¬ƒpƒ‰ƒ[ƒ^
+PARAM_RENOVATE_TRAJECTORY rnvtrjParam; // ‹OÕC•œƒpƒ‰ƒ[ƒ^
+PARAM_PLOT plotParam; // ŒvŽZ‰ß’öƒvƒƒbƒgƒpƒ‰ƒ[ƒ^
 
 bool flgFirst;
 
