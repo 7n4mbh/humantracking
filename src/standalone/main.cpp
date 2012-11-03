@@ -30,6 +30,8 @@ float roi_width, roi_height;
 float roi_x, roi_y;
 float scale_m2px, scale_m2px_silhouette;
 
+const int stereo_width = 512, stereo_height = 384;
+
 inline void copy( Mat& img_dst, int dst_x, int dst_y, Mat& img_src, int src_x, int src_y, int width, int height )
 {
     for( int x = 0; x < width; ++x ) {
@@ -147,20 +149,53 @@ int main( int argc, char *argv[] )
 
         cout << "<Initialized>" << endl;
         cout << serialNumber[i] << endl;
+
+        // Set Triclops parameter for stereo
+        stereoVideo[ i ].SetStereoParameters( stereo_width, stereo_height );
+        cout << "<Stereo Parameters Changed>" << endl;
+
+        // Load a background image
+        cout << endl;
+        if( stereoVideo[ i ].load_background() ) {
+            cout << "Background image loaded." << endl;
+        } else {
+            cout << "No background image loaded." << endl;
+            exit( 1 );
+        }
     }
 
     //
     // test code
-    VideoWriter video;
-    const int fps = 30;
-    ostringstream oss;
-    oss << strStereoVideoFilePath << "integrated_cameraview.avi";
-    if( !video.open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( 1280, 960 ) ) ) {
-        cerr << "Couldn't open " <<  oss.str() << "." <<  endl;
-        exit( 1 );
-    }
-
     Mat image_record( 960, 1280, CV_8UC3 );
+    Mat image_depth_record( stereo_height * 2, stereo_width * 2, CV_8U );
+    Mat image_occupancy_record( (int)( scale_m2px * roi_height ) * 2, (int)( scale_m2px * roi_width ) * 2, CV_8U );
+
+    VideoWriter video_camera, video_depth, video_occupancy;
+    const int fps = 30;
+    {
+        ostringstream oss;
+        oss << strStereoVideoFilePath << "integrated_cameraview.avi";
+        if( !video_camera.open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( 1280, 960 ) ) ) {
+            cerr << "Couldn't open " <<  oss.str() << "." <<  endl;
+            exit( 1 );
+        }
+    }
+    {
+        ostringstream oss;
+        oss << strStereoVideoFilePath << "integrated_depthmap.avi";
+        if( !video_depth.open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( image_depth_record.size().width, image_depth_record.size().height ) ) ) {
+            cerr << "Couldn't open " <<  oss.str() << "." <<  endl;
+            exit( 1 );
+        }
+    }
+    {
+        ostringstream oss;
+        oss << strStereoVideoFilePath << "integrated_occupancymap.avi";
+        if( !video_occupancy.open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( image_occupancy_record.size().width, image_occupancy_record.size().height ) ) ) {
+            cerr << "Couldn't open " <<  oss.str() << "." <<  endl;
+            exit( 1 );
+        }
+    }
 
     unsigned long long time = time_start;
     int frame = 0;
@@ -173,31 +208,77 @@ int main( int argc, char *argv[] )
         }
     }
 
+    bool flgLoop = true;
+    bool flgPlaying = false;
     for( ; ; ) {
-        for( int i = 0; i < stereoVideo.size(); ++i ) {
+        for( int i = 0; i < stereoVideo.size() && flgLoop; ++i ) {
             while( stereoVideo[ i ].get_timestamp() < time ) {
-                if( !stereoVideo[ i ].grab() ) {
+                bool ret;
+
+                // Grab an image from a video file.
+                ret = stereoVideo[ i ].grab();
+                if( !ret ) {
                     cerr << "Error in grabbing an image from the video file: " 
                          << serialNumber[ i ] << ".avi" << endl;
-                    exit( 1 );
+                    flgLoop = false;
+                    break;
+                }
+
+                // Create an occupancy map
+                if( flgPlaying ) {
+                    stereoVideo[ i ].create_pepmap();
                 }
             } 
         }
+
+        if( flgLoop == false ) {
+            break;
+        }
+
+        flgPlaying = true;
         
-        //image_record = stereoVideo[ 0 ].image;
-        copy( image_record, 0, 0, stereoVideo[ 0 ].image, 640, 0, 640, 480 );
-        copy( image_record, 640, 0, stereoVideo[ 1 ].image, 640, 0, 640, 480 );
-        copy( image_record, 0, 480, stereoVideo[ 2 ].image, 640, 0, 640, 480 );
-        copy( image_record, 640, 480, stereoVideo[ 3 ].image, 640, 0, 640, 480 );
+        {
+            //image_record = stereoVideo[ 0 ].image;
+            copy( image_record, 0, 0, stereoVideo[ 0 ].image, 640, 0, 640, 480 );
+            copy( image_record, 640, 0, stereoVideo[ 1 ].image, 640, 0, 640, 480 );
+            copy( image_record, 0, 480, stereoVideo[ 2 ].image, 640, 0, 640, 480 );
+            copy( image_record, 640, 480, stereoVideo[ 3 ].image, 640, 0, 640, 480 );
+            imshow( "Record", image_record );
+            video_camera.write( image_record );
+        }
 
+        //imshow( "Rectified", stereoVideo[ 0 ].image_rectified );
 
-        imshow( "Record", image_record );
+        {
+            copy( image_depth_record, 0, 0, stereoVideo[ 0 ].image_depth, stereo_width, 0, stereo_width, stereo_height );
+            copy( image_depth_record, stereo_width, 0, stereoVideo[ 1 ].image_depth, stereo_width, 0, stereo_width, stereo_height );
+            copy( image_depth_record, 0, stereo_height, stereoVideo[ 2 ].image_depth, stereo_width, 0, stereo_width, stereo_height );
+            copy( image_depth_record, stereo_width, stereo_height, stereoVideo[ 3 ].image_depth, stereo_width, 0, stereo_width, stereo_height );
+            imshow( "Depth Map", image_depth_record );
+            Mat tmp( image_depth_record.size(), CV_8UC3 );
+            cvtColor( image_depth_record, tmp, CV_GRAY2BGR );
+            video_depth.write( tmp/*image_depth_record*/ );
+        }
+
+        {
+            const int width = (int)( scale_m2px * roi_width );
+            const int height = (int)( scale_m2px * roi_height );
+            copy( image_occupancy_record, 0, 0, stereoVideo[ 0 ].image_occupancy, width, 0, width, height );
+            copy( image_occupancy_record, width, 0, stereoVideo[ 1 ].image_occupancy, width, 0, width, height );
+            copy( image_occupancy_record, 0, height, stereoVideo[ 2 ].image_occupancy, width, 0, width, height );
+            copy( image_occupancy_record, width, height, stereoVideo[ 3 ].image_occupancy, width, 0, width, height );
+            imshow( "Occupancy map", image_occupancy_record );
+            Mat tmp( image_occupancy_record.size(), CV_8UC3 );
+            cvtColor( image_occupancy_record, tmp, CV_GRAY2BGR );
+            video_occupancy.write( tmp/*image_occupancy_record*/ );
+        }
+
         // Exit when ESC is hit.
         char c = cvWaitKey( 1 );
         if ( c == 27 ) {
             break;
         }
-        video.write( image_record );
+
         ++frame;
         time = time_start + ( flgCompatible ? ( ( 10000000ULL * (unsigned long long)frame ) / (unsigned long long)fps ) 
                                             : ( ( 1000000ULL  * (unsigned long long)frame ) / (unsigned long long)fps ) );
