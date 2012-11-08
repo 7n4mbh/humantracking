@@ -49,7 +49,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
 #endif
 #ifdef LINUX_OS
-	oss << "/home/kumalab/project/HumanTracking/bin/tmp_trajectories/";
+	oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
 #endif
 	oss << "samples_" << timeBegin << ".csv";
         strSampleFile = oss.str();
@@ -72,7 +72,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
 #endif
 #ifdef LINUX_OS
-	oss << "/home/kumalab/project/HumanTracking/bin/tmp_trajectories/";
+	oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
 #endif
         oss << "trajectories_" << timeBegin << ".csv";
         strTrajectoriesFile = oss.str();
@@ -101,7 +101,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
 #endif
 #ifdef LINUX_OS
-	oss << "/home/kumalab/project/HumanTracking/bin/tmp_trajectories/";
+	oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
 #endif
         oss << "plot_trajectories_" << timeBegin << ".plt";
         strScriptFile = oss.str();
@@ -296,7 +296,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_renovate\\";
 #endif
 #ifdef LINUX_OS
-	oss << "/home/kumalab/project/HumanTracking/bin/tmp_renovate/";
+	oss << "/home/fukushi/project/HumanTracking/bin/tmp_renovate/";
 #endif
         oss << "samples_" << timeBegin << ".csv";
         strSampleFile = oss.str();
@@ -320,7 +320,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
             oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_renovate\\";
 #endif
 #ifdef LINUX_OS
-            oss << "/home/kumalab/project/HumanTracking/bin/tmp_renovate/";
+            oss << "/home/fukushi/project/HumanTracking/bin/tmp_renovate/";
 #endif
             oss << "trajectories_result_" << itResult->first << "_" << timeBegin << ".csv";
             strTrajectoriesFile.push_back( oss.str() );
@@ -351,7 +351,7 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
         oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_renovate\\";
 #endif
 #ifdef LINUX_OS
-	oss << "/home/kumalab/project/HumanTracking/bin/tmp_renovate/";
+	oss << "/home/fukushi/project/HumanTracking/bin/tmp_renovate/";
 #endif
         oss << "plot_trajectories_result" << timeBegin << ".plt";
         strScriptFile = oss.str();

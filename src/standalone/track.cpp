@@ -518,7 +518,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
 #endif
 #ifdef LINUX_OS
-			                , "/home/kumalab/project/HumanTracking/bin/tmp_trajectories/"
+			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
 #endif
                             , ""//oss.str()
                             , NULL

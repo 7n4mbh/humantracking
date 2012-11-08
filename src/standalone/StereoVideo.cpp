@@ -78,6 +78,11 @@ bool StereoVideo::load_extrinsic_parameters()
     H.at<float>( 1, 3 ) = H.at<float>( 1, 3 ) / 1000.0f;
     H.at<float>( 2, 3 ) = H.at<float>( 2, 3 ) / 1000.0f;
 
+    cout << "Loaded the extrinsic parameters from " << oss.str() << endl;
+    cout << H.at<float>( 0, 0 ) << "," << H.at<float>( 0, 1 ) << "," << H.at<float>( 0, 2 ) << "," << H.at<float>( 0, 3 ) << endl;
+    cout << H.at<float>( 1, 0 ) << "," << H.at<float>( 1, 1 ) << "," << H.at<float>( 1, 2 ) << "," << H.at<float>( 1, 3 ) << endl;
+    cout << H.at<float>( 2, 0 ) << "," << H.at<float>( 2, 1 ) << "," << H.at<float>( 2, 2 ) << "," << H.at<float>( 2, 3 ) << endl;
+
     return true;
 
     //H.at<float>( 0, 0 ) = 0.556880; H.at<float>( 0, 1 ) = -0.326309; H.at<float>( 0, 2 ) = 0.763811; H.at<float>( 0, 3 ) = -1.818401435;

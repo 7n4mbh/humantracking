@@ -36,15 +36,25 @@ const int stereo_width = 512, stereo_height = 384;
 
 bool flgOutputTrackingProcessData2Files = true;
 
-TrackingResultResources resTracking;
+//TrackingResultResources resTracking;
 
 inline void copy( Mat& img_dst, int dst_x, int dst_y, Mat& img_src, int src_x, int src_y, int width, int height )
 {
+    //cout << "copy(): "
+    //     << "width=" << width
+    //     << ", height=" << height 
+    //     << ", img_src.size().width=" << img_src.size().width
+    //     << ", img_src.size().heigh=" << img_src.size().height
+    //     << ", img_dst.size().width=" << img_dst.size().width
+    //     << ", img_dst.size().height=" << img_dst.size().height
+    //     << endl;
+
     if( img_src.size().width < width || img_src.size().height < height ) {
         return;
     }
 
     for( int x = 0; x < width; ++x ) {
+	//cout << "x=" << x;
         for( int y = 0; y < height; ++y ) {
             for ( int channel = 0; channel < img_dst.channels(); ++channel ) {
                 *(unsigned char*)( img_dst.data + ( dst_y + y ) * img_dst.step + ( dst_x + x ) * img_dst.channels() + channel )
@@ -55,6 +65,7 @@ inline void copy( Mat& img_dst, int dst_x, int dst_y, Mat& img_src, int src_x, i
                 //    = *(unsigned char*)( img_src.data + src_y * img_src.step + src_x * img_src.channels() + 2 );
             }
         }
+	//cout << " done." << endl;
     }
 }
 
@@ -183,8 +194,9 @@ int main( int argc, char *argv[] )
     const string strSilhouettePath = strStereoVideoFilePath + "result_silhouette\\";
 #endif
 #ifdef LINUX_OS
-    const string strSilhouettePath = strPath + "result_silhouette/";
+    const string strSilhouettePath = strStereoVideoFilePath + "result_silhouette/";
 #endif
+/*
     resTracking.init( strStereoVideoFilePath + "result.txt"
                     , strStereoVideoFilePath + "result_pepmap.avi"
                     , strStereoVideoFilePath + "result_camera.avi"
@@ -192,13 +204,13 @@ int main( int argc, char *argv[] )
     resTracking.SetDelayUpdate( 10 );
     resTracking.clear();
     resTracking.EnableViewWindow();
-    
+*/  
     Mat image_record( 960, 1280, CV_8UC3 );
     Mat image_depth_record( stereo_height * 2, stereo_width * 2, CV_8U );
     Mat image_occupancy_record( (int)( scale_m2px * roi_height ) * 2, (int)( scale_m2px * roi_width ) * 2, CV_8U );
+    const int fps = 30;
 
     VideoWriter video_camera, video_depth, video_occupancy;
-    const int fps = 30;
     {
         ostringstream oss;
         oss << strStereoVideoFilePath << "integrated_cameraview.avi";
@@ -255,9 +267,11 @@ int main( int argc, char *argv[] )
 
                 if( flgPlaying ) {
                     // Create an occupancy map
+		    cout << "create_pepmap()...";
                     stereoVideo[ i ].create_pepmap();
-                    
-                    resTracking.UpdateView();
+                    cout << "done." << endl;
+
+                    //resTracking.UpdateView();
 
                     // Sort occupancy maps in the buffer
                     unsigned long long timestamp = stereoVideo[ i ].get_timestamp();
@@ -291,9 +305,11 @@ int main( int argc, char *argv[] )
                         map<unsigned long long, multimap<int,Point2d> > ext_result;
                         if( track( &result, &ext_result, pepmap.occupancy, timestamp ) ) {
                             // Store result view resources
-                            resTracking.AddResultTrajectories( result, ext_result );
+                            //resTracking.AddResultTrajectories( result, ext_result );
                         }
-                        resTracking.AddPEPMapInfo( pepmap );
+			//cout << "AddPEPMapInfo()...";
+                        //resTracking.AddPEPMapInfo( pepmap );
+			//cout << "done." << endl;
                     }
                     
                 }
@@ -305,14 +321,17 @@ int main( int argc, char *argv[] )
         }
 
         flgPlaying = true;
-        
+        //cout << "flgPlaying = true;" << endl;
+
         {
             //image_record = stereoVideo[ 0 ].image;
             copy( image_record, 0, 0, stereoVideo[ 0 ].image, 640, 0, 640, 480 );
             copy( image_record, 640, 0, stereoVideo[ 1 ].image, 640, 0, 640, 480 );
             copy( image_record, 0, 480, stereoVideo[ 2 ].image, 640, 0, 640, 480 );
             copy( image_record, 640, 480, stereoVideo[ 3 ].image, 640, 0, 640, 480 );
-            imshow( "Record", image_record );
+            //cout << "copy done." << endl;
+	    imshow( "Record", image_record );
+	    //cout << "imshow( \"Record\", image_record );" << endl;
             video_camera.write( image_record );
         }
 
@@ -328,6 +347,7 @@ int main( int argc, char *argv[] )
             cvtColor( image_depth_record, tmp, CV_GRAY2BGR );
             video_depth.write( tmp/*image_depth_record*/ );
         }
+	//cout << "imshow( \"Depth Map\", image_depth_record );" << endl;
 
         {
             const int width = (int)( scale_m2px * roi_width );
@@ -341,9 +361,10 @@ int main( int argc, char *argv[] )
             cvtColor( image_occupancy_record, tmp, CV_GRAY2BGR );
             video_occupancy.write( tmp/*image_occupancy_record*/ );
         }
+	//cout << "imshow( \"Occupancy map\", image_occupancy_record );" << endl;
 
         // Exit when ESC is hit.
-        char c = cvWaitKey( 1 );
+        char c = cvWaitKey( 10 );
         if ( c == 27 ) {
             break;
         }
@@ -352,7 +373,7 @@ int main( int argc, char *argv[] )
         time = time_start + ( flgCompatible ? ( ( 10000000ULL * (unsigned long long)frame ) / (unsigned long long)fps ) 
                                             : ( ( 1000000ULL  * (unsigned long long)frame ) / (unsigned long long)fps ) );
     }
-
+/*
     while( resTracking.hasDataToDisplay() ) {
 #ifdef WINDOWS_OS
 	Sleep( 1000 );
@@ -363,4 +384,5 @@ int main( int argc, char *argv[] )
     }
 
     resTracking.TerminateViewWindow();
+*/
 }
