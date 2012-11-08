@@ -12,6 +12,8 @@
 #include "opencv/highgui.h"
 
 #include "../humantracking.h"
+#include "track.h"
+#include "TrackingResultResources.h"
 #include "StereoVideo.h"
 
 #ifdef LINUX_OS
@@ -32,8 +34,16 @@ float scale_m2px, scale_m2px_silhouette;
 
 const int stereo_width = 512, stereo_height = 384;
 
+bool flgOutputTrackingProcessData2Files = true;
+
+TrackingResultResources resTracking;
+
 inline void copy( Mat& img_dst, int dst_x, int dst_y, Mat& img_src, int src_x, int src_y, int width, int height )
 {
+    if( img_src.size().width < width || img_src.size().height < height ) {
+        return;
+    }
+
     for( int x = 0; x < width; ++x ) {
         for( int y = 0; y < height; ++y ) {
             for ( int channel = 0; channel < img_dst.channels(); ++channel ) {
@@ -114,6 +124,7 @@ int main( int argc, char *argv[] )
     //vector<CameraImageInfo> cam_image;
     //vector<GeometryMapInfo> geometry;
     //string str;
+    string strTrackingConfigFile = "tracking.cfg";
     unsigned long long time_start = 0;
 
     for( int i = 1; i < argc; ++i ) {
@@ -130,8 +141,10 @@ int main( int argc, char *argv[] )
         }
     }
 
+    initialize_tracker();
+
     load_pepmap_config();
-    //load_track_parameters( strPath, strTrackingConfigFile );
+    load_track_parameters( strStereoVideoFilePath, strTrackingConfigFile );
 
     vector<StereoVideo> stereoVideo( serialNumber.size() );
     for( int i = 0;i < serialNumber.size(); ++i ) {
@@ -166,6 +179,20 @@ int main( int argc, char *argv[] )
 
     //
     // test code
+#ifdef WINDOWS_OS
+    const string strSilhouettePath = strStereoVideoFilePath + "result_silhouette\\";
+#endif
+#ifdef LINUX_OS
+    const string strSilhouettePath = strPath + "result_silhouette/";
+#endif
+    resTracking.init( strStereoVideoFilePath + "result.txt"
+                    , strStereoVideoFilePath + "result_pepmap.avi"
+                    , strStereoVideoFilePath + "result_camera.avi"
+                    , strSilhouettePath );
+    resTracking.SetDelayUpdate( 10 );
+    resTracking.clear();
+    resTracking.EnableViewWindow();
+    
     Mat image_record( 960, 1280, CV_8UC3 );
     Mat image_depth_record( stereo_height * 2, stereo_width * 2, CV_8U );
     Mat image_occupancy_record( (int)( scale_m2px * roi_height ) * 2, (int)( scale_m2px * roi_width ) * 2, CV_8U );
@@ -208,6 +235,8 @@ int main( int argc, char *argv[] )
         }
     }
 
+    map<unsigned long long,PEPMapInfo> sort_buffer;
+
     bool flgLoop = true;
     bool flgPlaying = false;
     for( ; ; ) {
@@ -224,9 +253,49 @@ int main( int argc, char *argv[] )
                     break;
                 }
 
-                // Create an occupancy map
                 if( flgPlaying ) {
+                    // Create an occupancy map
                     stereoVideo[ i ].create_pepmap();
+                    
+                    resTracking.UpdateView();
+
+                    // Sort occupancy maps in the buffer
+                    unsigned long long timestamp = stereoVideo[ i ].get_timestamp();
+                    if( flgCompatible ) {
+                        timestamp /= 10;
+                        timestamp -= DELTA_EPOCH_IN_MICROSECS; 
+                    }
+
+                    PEPMapInfo pepmap;
+                    pepmap.serialNumber = serialNumber[ i ];
+                    pepmap.timeStamp = timestamp;
+                    pepmap.occupancy = stereoVideo[ i ].occupancy;
+                    sort_buffer[ timestamp ] = pepmap;
+
+                    for( ; ; ) {
+                        if( sort_buffer.size() < 2 ) {
+                            break;
+                        }
+
+                        unsigned long long diff = sort_buffer.rbegin()->first - sort_buffer.begin()->first;
+                        if( diff < 300000 ) {
+                            break;
+                        }
+                                                
+                        timestamp = sort_buffer.begin()->first;
+                        pepmap = sort_buffer.begin()->second;
+                        sort_buffer.erase( sort_buffer.begin() );
+
+                        // Tracking
+                        map< unsigned long long, map<int,Point2d> > result;
+                        map<unsigned long long, multimap<int,Point2d> > ext_result;
+                        if( track( &result, &ext_result, pepmap.occupancy, timestamp ) ) {
+                            // Store result view resources
+                            resTracking.AddResultTrajectories( result, ext_result );
+                        }
+                        resTracking.AddPEPMapInfo( pepmap );
+                    }
+                    
                 }
             } 
         }
@@ -283,4 +352,15 @@ int main( int argc, char *argv[] )
         time = time_start + ( flgCompatible ? ( ( 10000000ULL * (unsigned long long)frame ) / (unsigned long long)fps ) 
                                             : ( ( 1000000ULL  * (unsigned long long)frame ) / (unsigned long long)fps ) );
     }
+
+    while( resTracking.hasDataToDisplay() ) {
+#ifdef WINDOWS_OS
+	Sleep( 1000 );
+#endif
+#ifdef LINUX_OS     
+        sleep( 1 );
+#endif
+    }
+
+    resTracking.TerminateViewWindow();
 }

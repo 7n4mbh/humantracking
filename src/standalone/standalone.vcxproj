@@ -103,13 +103,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\include;C:\Program Files\opencv\build\include;C:\Program Files (x86)\boost_1_49_0;C:\Program Files\Intel\IPP\6.1.3.047\em64t\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\include;C:\Program Files\opencv\build\include;C:\Program Files (x86)\boost_1_49_0;C:\Program Files\Intel\IPP\6.1.3.047\em64t\include;C:\Program Files\zlib</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files\Intel\IPP\6.1.3.047\em64t\stublib;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib;ippcoreem64t.lib;ippiem64t.lib;ippsem64t.lib;ippmem64t.lib;triclops.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files\Intel\IPP\6.1.3.047\em64t\stublib;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib64;C:\Program Files\zlib\build\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib;ippcoreem64t.lib;ippiem64t.lib;ippsem64t.lib;ippmem64t.lib;triclops.lib;zlibd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -137,27 +137,47 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\include;C:\Program Files\opencv\build\include;C:\Program Files (x86)\boost_1_49_0;C:\Program Files\Intel\IPP\6.1.3.047\em64t\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Point Grey Research\FlyCapture2\include;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\include;C:\Program Files\opencv\build\include;C:\Program Files (x86)\boost_1_49_0;C:\Program Files\Intel\IPP\6.1.3.047\em64t\include;C:\Program Files\zlib</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files\Intel\IPP\6.1.3.047\em64t\stublib;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_core231.lib;opencv_highgui231.lib;opencv_imgproc231.lib;opencv_calib3d231.lib;ippcoreem64t.lib;ippiem64t.lib;ippsem64t.lib;ippmem64t.lib;triclops.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\opencv\build\x64\vc10\lib;C:\Program Files\Intel\IPP\6.1.3.047\em64t\stublib;C:\Program Files\Point Grey Research\Triclops Stereo Vision SDK\lib64;C:\Program Files\zlib\build\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_core231.lib;opencv_highgui231.lib;opencv_imgproc231.lib;opencv_calib3d231.lib;ippcoreem64t.lib;ippiem64t.lib;ippsem64t.lib;ippmem64t.lib;triclops.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ClusterTrajectories.cpp" />
+    <ClCompile Include="ExtendTrajectories.cpp" />
+    <ClCompile Include="ExtractLUM.cpp" />
+    <ClCompile Include="GestureRecognition.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MakeLUMSlice.cpp" />
+    <ClCompile Include="PlotCalculationProcess.cpp" />
+    <ClCompile Include="RenovateTrajectory.cpp" />
     <ClCompile Include="StereoVideo.cpp" />
+    <ClCompile Include="track.cpp" />
+    <ClCompile Include="TrackingResultResources.cpp" />
+    <ClCompile Include="Trajectory.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GestureRecognition.h" />
+    <ClInclude Include="LinearUniformMotion.h" />
+    <ClInclude Include="PersonTrackingCommon.h" />
+    <ClInclude Include="PosXYT.h" />
+    <ClInclude Include="ProbSampleReplace.h" />
+    <ClInclude Include="pttype.h" />
+    <ClInclude Include="RenovateTrajectory.h" />
     <ClInclude Include="StereoVideo.h" />
+    <ClInclude Include="track.h" />
+    <ClInclude Include="TrackingResultResources.h" />
+    <ClInclude Include="Trajectory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

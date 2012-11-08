@@ -16,6 +16,7 @@ public:
     cv::Mat image_rectified;
     cv::Mat image_depth;
     cv::Mat image_occupancy;
+    cv::Mat occupancy;
 
 private:
     FlyCapture2::CameraInfo camInfo;

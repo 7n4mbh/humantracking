@@ -95,7 +95,7 @@ bool StereoVideo::SetStereoParameters( int width, int height, bool flg_output_ms
     img_background_cam.create( height, width, CV_32F );
     image_rectified.create( height, width, CV_8U );
     image_occupancy.create( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
-    image_depth.create( width, height, CV_8U );
+    image_depth.create( height, width, CV_8U );
 
     //
     // Change stereo parameters
@@ -456,7 +456,7 @@ void StereoVideo::create_pepmap()
     // 
     // Create an occupancy map with foreground data
     // （ベクトル計算で高速化の余地あり）
-    Mat occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
+    /*Mat*/ occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
     //Mat occupancy_2 = Mat::zeros( (int)( 3.0 * scale_m2px ), (int)( roi_height * scale_m2px ), CV_16U );
     //Mat occupancy_3 = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
     //Mat geometry = Mat::zeros( height, width, CV_16U );
@@ -527,6 +527,7 @@ void StereoVideo::create_pepmap()
         //    }
         //}
 
+        GaussianBlur( occupancy, occupancy, Size( 7, 7 ), 1.5 );
         for( int row = 0; row < occupancy.rows; ++row ) {
             for( int col = 0; col < occupancy.cols; ++col ) {
                 if( occupancy.at<unsigned short>( row, col ) < /*10*/50 ) {
@@ -537,7 +538,7 @@ void StereoVideo::create_pepmap()
     }
 
     image_occupancy.create( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
-    image_depth.create( width, height, CV_8U );
+    image_depth.create( height, width, CV_8U );
     occupancy.convertTo( image_occupancy, CV_8U );
     img_depth.convertTo( image_depth, CV_8U, 25.0, 0.0 );
 }
