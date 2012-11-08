@@ -10,3 +10,6 @@ cameraunit:
 
 viewer:
 	(cd viewer;make)
+
+standalone:
+	(cd standalone;make)
