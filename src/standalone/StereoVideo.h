@@ -1,6 +1,8 @@
 #ifndef __HEADER_STEREOVIDEO__
 #define __HEADER_STEREOVIDEO__
 
+#include <fstream>
+
 #include "FlyCapture2.h"
 #include "triclops.h"
 #include "opencv/cv.h"
@@ -29,6 +31,7 @@ private:
     int width, height;
     cv::Mat img_background;
     cv::Mat img_background_cam;
+    std::ofstream* p_ofs_log;
 
 public:
     StereoVideo();
