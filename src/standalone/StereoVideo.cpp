@@ -36,7 +36,6 @@ void getfilename( const string src, string* p_str_path, string* p_str_name, stri
 
 StereoVideo::StereoVideo()
 {
-    H.create( 3, 4, CV_32F );
     frame = -1;
     width = 512;
     height = 384;
@@ -295,6 +294,7 @@ bool StereoVideo::init( std::string strVideoFile )
     TriclopsError te;
 
     this->strVideoFile = strVideoFile;
+    H.create( 3, 4, CV_32F );
 
     if( !video.open( strVideoFile ) ) {
         return false;
