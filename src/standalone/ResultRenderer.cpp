@@ -13,6 +13,8 @@ extern float roi_width, roi_height;
 extern float roi_x, roi_y;
 extern float scale_m2px, scale_m2px_silhouette;
 
+extern const int stereo_width = 512, stereo_height = 384;
+
 ResultRenderer::ResultRenderer()
 {
 }
@@ -21,7 +23,7 @@ ResultRenderer::~ResultRenderer()
 {
 }
 
-void ResultRenderer::init( std::string result_pepmapvideo_filename/*, std::string result_cameravideo_filename, std::string silhouette_path*/ )
+void ResultRenderer::init( std::string result_pepmapvideo_filename, std::map<unsigned long long,std::string> result_cameravideo_filename/*, std::string result_cameravideo_filename, std::string silhouette_path*/ )
 {
     bufPEPMap.clear();
     trackingResult.clear();
@@ -31,14 +33,35 @@ void ResultRenderer::init( std::string result_pepmapvideo_filename/*, std::strin
     strResultPEPMapVideoFilename = result_pepmapvideo_filename;
 
     if( !pepmapVideoWriter.open( strResultPEPMapVideoFilename, CV_FOURCC('X','V','I','D'), 40, Size( (int)( roi_width * 80 ), (int)( roi_height * 80 ) ) ) ) {
-      cerr << "Couldn't open " << strResultPEPMapVideoFilename << "." <<  endl;
-      exit( 1 );
+        cerr << "Couldn't open " << strResultPEPMapVideoFilename << "." <<  endl;
+        exit( 1 );
+    }
+
+    for( map<unsigned long long,string>::iterator it = result_cameravideo_filename.begin(); it != result_cameravideo_filename.end(); ++it ) {
+        if( !cameraVideoWriter[it->first].open( it->second, CV_FOURCC('X','V','I','D'), 10, Size( (int)stereo_width, (int)( roi_height * 80 ) ) ) ) {
+          cerr << "Couldn't open " << strResultPEPMapVideoFilename << "." <<  endl;
+          exit( 1 );
+        }        
     }
 }
 
 void ResultRenderer::AddPEPMapInfo( PEPMapInfoEx& pepmap )
 {
     bufPEPMap.push_back( pepmap );
+}
+
+void ResultRenderer::AddCameraImageInfo( CameraImageInfoEx& cam_image )
+{
+    ostringstream oss;
+    oss << cam_image.timeStamp << "_" << cam_image.serialNumber;
+    bufCameraImage[ oss.str() ] = cam_image;
+}
+
+void ResultRenderer::AddGeometryMapInfo( GeometryMapInfoEx& geometry )
+{
+    ostringstream oss;
+    oss << geometry.timeStamp << "_" << geometry.serialNumber;
+    bufGeometry[ oss.str() ] = geometry;
 }
 
 void ResultRenderer::AddResultTrajectories( const std::map< unsigned long long, std::map<int,cv::Point2d> >& result, const std::map<unsigned long long, std::multimap<int,cv::Point2d> >& ext_result )
@@ -147,12 +170,61 @@ void ResultRenderer::Render()
             // Show/Record the rendered image
             imshow( "Tracking Result", img_display );
             pepmapVideoWriter.write( img_display );
+
+
+            //
+            // Draw Human Regions on a camera image if it is available
+            Mat img_cam_display;
+            bool flgCamImageAvailable = false;
+            ostringstream oss;
+            oss << pepmap.timeStamp << "_" << pepmap.serialNumber;
+            map<string,CameraImageInfoEx>::iterator itCamImageInfo = bufCameraImage.find( oss.str() );
+            if( itCamImageInfo != bufCameraImage.end() ) {
+                cvtColor( itCamImageInfo->second.image, img_cam_display, CV_GRAY2BGR );
+                flgCamImageAvailable = true;
+            }
+
+            Mat geometry;
+            bool flgGeometryAvailable = false;
+            map<string,GeometryMapInfoEx>::iterator itGeometryInfo = bufGeometry.find( oss.str()/*pepmap.timeStamp*/ );
+            if( itGeometryInfo != bufGeometry.end() ) {
+                geometry = itGeometryInfo->second.geometry;
+                flgGeometryAvailable = true;
+            }
+
+            if( flgCamImageAvailable && flgGeometryAvailable ) {
+                for( int x = 0; x < geometry.cols; ++x ) {
+                    for( int y = 0; y < geometry.rows; ++y ) {
+                        const int keyval = geometry.at<unsigned short>( y, x );
+                        map<int,int>::iterator itID;
+                        if( ( itID = geometry_to_ID.find( keyval ) ) != geometry_to_ID.end() ) {
+                            if( flgCamImageAvailable ) {
+                                line( img_cam_display, Point( x, y ), Point( x, y ), color_table[ itID->second % sizeColorTable ], 1 );
+                            }
+                        }
+                    }
+                }
+            }
+
+            if( flgCamImageAvailable ) {
+                ostringstream oss;
+                oss << "Segmentation_" << pepmap.serialNumber;
+                imshow( oss.str(), img_cam_display );
+                cameraVideoWriter[ pepmap.serialNumber ].write( img_cam_display );
+            }
+
             (void)cvWaitKey( 10 );
         } else {
                 const unsigned long long time_pepmap = trackingResult.begin()->first;
+                ostringstream oss;
+                oss << time_pepmap;
                 trackingResultExt.erase( trackingResultExt.begin()
-                                       , trackingResultExt.lower_bound( time_pepmap )  );
+                                       , trackingResultExt.lower_bound( time_pepmap ) );
                 trackingResult.erase( trackingResult.begin() );
+                bufCameraImage.erase( bufCameraImage.begin()
+                                    , bufCameraImage.lower_bound( oss.str() ) );
+                bufGeometry.erase( bufGeometry.begin()
+                                 , bufGeometry.lower_bound( oss.str() ) );
         }
     }
 }

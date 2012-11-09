@@ -506,7 +506,7 @@ void StereoVideo::create_pepmap()
     /*Mat*/ occupancy = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
     //Mat occupancy_2 = Mat::zeros( (int)( 3.0 * scale_m2px ), (int)( roi_height * scale_m2px ), CV_16U );
     //Mat occupancy_3 = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
-    //Mat geometry = Mat::zeros( height, width, CV_16U );
+    /*Mat*/ geometry = Mat::zeros( height, width, CV_16U );
     //Mat geometry_2 = Mat::zeros( height, width, CV_16U );
     Mat disparitymap = Mat::zeros( height, width, CV_16U );
     int row, col;
@@ -521,7 +521,7 @@ void StereoVideo::create_pepmap()
                 if( abs( ( a = (int)img_camera.at<unsigned char>( y, x ) ) - ( b = (int)img_background_cam.at<unsigned char>( y, x ) ) ) < 20
                     || abs( img_depth.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
                     img_depth.at<float>( y, x ) = 0.0f;
-                    //geometry.at<unsigned short>( y, x ) = 0;
+                    geometry.at<unsigned short>( y, x ) = 0;
                     //geometry_2.at<unsigned short>( y, x ) = 0;
                     disparitymap.at<unsigned short>( y, x ) = 0xff00;
                 } else {
@@ -545,7 +545,7 @@ void StereoVideo::create_pepmap()
                                     << " -> (row,col)=(" << row << "," << col << ")" << endl;
                         }
 
-                        //geometry.at<unsigned short>( y, x ) = row * occupancy.cols + col + 1;
+                        geometry.at<unsigned short>( y, x ) = row * occupancy.cols + col + 1;
                             
                         //col = row; // X axis is projected on the horizontal axis of the geometry map2.
                         //row = (int)( occupancy_2.rows - scale_m2px * pv_z ); // Z axis is projeted on the vertical axis of the geometry map2.
@@ -565,7 +565,7 @@ void StereoVideo::create_pepmap()
 
                     } else {
                         img_depth.at<float>( y, x ) = 0.0f;
-                        //geometry.at<unsigned short>( y, x ) = 0;
+                        geometry.at<unsigned short>( y, x ) = 0;
                         //geometry_2.at<unsigned short>( y, x ) = 0;
                         disparitymap.at<unsigned short>( y, x ) = 0xff00;
                     }

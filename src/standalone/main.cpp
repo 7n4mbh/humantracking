@@ -207,7 +207,13 @@ int main( int argc, char *argv[] )
     resTracking.clear();
     resTracking.EnableViewWindow();
 */  
-    resultRenderer.init( strStereoVideoFilePath + "result_pepmap.avi" );
+    map<unsigned long long,string> result_cameravideo_filename;
+    for( int i = 0; i < serialNumber.size(); ++i ) {
+        ostringstream oss, oss2;
+        oss << strStereoVideoFilePath << "Segmentation_" << serialNumber[ i ] << ".avi"; 
+        result_cameravideo_filename[ serialNumber[ i ] ] = oss.str();
+    }
+    resultRenderer.init( strStereoVideoFilePath + "result_pepmap.avi", result_cameravideo_filename );
 
     Mat image_record( 960, 1280, CV_8UC3 );
     Mat image_depth_record( stereo_height * 2, stereo_width * 2, CV_8U );
@@ -290,6 +296,25 @@ int main( int argc, char *argv[] )
                     pepmap.occupancy = stereoVideo[ i ].occupancy.clone();
                     sort_buffer[ timestamp ] = pepmap;
 
+                    GeometryMapInfoEx geometry;
+                    geometry.serialNumber = serialNumber[ i ];
+                    geometry.timeStamp = timestamp;
+                    geometry.width = stereo_width;
+                    geometry.height = stereo_height;
+                    geometry.geometry = stereoVideo[ i ].geometry.clone();
+
+                    CameraImageInfoEx camera;
+                    camera.serialNumber = serialNumber[ i ];
+                    camera.timeStamp = timestamp;
+                    camera.width = stereo_width;
+                    camera.height = stereo_height;
+                    camera.image = stereoVideo[ i ].image_rectified.clone();
+
+                    resultRenderer.AddPEPMapInfo( pepmap );
+                    resultRenderer.AddCameraImageInfo( camera );
+                    resultRenderer.AddGeometryMapInfo( geometry );
+                    
+
                     for( ; ; ) {
                         if( sort_buffer.size() < 2 ) {
                             break;
@@ -315,7 +340,7 @@ int main( int argc, char *argv[] )
                         }
 			            //cout << "AddPEPMapInfo()...";
                         //resTracking.AddPEPMapInfo( pepmap );
-                        resultRenderer.AddPEPMapInfo( pepmap );
+                        //resultRenderer.AddPEPMapInfo( pepmap );
 			            //cout << "done." << endl;
                     }
                     
