@@ -13,7 +13,8 @@
 
 #include "../humantracking.h"
 #include "track.h"
-#include "TrackingResultResources.h"
+//#include "TrackingResultResources.h"
+#include "ResultRenderer.h"
 #include "StereoVideo.h"
 
 #ifdef LINUX_OS
@@ -37,6 +38,7 @@ const int stereo_width = 512, stereo_height = 384;
 bool flgOutputTrackingProcessData2Files = true;
 
 //TrackingResultResources resTracking;
+ResultRenderer resultRenderer;
 
 inline void copy( Mat& img_dst, int dst_x, int dst_y, Mat& img_src, int src_x, int src_y, int width, int height )
 {
@@ -205,6 +207,8 @@ int main( int argc, char *argv[] )
     resTracking.clear();
     resTracking.EnableViewWindow();
 */  
+    resultRenderer.init( strStereoVideoFilePath + "result_pepmap.avi" );
+
     Mat image_record( 960, 1280, CV_8UC3 );
     Mat image_depth_record( stereo_height * 2, stereo_width * 2, CV_8U );
     Mat image_occupancy_record( (int)( scale_m2px * roi_height ) * 2, (int)( scale_m2px * roi_width ) * 2, CV_8U );
@@ -247,7 +251,7 @@ int main( int argc, char *argv[] )
         }
     }
 
-    map<unsigned long long,PEPMapInfo> sort_buffer;
+    map<unsigned long long,PEPMapInfoEx> sort_buffer;
 
     bool flgLoop = true;
     bool flgPlaying = false;
@@ -280,10 +284,10 @@ int main( int argc, char *argv[] )
                         timestamp -= DELTA_EPOCH_IN_MICROSECS; 
                     }
 
-                    PEPMapInfo pepmap;
+                    PEPMapInfoEx pepmap;
                     pepmap.serialNumber = serialNumber[ i ];
                     pepmap.timeStamp = timestamp;
-                    pepmap.occupancy = stereoVideo[ i ].occupancy;
+                    pepmap.occupancy = stereoVideo[ i ].occupancy.clone();
                     sort_buffer[ timestamp ] = pepmap;
 
                     for( ; ; ) {
@@ -306,10 +310,13 @@ int main( int argc, char *argv[] )
                         if( track( &result, &ext_result, pepmap.occupancy, timestamp ) ) {
                             // Store result view resources
                             //resTracking.AddResultTrajectories( result, ext_result );
+                            resultRenderer.AddResultTrajectories( result, ext_result );
+                            resultRenderer.Render();
                         }
-			//cout << "AddPEPMapInfo()...";
+			            //cout << "AddPEPMapInfo()...";
                         //resTracking.AddPEPMapInfo( pepmap );
-			//cout << "done." << endl;
+                        resultRenderer.AddPEPMapInfo( pepmap );
+			            //cout << "done." << endl;
                     }
                     
                 }

@@ -35,6 +35,7 @@ private:
 
 public:
     StereoVideo();
+    StereoVideo( const StereoVideo& obj );
     virtual ~StereoVideo();
     bool init( std::string strVideoFile );
     bool SetStereoParameters( int width, int height, bool flg_output_msg = true );

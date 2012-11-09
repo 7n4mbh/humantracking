@@ -42,6 +42,28 @@ StereoVideo::StereoVideo()
     p_ofs_log = NULL;
 }
 
+StereoVideo::StereoVideo( const StereoVideo& obj )
+{
+    image = obj.image.clone();
+    image_rectified = obj.image_rectified.clone();
+    image_depth = obj.image_depth.clone();
+    image_occupancy = obj.image_occupancy.clone();
+    occupancy = obj.occupancy.clone();
+    H = obj.H.clone();
+    img_background = obj.img_background.clone();
+    img_background_cam = obj.img_background_cam.clone();
+
+    camInfo = obj.camInfo;
+    triclops = obj.triclops;
+    video = obj.video;
+    strVideoFile = obj.strVideoFile;
+    frame_to_timestamp = obj.frame_to_timestamp;
+    frame = obj.frame;
+    width = obj.width;
+    height = obj.height;
+    p_ofs_log = obj.p_ofs_log;
+}
+
 StereoVideo::~StereoVideo()
 {
     if( p_ofs_log) {

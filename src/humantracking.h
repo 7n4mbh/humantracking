@@ -40,7 +40,6 @@ typedef struct {
     unsigned int serialNumber;
     unsigned long long timeStamp;
     std::string data;
-    cv::Mat occupancy; // for standalone program
 } PEPMapInfo;
 
 typedef struct {
