@@ -404,7 +404,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         int iTrj = 0;
         for( ; it != storageTrajectoryElement.end(); ++it, ++iTrj ) {
             if( it->rbegin()->t - it->begin()->t >= clusteringParam.minLength ) {
-                if( rand() < (int)( (float)RAND_MAX * 0.4f ) ) { 
+                if( rand() < (int)( (float)RAND_MAX * 0.6f/*0.4f*/ ) ) { 
                     trajectoryForClustering[ iTrj ].push_back( *it );
                     idxTrajectoryForClustering.push_back( iTrj );
                 }
@@ -568,6 +568,40 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         cerr << "Done. "
              << trajectoriesClustered.size() << " clusters has been made." << endl;
+
+        cout << "Integrating Clusters that have similar shape..." << endl;
+
+        const int nCluster = trajectoriesClustered.size();
+        vector<CTrajectory> trajectoriesAveraged( nCluster );
+        for( int i = 0; i < nCluster; ++i ) {
+            trajectoriesClustered[ i ].Integrate( &trajectoriesAveraged[ i ] );
+        }
+
+        CTrajectory_Distance distanceTrajectory( clusteringParam.distanceLimit, clusteringParam.nLimit, clusteringParam.minCommonTimeRange );
+        double* distTable = new double[ nCluster * nCluster ];
+        for( size_t iTrj1 = 0; iTrj1 < nCluster; ++iTrj1 ) {
+            for( size_t iTrj2 = 0; iTrj2 < nCluster; ++iTrj2 ) {
+                distTable[ iTrj1 * nCluster + iTrj2 ] = distTable[ iTrj2 * nCluster + iTrj1 ]
+                = distanceTrajectory( trajectoriesAveraged[ iTrj1 ], trajectoriesAveraged[ iTrj2 ] );
+            }
+        }
+        
+        vector<int> classID( nCluster, -1 );
+        int nClass = Clustering( &classID, distTable , nCluster, clusteringParam.thConnect );
+
+        {
+            vector<CTrajectory> tmp( nClass );
+            for( int i = 0; i < nCluster; ++i ) {
+                tmp[ classID[ i ] ].insert( tmp[ classID[ i ] ].end()
+                                          , trajectoriesClustered[ i ].begin()
+                                          , trajectoriesClustered[ i ].end() );
+            }
+            trajectoriesClustered = tmp;
+        }
+
+        delete [] distTable;
+
+        cout << "Done. # of the cluster is " << trajectoriesClustered.size() << "." << endl;
 
         //
         // Output process information of clustering
@@ -920,7 +954,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         }
 
         // セクション分割
-        DivideIntoSections( &infoTrj, rnvtrjParam );
+        pointIdxToTrjNo.clear();
+        DivideIntoSections( &infoTrj, &pointIdxToTrjNo, rnvtrjParam );
 
         // 各セクションでセットを作成
         for( int i = 0; i < (int)infoTrj.section.size(); ++i ) {
@@ -940,7 +975,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 vector<TrajectoryElement> trjElement;
                 vector<int> idTrjElement;
                 double t1 = 0.0, t2 = 0.0, t3 = 0.0;
-                double e = Optimize( &trjElement, &idTrjElement, &reserve, idxSec, idxSet, 100/*20*/, &infoTrj, rnvtrjParam, &t1, &t2, &t3 );
+                double e = Optimize( &trjElement, &idTrjElement, &reserve, idxSec, idxSet, 100/*20*/, &infoTrj, &pointIdxToTrjNo, rnvtrjParam, &t1, &t2, &t3 );
                 if( e >= 0.0 && ( min < 0.0 || e < min ) ) {
                     optOfSec = trjElement;
                     idOptOfSec = idTrjElement;

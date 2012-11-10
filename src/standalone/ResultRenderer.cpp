@@ -135,7 +135,7 @@ void ResultRenderer::Render()
                     int col = (int)( scale_m2px * ( ( it->y - roi_y ) + roi_width / 2.0f ) );
                     circle( img_display, Point( col, row ), 3, color_table[ itHuman->first % sizeColorTable ], -1 );
                     if( it != itHuman->second.begin() ) {
-                        line( img_display, Point( col, row ), Point( old_col, old_row ), color_table[ itHuman->first % sizeColorTable ], 6 );
+                        line( img_display, Point( col, row ), Point( old_col, old_row ), color_table[ itHuman->first % sizeColorTable ], 1 );
                     }
                     old_col = col;
                     old_row = row;
@@ -201,6 +201,34 @@ void ResultRenderer::Render()
                             if( flgCamImageAvailable ) {
                                 line( img_cam_display, Point( x, y ), Point( x, y ), color_table[ itID->second % sizeColorTable ], 1 );
                             }
+                        } else if( keyval != 0 ) {
+/*
+                            bool flgSearchDone = false;
+                            const int row_on_pepmap = ( keyval - 1 ) / pepmap.occupancy.cols;
+                            const int col_on_pepmap = ( keyval - 1 ) % pepmap.occupancy.cols;
+                            for( int search_size = 1; !flgSearchDone && search_size <= 10; ++search_size ) {
+                                for( int offset_row = -search_size; !flgSearchDone && offset_row <= search_size; ++offset_row ) {
+                                    const int row = row_on_pepmap + offset_row;
+                                    if( row < 0 || row >= pepmap.occupancy.rows ) {
+                                        continue;
+                                    }
+                                    for( int offset_col = -search_size; !flgSearchDone && offset_col <= search_size; ++offset_col ) {
+                                        const int col = col_on_pepmap + offset_col;
+                                        if( col < 0 || col >= pepmap.occupancy.cols ) {
+                                            continue;
+                                        }
+                                        int keyval = row * pepmap.occupancy.cols + col + 1;
+                                        if( ( itID = geometry_to_ID.find( keyval ) ) != geometry_to_ID.end() ) {
+                                            if( flgCamImageAvailable ) {
+                                                line( img_cam_display, Point( x, y ), Point( x, y ), color_table[ itID->second % sizeColorTable ], 1 );
+                                                flgSearchDone = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+*/
                         }
                     }
                 }

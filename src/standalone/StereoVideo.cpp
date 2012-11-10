@@ -540,13 +540,16 @@ void StereoVideo::create_pepmap()
                         }
 
                         // Debug Code!
-                        if( x == 240 && y == 320 ) {
-                            *p_ofs_log << "    (x,y,z)=(" << xx << "," << yy << "," << zz << ")"
-                                    << " -> (row,col)=(" << row << "," << col << ")" << endl;
+                        //if( x == 240 && y == 320 ) {
+                        //    *p_ofs_log << "    (x,y,z)=(" << xx << "," << yy << "," << zz << ")"
+                        //            << " -> (row,col)=(" << row << "," << col << ")" << endl;
+                        //}
+                        if( row >= 0 && row < occupancy.rows && col >= 0 && col < occupancy.cols ) {
+                            geometry.at<unsigned short>( y, x ) = row * occupancy.cols + col + 1;
+                        } else {
+                            geometry.at<unsigned short>( y, x ) = 0;
                         }
 
-                        geometry.at<unsigned short>( y, x ) = row * occupancy.cols + col + 1;
-                            
                         //col = row; // X axis is projected on the horizontal axis of the geometry map2.
                         //row = (int)( occupancy_2.rows - scale_m2px * pv_z ); // Z axis is projeted on the vertical axis of the geometry map2.
                         //col = (int)( scale_m2px_silhouette * ( ( pv_x - roi_x ) + roi_height / 2.0f ) ); // X axis is projected on the horizontal axis of the geometry map2.
@@ -584,7 +587,7 @@ void StereoVideo::create_pepmap()
         GaussianBlur( occupancy, occupancy, Size( 7, 7 ), 1.5 );
         for( int row = 0; row < occupancy.rows; ++row ) {
             for( int col = 0; col < occupancy.cols; ++col ) {
-                if( occupancy.at<unsigned short>( row, col ) < 60/*50*//*10*/ ) {
+                if( occupancy.at<unsigned short>( row, col ) < 60/*10*/ ) {
                     occupancy.at<unsigned short>( row, col ) = 0;
                 }
             }
