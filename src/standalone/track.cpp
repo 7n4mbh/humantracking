@@ -1,4 +1,5 @@
 #include <numeric>
+#include <stdlib.h>
 
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
@@ -43,9 +44,9 @@ double dist_trajectory_element( TrajectoryElement& trj1, TrajectoryElement& trj2
     }
 
     // 共通時間がminCommonTimeRange[usec]未満の場合は無限大を返す
-    //if( ( timeEnd - timeBegin ) < clusteringParam.minCommonTimeRange ) {
-    //    return -0.4;
-    //}
+    if( ( timeEnd - timeBegin ) < clusteringParam.minCommonTimeRange ) {
+        return -0.4;
+    }
 
 //    // テスト
 //    // 共通時間が長い方の軌跡の8割未満の場合は無限大を返す
@@ -394,7 +395,71 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 #ifdef NEW_CLUSTERING_ALGORITHM
 
         vector<CTrajectory> trajectoriesClustered;
+#if 1
+        cout << "Started Clustering. " ;
+        map<int,CTrajectory> trajectoryForClustering;
+        vector<int> idxTrajectoryForClustering;
+        map<unsigned long long, map<int,PosXYTID> > time_to_TrjIdx_and_pos;
+        vector<TrajectoryElement>::iterator it = storageTrajectoryElement.begin();
+        int iTrj = 0;
+        for( ; it != storageTrajectoryElement.end(); ++it, ++iTrj ) {
+            if( it->rbegin()->t - it->begin()->t >= clusteringParam.minLength ) {
+                if( rand() < (int)( (float)RAND_MAX * 0.4f ) ) { 
+                    trajectoryForClustering[ iTrj ].push_back( *it );
+                    idxTrajectoryForClustering.push_back( iTrj );
+                }
+            }
+            TrajectoryElement::iterator itPosID = it->begin();
+            for( ; itPosID != it->end(); ++itPosID ) {
+                time_to_TrjIdx_and_pos[ itPosID->t ][ iTrj ] = *itPosID;
+            }
+        }
 
+        cout << trajectoryForClustering.size() << " trajectories out of " << storageTrajectoryElement.size() << " are chosen for clustering."
+             << endl;
+
+        map<unsigned long long, map<int,PosXYTID> >::iterator itTrjIdxToPos = time_to_TrjIdx_and_pos.begin();
+        for( ; itTrjIdxToPos != time_to_TrjIdx_and_pos.end(); ++itTrjIdxToPos ) {
+            const unsigned long long time = itTrjIdxToPos->first;
+            const int nTrj = itTrjIdxToPos->second.size();
+            double* dist = new double[ nTrj * nTrj ];
+
+            // Make a distance table at 'time'
+            map<int,PosXYTID>::iterator itPos1 = itTrjIdxToPos->second.begin();
+            for( int idx1 = 0; idx1 < nTrj; ++idx1, ++itPos1 ) {
+                map<int,PosXYTID>::iterator itPos2 = itPos1;
+                for( int idx2 = idx1; idx2 < nTrj; ++idx2, ++itPos2 ) {
+                    double dist_x, dist_y, d;
+                    dist_x = ( itPos1->second.x - itPos2->second.x );
+                    dist_y = ( itPos1->second.y - itPos2->second.y );
+                    d = sqrt( dist_x * dist_x + dist_y * dist_y );
+                    dist[ idx1 + idx2 * nTrj ] = dist[ idx2 + idx1 * nTrj ] = d;
+                }
+            }
+
+            // clustering
+            vector<int> classID( nTrj, -1 );
+            int nClass = Clustering( &classID, dist, nTrj, 0.18/*0.22*//*0.2*//*0.07*/ );
+            cout << " time=" << time << ", nClass=" << nClass << ", nTrj=" << nTrj << endl;
+
+            // Set classID to the field of 'ID' of PosXYTID at each trajectory.
+            map<int,PosXYTID>::iterator itPos = itTrjIdxToPos->second.begin();
+            for( int idx = 0; idx < nTrj; ++idx, ++itPos ) {
+                map<int,CTrajectory>::iterator itIdxToTrj = trajectoryForClustering.find( itPos->first ); 
+                if( itIdxToTrj != trajectoryForClustering.end() ) {
+                    TrajectoryElement::iterator it = itIdxToTrj->second.begin()->find( PosXYT( 0.0, 0.0, time ) );
+                    if( it != trajectoryForClustering[ itPos->first ].begin()->end() ) {
+                        PosXYTID pos_id = *it;
+                        itIdxToTrj->second.begin()->erase( it );
+                        pos_id.ID = classID[ idx ];
+                        itIdxToTrj->second.begin()->insert( pos_id );
+                    }
+                }
+            }
+
+            delete [] dist;
+        }
+#else
         //
         // クラスタリングに用いる軌跡（長さがclusterigParam.minLength以上）を取り出す
         vector<TrajectoryElement> trajectoryElementOfMyProc;
@@ -449,7 +514,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
             // clustering
             vector<int> classID( nTrj, -1 );
-            Clustering( &classID, dist, nTrj, 0.2/*0.07*/ );
+            Clustering( &classID, dist, nTrj, 0.22/*0.2*//*0.07*/ );
 
             // Set classID to the field of 'ID' of PosXYTID at each trajectory.
             map<int,PosXYTID>::iterator itPos = itTrjIdxToPos->second.begin();
@@ -467,7 +532,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
             delete [] dist;
         }
-
+#endif
         // Make a distance table among every trajectory
         const int nTrj = trajectoryForClustering.size();
         double* dist = new double[ nTrj * nTrj ];
@@ -495,7 +560,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         for( int i = 0; i < tmp.size(); ++i ) {
             CTrajectory trj;
             for( int j = 0; j < tmp[ i ].size(); ++j ) {
-                trj.push_back( *trajectoryForClustering[ tmp[ i ][ j ] ].begin() );
+                //trj.push_back( *trajectoryForClustering[ tmp[ i ][ j ] ].begin() );
+                trj.push_back( *trajectoryForClustering[ idxTrajectoryForClustering[ tmp[ i ][ j ] ] ].begin() );
             }
             trajectoriesClustered.push_back( trj );
         }
