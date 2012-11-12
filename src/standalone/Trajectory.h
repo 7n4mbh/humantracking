@@ -172,7 +172,7 @@ inline double TrajectoryElement_Distance::operator()( TrajectoryElement& obj1, T
         double dx = it1->x - it2->x;
         double dy = it1->y - it2->y;
         double dsq = dx * dx + dy * dy;
-        if( dsq > dlsq/*distanceLimit * distanceLimit*/ ) {
+        if( dsq > dlsq ) {
             cnt++;
             if( cnt > nLimit ) {
                 return -1.0;
@@ -192,6 +192,7 @@ inline double TrajectoryElement_Distance::operator()( TrajectoryElement& obj1, T
     return sqrt( ex * ex + ey * ey );
 }
 
+/*
 inline double CTrajectory_Distance::operator()( CTrajectory& obj1, CTrajectory& obj2 )
 {
     CTrajectory::iterator itObj1, itObj2;
@@ -202,7 +203,7 @@ inline double CTrajectory_Distance::operator()( CTrajectory& obj1, CTrajectory& 
         for( itObj2 = obj2.begin(); itObj2 != obj2.end(); itObj2++ ) {
             distance = distanceTrajectoryElement( *itObj1, *itObj2 );
             //if( distance >= 0.0 ) {
-                if( min < -1.0  || ( min < 0.0 && distance < 0.0 && min < distance ) || ( distance >= 0.0 && min > distance ) ) {
+                if( min < -1.0  || ( min < 0.0 && distance < 0.0 && min < distance ) || ( distance >= 0.0 && min < 0.0 ) || ( distance >= 0.0 && min > distance ) ) {
                     min = distance;
                 }
             //}
@@ -210,6 +211,66 @@ inline double CTrajectory_Distance::operator()( CTrajectory& obj1, CTrajectory& 
     }
 
     return min;
+}
+*/
+
+inline double CTrajectory_Distance::operator()( CTrajectory& obj1, CTrajectory& obj2 )
+{
+    std::map<unsigned long long,std::vector<PosXYTID> > time_to_points[ 2 ];
+
+    for( CTrajectory::iterator itTrj = obj1.begin(); itTrj != obj1.end(); ++itTrj ) {
+        for( TrajectoryElement::iterator it = itTrj->begin(); it != itTrj->end(); ++it ) {
+            time_to_points[ 0 ][ it->t ].push_back( *it );
+        }
+    }
+    for( CTrajectory::iterator itTrj = obj2.begin(); itTrj != obj2.end(); ++itTrj ) {
+        for( TrajectoryElement::iterator it = itTrj->begin(); it != itTrj->end(); ++it ) {
+            time_to_points[ 1 ][ it->t ].push_back( *it );
+        }
+    }
+
+    TIME_MICRO_SEC timeBegin; // 距離を評価する開始時間
+    TIME_MICRO_SEC timeEnd; // 距離を評価する終了時間
+
+    // 共通する時間（距離を評価する時間範囲）を調べる
+    timeBegin = max( time_to_points[ 0 ].begin()->first, time_to_points[ 1 ].begin()->first );
+    timeEnd = min( time_to_points[ 0 ].rbegin()->first, time_to_points[ 1 ].rbegin()->first );
+
+    // 共通時間がない場合は無限大を返す
+    if( timeBegin > timeEnd ) {
+        return -0.3;
+    }
+
+    // 共通時間がminCommonTimeRange[usec]未満の場合は無限大を返す
+    if( ( timeEnd - timeBegin ) < minCommonTimeRange ) {
+        return -0.4;
+    }
+
+
+    double distance = -1.0;
+    std::map<unsigned long long,std::vector<PosXYTID> >::iterator it1 = time_to_points[ 0 ].lower_bound( timeBegin );
+    std::map<unsigned long long,std::vector<PosXYTID> >::iterator itEnd = time_to_points[ 0 ].upper_bound( timeEnd );
+    for( ; it1 != itEnd; ++it1 ) {
+        std::map<unsigned long long,std::vector<PosXYTID> >::iterator it2 = time_to_points[ 1 ].lower_bound( it1->first );
+        double minDist = -1.0;  
+        if( it2 != time_to_points[ 1 ].end() ) {
+            for( int i = 0; i < it1->second.size(); ++i ) {
+                for( int j = 0; j < it2->second.size(); ++j ) {
+                    double dx = (it1->second)[ i ].x - (it2->second)[ j ].x;
+                    double dy = (it1->second)[ i ].y - (it2->second)[ j ].y;
+                    double d = sqrt( dx * dx + dy * dy );
+                    if( minDist < 0.0 || d < minDist ) {
+                        minDist = d;
+                    }
+                }
+            }
+        }
+        if( minDist > distance ) {
+            distance = minDist;
+        }
+    }
+
+    return distance;
 }
 
 #endif /* _TRAJECTORY_H */

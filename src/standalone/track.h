@@ -95,7 +95,7 @@ void CalculateDistanceTable( double* distTable
                                 , CTrajectory_Distance& funcDist );
 int Clustering( std::vector<int>* pIndexCluster, double* distTable, size_t nElements, double threshold );
 int Clustering2( std::vector< std::vector<int> >* pDst, std::vector<int>& classID, double* distTable, size_t nElements, double thConnect, double thDiameter );
-int Clustering3( std::vector< vector<int> >* pDst, double* distTable, size_t nElements, double thConnect, double thDiameter );
+int Clustering3( std::vector< vector<int> >* pDst, double* distTable, size_t nElements, double thConnect );
 bool VerifyClusteredTrajectories( CTrajectory& trj, double threshold );
 void CalcFrequency( double* pDst, double* distTable, int size, double sigma, double thDist );
 void ReduceTrajectory( vector<int>* pDst, double* frequency, int size, double fval );

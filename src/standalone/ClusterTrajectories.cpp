@@ -477,7 +477,7 @@ void ReduceTrajectory( vector<int>* pDst, double* frequency, int size, double fv
     }
 }
 
-void _clustering3( int index, vector< vector<int> >* pDst, vector<int> cluster, double thConnect, double thDiameter, size_t nElements, double* distTable, std::vector<bool>& flgClustered )
+void _clustering3( int index, vector< vector<int> >* pDst, vector<int> cluster, double thConnect, size_t nElements, double* distTable, std::vector<bool>& flgClustered )
 {
     flgClustered[ index ] = true;
     cluster.push_back( index );
@@ -518,7 +518,7 @@ void _clustering3( int index, vector< vector<int> >* pDst, vector<int> cluster, 
         }
 
         if( flgCluster ) {
-            _clustering3( idxTrj, pDst, cluster, thConnect, thDiameter, nElements, distTable, flgClustered );
+            _clustering3( idxTrj, pDst, cluster, thConnect, nElements, distTable, flgClustered );
             flgTerminal = false;
         }
     }
@@ -528,7 +528,7 @@ void _clustering3( int index, vector< vector<int> >* pDst, vector<int> cluster, 
     }
 }
 
-int Clustering3( vector< vector<int> >* pDst, double* distTable, size_t nElements, double thConnect, double thDiameter )
+int Clustering3( vector< vector<int> >* pDst, double* distTable, size_t nElements, double thConnect )
 {
     pDst->clear();
 
@@ -537,7 +537,7 @@ int Clustering3( vector< vector<int> >* pDst, double* distTable, size_t nElement
     for( int idxTrj = 0; idxTrj < (int)nElements; ++idxTrj ) {
         if( flgClustered[ idxTrj ] == false ) {
             vector<int> cluster;
-            _clustering3( idxTrj, pDst, cluster, thConnect, thDiameter, nElements, distTable, flgClustered );
+            _clustering3( idxTrj, pDst, cluster, thConnect, nElements, distTable, flgClustered );
         }
     }
 

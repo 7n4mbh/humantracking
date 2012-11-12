@@ -133,7 +133,7 @@ void ResultRenderer::Render()
                 for( vector<Point2d>::iterator it = itHuman->second.begin(); it != itHuman->second.end(); ++it ) {
                     int row = (int)( scale_m2px * ( ( it->x - roi_x ) + roi_height / 2.0f ) );
                     int col = (int)( scale_m2px * ( ( it->y - roi_y ) + roi_width / 2.0f ) );
-                    circle( img_display, Point( col, row ), 3, color_table[ itHuman->first % sizeColorTable ], -1 );
+                    circle( img_display, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
                     if( it != itHuman->second.begin() ) {
                         line( img_display, Point( col, row ), Point( old_col, old_row ), color_table[ itHuman->first % sizeColorTable ], 1 );
                     }
