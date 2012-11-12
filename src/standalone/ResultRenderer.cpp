@@ -38,7 +38,7 @@ void ResultRenderer::init( std::string result_pepmapvideo_filename, std::map<uns
     }
 
     for( map<unsigned long long,string>::iterator it = result_cameravideo_filename.begin(); it != result_cameravideo_filename.end(); ++it ) {
-        if( !cameraVideoWriter[it->first].open( it->second, CV_FOURCC('X','V','I','D'), 10, Size( (int)stereo_width, (int)( roi_height * 80 ) ) ) ) {
+        if( !cameraVideoWriter[it->first].open( it->second, CV_FOURCC('X','V','I','D'), 10, Size( (int)stereo_width, (int)stereo_height ) ) ) {
           cerr << "Couldn't open " << strResultPEPMapVideoFilename << "." <<  endl;
           exit( 1 );
         }        
@@ -202,6 +202,20 @@ void ResultRenderer::Render()
                                 line( img_cam_display, Point( x, y ), Point( x, y ), color_table[ itID->second % sizeColorTable ], 1 );
                             }
                         } else if( keyval != 0 ) {
+                            const int row_on_pepmap = ( keyval - 1 ) / pepmap.occupancy.cols;
+                            const int col_on_pepmap = ( keyval - 1 ) % pepmap.occupancy.cols;
+                            for( map<int,Point2d>::iterator itHuman = posHuman.begin(); itHuman != posHuman.end(); ++itHuman ) {
+                                const int _row_on_pepmap = scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_height / 2.0f );
+                                const int _col_on_pepmap = scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_width / 2.0f );
+                                const int diff_row = row_on_pepmap - _row_on_pepmap;
+                                const int diff_col = col_on_pepmap - _col_on_pepmap;
+                                const double dist = sqrt( (double)( diff_row * diff_row + diff_col * diff_col ) );
+                                if( dist < 6 ) {
+                                    if( flgCamImageAvailable ) {
+                                        line( img_cam_display, Point( x, y ), Point( x, y ), color_table[ itHuman->first % sizeColorTable ], 1 );
+                                    }
+                                }
+                            }
 /*
                             bool flgSearchDone = false;
                             const int row_on_pepmap = ( keyval - 1 ) / pepmap.occupancy.cols;

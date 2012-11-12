@@ -406,7 +406,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         int iTrj = 0;
         for( ; it != storageTrajectoryElement.end(); ++it, ++iTrj ) {
             if( it->rbegin()->t - it->begin()->t >= clusteringParam.minLength ) {
-                if( rand() < (int)( (float)RAND_MAX * 0.06f/*0.6f*//*0.4f*/ ) ) { 
+                if( rand() < (int)( (float)RAND_MAX * 0.25f/*0.6f*//*0.4f*/ ) ) { 
                     trajectoryForClustering[ iTrj ].push_back( *it );
                     idxTrajectoryForClustering.push_back( iTrj );
                 }
