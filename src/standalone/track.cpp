@@ -669,7 +669,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 			oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
 #endif
             oss << "distTable_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
-            ofstream ofs( oss.str() );
+            ofstream ofs( oss.str().c_str() );
             for( size_t iTrj1 = 0; iTrj1 < nCluster; ++iTrj1 ) {
                 for( size_t iTrj2 = iTrj1; iTrj2 < nCluster; ++iTrj2 ) {
                     distTable[ iTrj1 * nCluster + iTrj2 ] = distTable[ iTrj2 * nCluster + iTrj1 ]
