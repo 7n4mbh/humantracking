@@ -570,6 +570,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         }
 #endif
         // Make a distance table among every trajectory
+        cout << " Make a distance table among every trajectory...";
         const int nTrj = trajectoryForClustering.size();
         double* dist = new double[ nTrj * nTrj ];
         map<int,CTrajectory>::iterator itTrj1 = trajectoryForClustering.begin();
@@ -580,6 +581,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     dist_trajectory_element( *itTrj1->second.begin(), *itTrj2->second.begin() );
             }
         }
+        cout << "done." << endl;
         
         //Clustering
         //vector<int> classID( nTrj, -1 );
@@ -589,93 +591,98 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         //vector< vector<int> > tmp;
         //Clustering2( &tmp, classID, dist, nTrj, 0.1, 10.0 );
+        cout << " Clustering3()...";
         vector< vector<int> > tmp;
         Clustering3( &tmp, dist, nTrj, 0.1 );
+        cout << "done." << endl;
 
+        cout << " Storing the trajectories to trajectoriesClustered...";
         trajectoriesClustered.clear();
+        trajectoriesClustered.resize( tmp.size() );
         for( int i = 0; i < tmp.size(); ++i ) {
-            CTrajectory trj;
+            //CTrajectory trj;
             for( int j = 0; j < tmp[ i ].size(); ++j ) {
                 //trj.push_back( *trajectoryForClustering[ tmp[ i ][ j ] ].begin() );
-                trj.push_back( *trajectoryForClustering[ idxTrajectoryForClustering[ tmp[ i ][ j ] ] ].begin() );
+                trajectoriesClustered[ i ].push_back( *trajectoryForClustering[ idxTrajectoryForClustering[ tmp[ i ][ j ] ] ].begin() );
             }
-            trajectoriesClustered.push_back( trj );
+            //trajectoriesClustered.push_back( trj );
         }
+        cout << "done." << endl;
 
         cerr << "Done. "
              << trajectoriesClustered.size() << " clusters has been made." << endl;
 
         //
         // Output process information of clustering
-        {
-            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
-            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-                            , timeTracking//tableLUMSlice.rbegin()->first
-                            , timeEarliestPEPMap
-                            , &sampler
-                            , nSample
-                            , &trajectoriesClustered
-#ifdef WINDOWS_OS
-			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
-#endif
-#ifdef LINUX_OS
-			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
-#endif
-                            , "before-integration"//oss.str()
-                            , NULL
-                            , &plotParam );
-        }
+//        {
+//            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
+//            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
+//            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+//                            , timeTracking//tableLUMSlice.rbegin()->first
+//                            , timeEarliestPEPMap
+//                            , &sampler
+//                            , nSample
+//                            , &trajectoriesClustered
+//#ifdef WINDOWS_OS
+//			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+//#endif
+//#ifdef LINUX_OS
+//			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
+//#endif
+//                            , "before-integration"//oss.str()
+//                            , NULL
+//                            , &plotParam );
+//        }
 
 
         cout << "Integrating Clusters that have similar shape..." << endl;
 
         const int nCluster = trajectoriesClustered.size();
-        vector<CTrajectory> trajectoriesAveraged( nCluster );
-        for( int i = 0; i < nCluster; ++i ) {
-            trajectoriesClustered[ i ].Integrate( &trajectoriesAveraged[ i ] );
-        }
+        //vector<CTrajectory> trajectoriesAveraged( nCluster );
+        //for( int i = 0; i < nCluster; ++i ) {
+        //    trajectoriesClustered[ i ].Integrate( &trajectoriesAveraged[ i ] );
+        //}
 
         //
         // Output process information of clustering
-        {
-            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
-            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-                            , timeTracking//tableLUMSlice.rbegin()->first
-                            , timeEarliestPEPMap
-                            , &sampler
-                            , nSample
-                            , &trajectoriesAveraged
-#ifdef WINDOWS_OS
-			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
-#endif
-#ifdef LINUX_OS
-			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
-#endif
-                            , "averaged"//oss.str()
-                            , NULL
-                            , &plotParam );
-        }
+//        {
+//            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
+//            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
+//            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+//                            , timeTracking//tableLUMSlice.rbegin()->first
+//                            , timeEarliestPEPMap
+//                            , &sampler
+//                            , nSample
+//                            , &trajectoriesAveraged
+//#ifdef WINDOWS_OS
+//			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+//#endif
+//#ifdef LINUX_OS
+//			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
+//#endif
+//                            , "averaged"//oss.str()
+//                            , NULL
+//                            , &plotParam );
+//        }
 
         CTrajectory_Distance distanceTrajectory( clusteringParam.distanceLimit, clusteringParam.nLimit, clusteringParam.minCommonTimeRange, false );
         double* distTable = new double[ nCluster * nCluster ];
         {
-            ostringstream oss;
-#ifdef WINDOWS_OS
-		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
-#endif
-#ifdef LINUX_OS
-			oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
-#endif
-            oss << "distTable_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
-            ofstream ofs( oss.str().c_str() );
+//            ostringstream oss;
+//#ifdef WINDOWS_OS
+//		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+//#endif
+//#ifdef LINUX_OS
+//			oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+//#endif
+//            oss << "distTable_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
+//            ofstream ofs( oss.str().c_str() );
             for( size_t iTrj1 = 0; iTrj1 < nCluster; ++iTrj1 ) {
                 for( size_t iTrj2 = iTrj1; iTrj2 < nCluster; ++iTrj2 ) {
                     distTable[ iTrj1 * nCluster + iTrj2 ] = distTable[ iTrj2 * nCluster + iTrj1 ]
                     //= distanceTrajectory( trajectoriesAveraged[ iTrj1 ], trajectoriesAveraged[ iTrj2 ] );
                     = distanceTrajectory( trajectoriesClustered[ iTrj1 ], trajectoriesClustered[ iTrj2 ] );
-                    ofs << "distTable[" << iTrj1 << "][" << iTrj2 << "]=" << distTable[ iTrj1 * nCluster + iTrj2 ] << endl;
+                    //ofs << "distTable[" << iTrj1 << "][" << iTrj2 << "]=" << distTable[ iTrj1 * nCluster + iTrj2 ] << endl;
                 }
             }
         }
@@ -714,7 +721,31 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         //
         // Output process information of clustering
+//        {
+//            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
+//            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
+//            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+//                            , timeTracking//tableLUMSlice.rbegin()->first
+//                            , timeEarliestPEPMap
+//                            , &sampler
+//                            , nSample
+//                            , &trajectoriesClustered
+//#ifdef WINDOWS_OS
+//			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+//#endif
+//#ifdef LINUX_OS
+//			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
+//#endif
+//                            , ""//oss.str()
+//                            , NULL
+//                            , &plotParam );
+//        }
         {
+            vector<CTrajectory> trajectoriesAveraged( trajectoriesClustered.size() );
+            for( int i = 0; i < trajectoriesClustered.size(); ++i ) {
+                trajectoriesClustered[ i ].Integrate( &trajectoriesAveraged[ i ] );
+            }
+
             double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
             unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
             OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
@@ -722,14 +753,14 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                             , timeEarliestPEPMap
                             , &sampler
                             , nSample
-                            , &trajectoriesClustered
+                            , &trajectoriesAveraged
 #ifdef WINDOWS_OS
 			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
 #endif
 #ifdef LINUX_OS
 			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
 #endif
-                            , ""//oss.str()
+                            , "averaged"//oss.str()
                             , NULL
                             , &plotParam );
         }
@@ -1003,6 +1034,24 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         // セクション分割
         map<int,int> pointIdxToTrjNo;
         DivideIntoSections( &infoTrj, &pointIdxToTrjNo, rnvtrjParam );
+
+        {
+            ostringstream oss;
+#ifdef WINDOWS_OS
+		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+#endif
+#ifdef LINUX_OS
+			oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+#endif
+            oss << "DividedIntoSections_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
+            ofstream ofs( oss.str().c_str() );
+
+            for( int i = 0; i < infoTrj.tableGroupable.size(); ++i ) {
+                for( int j = i; j < infoTrj.tableGroupable.size(); ++j ) {
+                    ofs << "tableGroupable[" << i << "][" << j << "]=" << infoTrj.tableGroupable[ i ].get( j ) << endl;
+                }
+            }
+        }
 
         // 各セクションでセットを作成
         for( int i = 0; i < (int)infoTrj.section.size(); ++i ) {

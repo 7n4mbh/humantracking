@@ -282,7 +282,7 @@ void DivideIntoSections( TrajectoriesInfo* pInfoTrj, std::map<int,int>* pPointId
         for( int idx = (int)index - 1; idx >= 0; --idx ) {
             if( infoTrj.points[ idx ].ID == itPoint->ID ) {
                 t_back = infoTrj.points[ idx ].t;
-                const double dt = (double)( itPoint->t - t_back );
+                const double dt = (double)( itPoint->t - t_back ) * 1.0e-6;
                 vx1 = ( itPoint->x - infoTrj.points[ idx ].x ) / dt;
                 vy1 = ( itPoint->y - infoTrj.points[ idx ].y ) / dt;
                 break;
@@ -294,18 +294,18 @@ void DivideIntoSections( TrajectoriesInfo* pInfoTrj, std::map<int,int>* pPointId
         for( vector<PosXYTID>::iterator itConnect = itPoint; itConnect != itConnectLast; ++itConnect ) {
             if( itConnect->t > itPoint->t ) {
                 bool flgConnectable;
-                if(  t_back > 0 ) {
+                if(  t_back == /*>*/ 0 ) {
                     double v = sqrt( ( itPoint->x - itConnect->x ) * ( itPoint->x - itConnect->x )
                                    + ( itPoint->y - itConnect->y ) * ( itPoint->y - itConnect->y ) )
                              / ( (double)( itConnect->t - itPoint->t ) * 1.0e-6 );
                     flgConnectable = v < 5.0/*5.0*//*3.0*/;
                 } else {
-                    const double dt = (double)( itConnect->t - itPoint->t );
+                    const double dt = (double)( itConnect->t - itPoint->t )* 1.0e-6;
                     double dv, vx2, vy2;
                     vx2 = ( itConnect->x - itPoint->x ) / dt;
                     vy2 = ( itConnect->y - itPoint->y ) / dt;
                     dv = sqrt( ( vx2 - vx1 ) * ( vx2 - vx1 ) + ( vy2 - vy1 ) * ( vy2 - vy1 ) ); // should be corrected. Sometimes vx is used without initialization
-                    flgConnectable = dv < 1.5;
+                    flgConnectable = dv < 4.0/*1.5*/;
                 }
                 if( flgConnectable ) {
                     infoTrj.connectable[ index ].push_back( (int)distance( infoTrj.points.begin(), itConnect ) );

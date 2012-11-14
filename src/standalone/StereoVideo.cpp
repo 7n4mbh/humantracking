@@ -39,7 +39,7 @@ StereoVideo::StereoVideo()
     frame = -1;
     width = 512;
     height = 384;
-    p_ofs_log = NULL;
+    //p_ofs_log = NULL;
 }
 
 StereoVideo::StereoVideo( const StereoVideo& obj )
@@ -61,14 +61,14 @@ StereoVideo::StereoVideo( const StereoVideo& obj )
     frame = obj.frame;
     width = obj.width;
     height = obj.height;
-    p_ofs_log = obj.p_ofs_log;
+    //p_ofs_log = obj.p_ofs_log;
 }
 
 StereoVideo::~StereoVideo()
 {
-    if( p_ofs_log) {
-        delete p_ofs_log;
-    }
+    //if( p_ofs_log) {
+    //    delete p_ofs_log;
+    //}
 }
 
 bool StereoVideo::load_extrinsic_parameters()
@@ -361,13 +361,13 @@ bool StereoVideo::init( std::string strVideoFile )
 
     // Debug Code!
     // Create a log file.
-    {
-        ostringstream oss;
-        oss << strPath << "log" << camInfo.serialNumber << ".txt";
-        p_ofs_log = new ofstream();
-        p_ofs_log->open( (char*)oss.str().c_str() );
-        //ofs_log.open( "test" );
-    }
+    //{
+    //    ostringstream oss;
+    //    oss << strPath << "log" << camInfo.serialNumber << ".txt";
+    //    p_ofs_log = new ofstream();
+    //    p_ofs_log->open( (char*)oss.str().c_str() );
+    //    //ofs_log.open( "test" );
+    //}
 
     return true;
 }
@@ -453,12 +453,12 @@ void StereoVideo::create_pepmap()
     //unsigned char* compress_buf_geometry = new unsigned char[ len_compress_buf_geometry ];
     
     // Debug Code!
-    *p_ofs_log << "create_pepmap()" << endl;
-    *p_ofs_log << "    time: " << get_timestamp();
-    *p_ofs_log << "    Matrix H:" << endl;
-    *p_ofs_log << "    " << H.at<float>( 0, 0 ) << "," << H.at<float>( 0, 1 ) << "," << H.at<float>( 0, 2 ) << "," << H.at<float>( 0, 3 ) << endl;
-    *p_ofs_log << "    " << H.at<float>( 1, 0 ) << "," << H.at<float>( 1, 1 ) << "," << H.at<float>( 1, 2 ) << "," << H.at<float>( 1, 3 ) << endl;
-    *p_ofs_log << "    " << H.at<float>( 2, 0 ) << "," << H.at<float>( 2, 1 ) << "," << H.at<float>( 2, 2 ) << "," << H.at<float>( 2, 3 ) << endl;
+    //*p_ofs_log << "create_pepmap()" << endl;
+    //*p_ofs_log << "    time: " << get_timestamp();
+    //*p_ofs_log << "    Matrix H:" << endl;
+    //*p_ofs_log << "    " << H.at<float>( 0, 0 ) << "," << H.at<float>( 0, 1 ) << "," << H.at<float>( 0, 2 ) << "," << H.at<float>( 0, 3 ) << endl;
+    //*p_ofs_log << "    " << H.at<float>( 1, 0 ) << "," << H.at<float>( 1, 1 ) << "," << H.at<float>( 1, 2 ) << "," << H.at<float>( 1, 3 ) << endl;
+    //*p_ofs_log << "    " << H.at<float>( 2, 0 ) << "," << H.at<float>( 2, 1 ) << "," << H.at<float>( 2, 2 ) << "," << H.at<float>( 2, 3 ) << endl;
 
     //Mat image;
     Mat img_display( height, width, CV_8U );
@@ -600,7 +600,7 @@ void StereoVideo::create_pepmap()
     img_depth.convertTo( image_depth, CV_8U, 25.0, 0.0 );
 
     // Debug Code!
-    *p_ofs_log << endl;
+    //*p_ofs_log << endl;
 }
 
 
