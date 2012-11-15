@@ -252,7 +252,7 @@ void _connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > comb
                     if( tableConnectable[ index ] == 0.0 ) {
                         flgConnectable = true;
                     } else if( tableConnectable[ index ] == -0.5 ) {
-                        flgInvalid = false;
+                        flgInvalid = true;
                     }
                 }
             }
