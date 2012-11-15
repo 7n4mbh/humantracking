@@ -1338,7 +1338,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             for( int iTrj1 = 0; iTrj1 < sizeTableConnectable; ++iTrj1 ) {
                 for( int iTrj2 = iTrj1; iTrj2 < sizeTableConnectable; ++iTrj2 ) {
                     double value;
-                    if( iTrj1 > nCluster && iTrj2 > nCluster ) {
+                    if( iTrj1 >= nCluster && iTrj2 >= nCluster ) {
                         value = -1.0;
                     } else if( iTrj1 >= nCluster ) {
                         value = areConnectable( trajectoriesPrevResult[ iTrj1 - nCluster ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold );
