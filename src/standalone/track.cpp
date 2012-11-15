@@ -1403,6 +1403,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     cout << "(";
                     for( int k = 0; k < connection_patterns[ i ][ j ].size(); ++k ) {
                         cout << connection_patterns[ i ][ j ][ k ];
+			ofs << connection_patterns[ i ][ j ][ k ];
                         if( k != connection_patterns[ i ][ j ].size() - 1 ) {
                             ofs << ",";
                             cout << ",";
@@ -1421,6 +1422,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
 
         // Find the optimum
+	cout << " Started optimization." << endl;
         vector<TrajectoryElement> opt;
         vector<int> idOpt;
 
