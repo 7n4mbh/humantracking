@@ -1306,13 +1306,23 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         combination_highscored.push_back( combination[ idxCombinationMax ] );
         cout << idxCombinationMax << endl;
 
+        vector<CTrajectory> trajectoriesPrevResult;
+        map<int,int> idxResultTrjToID;
+        const int nPrevResultTrj = resultTrajectory.size();
+        {
+            int idx = nCluster;
+            for( map<int,CTrajectory>::iterator itResult = resultTrajectory.begin(); itResult != resultTrajectory.end(); ++itResult, ++idx ) {
+                trajectoriesPrevResult.push_back( itResult->second );
+                idxResultTrjToID[ nCluster ] = itResult->first;
+            }
+        }
+
         // Create a 'connectable' table for every two trajectories.
         // '0' if they can connect smoothly.
         // '<0' otherwise.
-        cout << " creating a connectable table...";
-        double* tableConnectable = new double[ nCluster * nCluster ];
-        const int nPrevResultTrj = resultTrajectory.size();
-        map<int,int> idxResultTrjToID;
+        cout << " creating a connectable table..." << flush;
+        int sizeTableConnectable = nCluster + nPrevResultTrj;
+        double* tableConnectable = new double[ sizeTableConnectable * sizeTableConnectable ];
         {
              ostringstream oss;
 #ifdef WINDOWS_OS
@@ -1323,18 +1333,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 #endif
             oss << "connectable_table_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
             ofstream ofs( oss.str().c_str() );
-            
-            vector<CTrajectory> trajectoriesPrevResult;
-            {
-                int idx = nCluster;
-                for( map<int,CTrajectory>::iterator itResult = resultTrajectory.begin(); itResult != resultTrajectory.end(); ++itResult, ++idx ) {
-                    trajectoriesPrevResult.push_back( itResult->second );
-                    idxResultTrjToID[ nCluster ] = itResult->first;
-                }
-            }
-            
+           
             const double threshold = 3.0;
-            int sizeTableConnectable = nCluster + nPrevResultTrj;
             for( int iTrj1 = 0; iTrj1 < sizeTableConnectable; ++iTrj1 ) {
                 for( int iTrj2 = iTrj1; iTrj2 < sizeTableConnectable; ++iTrj2 ) {
                     double value;
@@ -1377,7 +1377,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 }
             }
 
-            connect( &connection_patterns, init, combination_highscored[ i ], nCluster, tableConnectable );
+            connect( &connection_patterns, init, combination_highscored[ i ], sizeTableConnectable, tableConnectable );
         }
         sort( connection_patterns.begin(), connection_patterns.end() );
         connection_patterns.erase( unique( connection_patterns.begin(), connection_patterns.end() )
