@@ -126,6 +126,42 @@ double areIndependent( TrajectoryElement& trj1, TrajectoryElement& trj2, double 
     return 0.0;
 }
 
+double areConnectable( TrajectoryElement& trj1, TrajectoryElement& trj2, double threshold )
+{
+    TIME_MICRO_SEC timeBegin; // ãóó£Çï]âøÇ∑ÇÈäJénéûä‘
+    TIME_MICRO_SEC timeEnd; // ãóó£Çï]âøÇ∑ÇÈèIóπéûä‘
+
+    // ã§í Ç∑ÇÈéûä‘Åiãóó£Çï]âøÇ∑ÇÈéûä‘îÕàÕÅjÇí≤Ç◊ÇÈ
+    timeBegin = max( trj1.begin()->t, trj2.begin()->t );
+    timeEnd = min( trj1.rbegin()->t, trj2.rbegin()->t );
+
+    // ã§í éûä‘Ç™Ç†ÇÈèÍçáÇÕ'ê⁄ë±ïsâ¬î\'Çï‘Ç∑
+    if( timeBegin <= timeEnd ) {
+        return -1.0;
+    }
+
+    TrajectoryElement trjEarlier, trjLatter;
+    if( trj1.rbegin()->t == timeEnd ) {
+        trjEarlier = trj1;
+        trjLatter = trj2;
+    } else {
+        trjEarlier = trj2;
+        trjLatter = trj1;
+    }
+
+    // if trjEarlier and trjLatter can be connected at the speed less than 'threshold'
+    // return 0. Return -1 otherwise.
+    double dx = trjLatter.begin()->x - trjEarlier.rbegin()->x;
+    double dy = trjLatter.begin()->y - trjEarlier.rbegin()->y;
+    double dt = (double)( trjLatter.begin()->t - trjEarlier.rbegin()->t ) * 1.0e-6;
+    double v = sqrt( dx * dx + dy * dy ) / dt;
+    if( v > threshold ) {
+        return -1.0;
+    }
+
+    return 0.0;
+}
+
 double fitting_score( vector<int>& combination, vector<CTrajectory>& trajectories, map<unsigned long long,set<int> >& time_to_hash_where_occupied, vector< map<unsigned long long,set<int> > >& trj_time_to_hash_where_occupied )
 {
     map<unsigned long long,map<int,bool> > isOccupied;
@@ -162,6 +198,83 @@ double fitting_score( vector<int>& combination, vector<CTrajectory>& trajectorie
     }
 
     return (double)occupied / (double)total;
+}
+
+
+double areCoherent( TrajectoryElement& trj1, TrajectoryElement& trj2, double threshold )
+{
+    TIME_MICRO_SEC timeBegin; // ãóó£Çï]âøÇ∑ÇÈäJénéûä‘
+    TIME_MICRO_SEC timeEnd; // ãóó£Çï]âøÇ∑ÇÈèIóπéûä‘
+
+    // ã§í Ç∑ÇÈéûä‘Åiãóó£Çï]âøÇ∑ÇÈéûä‘îÕàÕÅjÇí≤Ç◊ÇÈ
+    timeBegin = max( trj1.begin()->t, trj2.begin()->t );
+    timeEnd = min( trj1.rbegin()->t, trj2.rbegin()->t );
+
+    // ã§í éûä‘Ç™Ç»Ç¢èÍçáÇÕñ≥å¿ëÂÇï‘Ç∑
+    if( timeBegin > timeEnd ) {
+        return -0.3;
+    }
+
+    // ã§í éûä‘Ç™minCommonTimeRange[usec]ñ¢ñûÇÃèÍçáÇÕñ≥å¿ëÂÇï‘Ç∑
+    if( ( timeEnd - timeBegin ) < clusteringParam.minCommonTimeRange ) {
+        return -0.4;
+    }
+
+    // ã§í Ç∑ÇÈëSÇƒÇÃéûçèÇ≈ãóó£Ç™thresholdà»â∫Ç»ÇÁÇŒè\ï™Ç…ãﬂÇ¢Ç∆îªíf
+    TrajectoryElement::iterator it1, it2;
+    it1 = trj1.find( PosXYT( 0.0, 0.0, timeBegin ) );
+    it2 = trj2.find( PosXYT( 0.0, 0.0, timeBegin ) );
+    for( ; it1 != trj1.end() && it1->t <= timeEnd && it2 != trj2.end() && it2->t <= timeEnd; ++it1, ++it2 ) {
+        double dx = it1->x - it2->x;
+        double dy = it1->y - it2->y;
+        if( sqrt( dx * dx + dy * dy ) > threshold ) {
+            return -1.0;
+        }
+    }
+
+    return 0.0;
+}
+
+void _connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > combination, int nElements, double* tableConnectable )
+{
+    sort( combination.begin(), combination.end() );
+    pDst->push_back( combination );
+
+    for( int i = 0; i < combination.size(); ++i ) {
+        for( int j = i + 1; j < combination.size(); ++j ) {
+            // see if trajectories in combination[ i ] and combination[ j ] are connectable
+            bool flgConnectable = true;
+            vector<int> trajectories;
+            trajectories.insert( trajectories.end(), combination[ i ].begin(), combination[ i ].end() );
+            trajectories.insert( trajectories.end(), combination[ j ].begin(), combination[ j ].end() );
+            sort( trajectories.begin(), trajectories.end() );
+            for( int iTrj1 = 0; flgConnectable && iTrj1 < trajectories.size(); ++iTrj1 ) {
+                for( int iTrj2 = iTrj1 + 1; flgConnectable && iTrj2 < trajectories.size(); ++iTrj2 ) {
+                    int index = trajectories[ iTrj1 ] + trajectories[ iTrj2 ] * nElements;
+                    flgConnectable = ( tableConnectable[ index ] == 0.0 );
+                }
+            }
+
+            // Integrate combination[ i ] and combination[ j ] if they are connectable 
+            if( flgConnectable ) {
+                vector< vector< int > > new_combination;
+                new_combination.push_back( trajectories );
+                for( int k = 0; k < combination.size(); ++k ) {
+                    if( k != i && k != j ) {
+                        new_combination.push_back( combination[ k ] );
+                    }
+                }
+                _connect( pDst, new_combination, nElements, tableConnectable );
+            }
+        }
+    }
+}
+
+void connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > init, vector<int>& combination, int nElements, double* tableConnectable )
+{
+    _connect( pDst, init, nElements, tableConnectable );
+    
+    return;
 }
 
 bool load_track_parameters( std::string strPath, std::string strFileName )
@@ -830,7 +943,19 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         vector<CTrajectory> trajectoriesAveraged( nCluster );
         for( int i = 0; i < nCluster; ++i ) {
-            trajectoriesClustered[ i ].Integrate( &trajectoriesAveraged[ i ] );
+            CTrajectory tmpTrj;
+            TrajectoryElement trjElement;
+            trajectoriesClustered[ i ].Integrate( &tmpTrj );
+
+            for( TrajectoryElement::const_iterator it = tmpTrj.front().begin(); it != tmpTrj.front().end(); ++it ) {
+                PosXYTID posid;
+                posid.x = it->x;
+                posid.y = it->y;
+                posid.t = it->t;
+                posid.ID = i;
+                trjElement.insert( posid );
+            }
+            trajectoriesAveraged[ i ].push_back( trjElement );
         }
         
         {
@@ -1097,7 +1222,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 for( int iTrj2 = iTrj1; iTrj2 < nCluster; ++iTrj2 ) {
                     tableIndependent[ iTrj1 + iTrj2 * nCluster ] 
                         = tableIndependent[ iTrj2 + iTrj1 * nCluster ] 
-                        = areIndependent( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesAveraged[ iTrj2 ].front(), clusteringParam.thConnect );
+                        = areIndependent( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesAveraged[ iTrj2 ].front(), 0.12/*clusteringParam.thConnect*/ );
                     ofs << "tableIndependent[" << iTrj1 << "][" << iTrj2 << "]=";
                     if( tableIndependent[ iTrj1 + iTrj2 * nCluster ] == 0.0 ) {
                         ofs << "true" << endl;
@@ -1111,10 +1236,12 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         // Make all the possible combinations in which trajectories are independent.
         cout << " making all the possible combinations..." << endl;
+        vector< vector<int> > combination;
+        vector<double> score;
         {
-            vector< vector<int> > combination;
             Clustering3( &combination, tableIndependent, nCluster, 0.1 );
- 
+            cout << "  # of combinations: " << combination.size() << endl;
+
             ostringstream oss;
 #ifdef WINDOWS_OS
 		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
@@ -1125,16 +1252,18 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             oss << "possible_combinations_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
             ofstream ofs( oss.str().c_str() );
 
+            score.resize( combination.size() );
             for( int i = 0; i < combination.size(); ++i ) {
-                double score = fitting_score( combination[ i ], trajectoriesAveraged, time_to_hash_where_occupied, trj_time_to_hash_where_occupied );
+                score[ i ] = fitting_score( combination[ i ], trajectoriesAveraged, time_to_hash_where_occupied, trj_time_to_hash_where_occupied );
                 ofs << "Combination " << i << ": "
-                     << "fitting_score=" << score
+                     << "fitting_score=" << score[ i ]
                      << ", ";
                 cout << "  Combination " << i << ": "
-                     << "fitting_score=" << score
+                     << "fitting_score=" << score[ i ]
                      << ", ";
                 for( int j = 0; j < combination[ i ].size(); ++j ) {
                     ofs << combination[ i ][ j ] << " ";
+                    cout << combination[ i ][ j ] << " ";
                 }
                 ofs << endl;
                 cout << endl;
@@ -1156,18 +1285,222 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             }
         }
         cout << endl;
+        delete [] tableIndependent;
+        tableIndependent = NULL;
 
-        // Scoring the combinations
+        // Select the high-scored combinations
+        cout << " High-scored combinations: ";
+        vector< vector<int> > combination_highscored;
+        double max = 0.0;
+        int idxCombinationMax = -1;
+        for( int i = 0; i < combination.size(); ++i ) {
+            if( score[ i ] > max ) {
+                max = score[ i ];
+                idxCombinationMax = i;
+            }
+            //if( score[ i ] > 0.55 ) {
+            //    combination_highscored.push_back( combination[ i ] );
+            //    cout << i << " ";
+            //}
+        }
+        combination_highscored.push_back( combination[ idxCombinationMax ] );
+        cout << idxCombinationMax << endl;
 
+        // Create a 'connectable' table for every two trajectories.
+        // '0' if they can connect smoothly.
+        // '<0' otherwise.
+        cout << " creating a connectable table...";
+        double* tableConnectable = new double[ nCluster * nCluster ];
+        const int nPrevResultTrj = resultTrajectory.size();
+        map<int,int> idxResultTrjToID;
+        {
+             ostringstream oss;
+#ifdef WINDOWS_OS
+		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+#endif
+#ifdef LINUX_OS
+			oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+#endif
+            oss << "connectable_table_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
+            ofstream ofs( oss.str().c_str() );
+            
+            vector<CTrajectory> trajectoriesPrevResult;
+            {
+                int idx = nCluster;
+                for( map<int,CTrajectory>::iterator itResult = resultTrajectory.begin(); itResult != resultTrajectory.end(); ++itResult, ++idx ) {
+                    trajectoriesPrevResult.push_back( itResult->second );
+                    idxResultTrjToID[ nCluster ] = itResult->first;
+                }
+            }
+            
+            const double threshold = 3.0;
+            int sizeTableConnectable = nCluster + nPrevResultTrj;
+            for( int iTrj1 = 0; iTrj1 < sizeTableConnectable; ++iTrj1 ) {
+                for( int iTrj2 = iTrj1; iTrj2 < sizeTableConnectable; ++iTrj2 ) {
+                    double value;
+                    if( iTrj1 > nCluster && iTrj2 > nCluster ) {
+                        value = -1.0;
+                    } else if( iTrj1 > nCluster ) {
+                        value = areConnectable( trajectoriesPrevResult[ iTrj1 - nCluster ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold );
+                    } else if( iTrj2 > nCluster ) {
+                        value = areConnectable( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesPrevResult[ iTrj2 - nCluster ].front(), threshold );
+                    } else {
+                        value = areConnectable( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold );                   
+                    }
+                    tableConnectable[ iTrj1 + iTrj2 * sizeTableConnectable ] = tableConnectable[ iTrj2 + iTrj1 * sizeTableConnectable ] = value;
+                    ofs << "tableConnectable[" << iTrj1 << "][" << iTrj2 << "]=";
+                    if( tableConnectable[ iTrj1 + iTrj2 * sizeTableConnectable ] == 0.0 ) {
+                        ofs << "true" << endl;
+                    } else {
+                        ofs << "false" << endl;
+                    }
+                }
+            }
+        }
+        cout << "done." << endl;
+
+
+        // Try to connect trajectories in each combination if possible
+        cout << " trying to connect trajectories...";
+        vector< vector< vector<int> > > connection_patterns;
+        for( int i = 0; i < combination_highscored.size(); ++i ) {
+            vector< vector<int> > init( combination_highscored[ i ].size() );
+            for( int j = 0; j < combination_highscored[ i ].size(); ++j ) {
+                init[ j ].push_back( combination_highscored[ i ][ j ] );
+                int k = 0;
+                for( map<int,CTrajectory>::iterator itResult = resultTrajectory.begin(); itResult != resultTrajectory.end(); ++itResult, ++k ) {
+                    if( areCoherent( trajectoriesAveraged[ combination_highscored[ i ][ j ] ].front()
+                                   , itResult->second.front(), clusteringParam.thConnect ) == 0.0 ) {
+                        init[ j ].push_back( nCluster + k );
+                        sort( init[ j ].begin(), init[ j ].end() );
+                    }
+                }
+            }
+
+            connect( &connection_patterns, init, combination_highscored[ i ], nCluster, tableConnectable );
+        }
+        sort( connection_patterns.begin(), connection_patterns.end() );
+        connection_patterns.erase( unique( connection_patterns.begin(), connection_patterns.end() )
+                                 , connection_patterns.end() );
+        cout << " done." << endl;
+        
+        {
+             ostringstream oss;
+#ifdef WINDOWS_OS
+		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+#endif
+#ifdef LINUX_OS
+			oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+#endif
+            oss << "connection_patterns_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
+            ofstream ofs( oss.str().c_str() );
+
+            for( int i = 0; i < connection_patterns.size(); ++i ) {
+                ofs << "Pattern " << i << ": ";
+                cout << "  Pattern " << i << ": ";
+                for( int j = 0; j < connection_patterns[ i ].size(); ++j ) {
+                    ofs << "(";
+                    cout << "(";
+                    for( int k = 0; k < connection_patterns[ i ][ j ].size(); ++k ) {
+                        cout << connection_patterns[ i ][ j ][ k ];
+                        if( k != connection_patterns[ i ][ j ].size() - 1 ) {
+                            ofs << ",";
+                            cout << ",";
+                        }
+                    }
+                    ofs << ") ";
+                    cout << ") ";
+                }
+                ofs << endl;
+                cout << endl;
+            }
+        }
+
+        delete [] tableConnectable;
+        tableConnectable = NULL;
+
+
+        // Find the optimum
+        vector<TrajectoryElement> opt;
+        vector<int> idOpt;
+
+        vector< vector<TrajectoryElement> > trajectories_for_pattern( connection_patterns.size() );
+        for( int i = 0; i < connection_patterns.size(); ++i ) {
+            for( int j = 0; j < connection_patterns[ i ].size(); ++j ) {
+                trajectories_for_pattern[ i ].resize( connection_patterns[ i ].size() );
+                for( int k = 0; k < connection_patterns[ i ][ j ].size(); ++k ) {
+                    int idxCluster = connection_patterns[ i ][ j ][ k ];
+                    trajectories_for_pattern[ i ][ j ].insert( trajectoriesAveraged[ idxCluster ].front().begin(), trajectoriesAveraged[ idxCluster ].front().end() );
+                }
+            }
+        }
+        
+        int idxOptPattern = -1;
+        if( connection_patterns.size() >= 2 ) {
+            cout << " scoring the patterns..." << endl;
+            vector<double> score( connection_patterns.size() );
+            for( int i = 0; i < connection_patterns.size(); ++i ) {
+                vector<double> speed( trajectories_for_pattern[ i ].size(), 0.0 );
+                vector<int> count( trajectories_for_pattern[ i ].size(), 0 );
+                double speed_overall = 0.0;
+                int count_total = 0;
+                for( int j = 0; j < trajectories_for_pattern[ i ].size(); ++j ) {
+                    PosXYTID posPrev;
+                    for( TrajectoryElement::iterator itPos = trajectories_for_pattern[ i ][ j ].begin(); itPos != trajectories_for_pattern[ i ][ j ].end(); ++itPos ) {
+                        if( itPos != trajectories_for_pattern[ i ][ j ].begin() ) {
+                            double dx = itPos->x - posPrev.x;
+                            double dy = itPos->y - posPrev.y;
+                            double dt = (double)( itPos->t - posPrev.t ) * 1.0e-6;
+                            double v = sqrt( dx * dx + dy * dy );
+                            speed[ j ] += v;
+                            count[ j ] += 1;
+                            speed_overall += v;
+                            ++count_total;
+                        }
+                        posPrev = *itPos;
+                    }
+                    speed[ j ] /= (double)count[ j ];
+                }
+                speed_overall /= (double)count_total;
+                double _score = speed_overall + 200.0 * (double)trajectories_for_pattern[ i ].size();
+                score[ i ] = _score;
+                cout << "  Pattern " << i << ": " << speed_overall << "(speed), " << trajectories_for_pattern[ i ].size() << "(# of people) -> " << _score << endl;
+            }
+            cout << " done." << endl;
+
+            double min = -1.0;
+            for( int i = 0; i < score.size(); ++i ) {
+                if( score[ i ] < min || min < 0.0 ) {
+                    min = score[ i ];
+                    idxOptPattern = i;
+                }
+            }
+            opt = trajectories_for_pattern[ idxOptPattern ];
+        } else {
+            idxOptPattern = 0;
+            opt = trajectories_for_pattern[ 0 ];
+        }
+        //Debug code!
+        idOpt.resize( opt.size(), -1 );
+        for( int i = 0; i < opt.size(); ++i ) {
+            for( int j = 0; j < connection_patterns[ idxOptPattern ][ i ].size(); ++j ) {
+                map<int,int>::iterator it = idxResultTrjToID.find( connection_patterns[ idxOptPattern ][ i ][ j ] );
+                if( it != idxResultTrjToID.end() ) {
+                    idOpt[ i ] = it->second;
+                }
+            }
+
+        }
 
         cout << "Done." << endl;
 
-        delete [] tableIndependent;
+
 
 
         //logTracking.renovation( TrackingProcessLogger::Start );
         //viewer.SetTrackingStatus( 2 );
 
+#if 0
         //
         // Renovate the trajectories
         TrajectoriesInfo infoTrj;
@@ -1352,6 +1685,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
 	    //logTracking.renovation( TrackingProcessLogger::End );
         //viewer.SetTrackingStatus( 3 );
+#endif
 
         //logTracking.finishing( TrackingProcessLogger::Start );
 
