@@ -137,7 +137,7 @@ double areConnectable( TrajectoryElement& trj1, TrajectoryElement& trj2, double 
 
     // ã§í éûä‘Ç™Ç†ÇÈèÍçáÇÕ'ê⁄ë±ïsâ¬î\'Çï‘Ç∑
     if( timeBegin <= timeEnd ) {
-        return -1.0;
+        return -0.5;
     }
 
     TrajectoryElement trjEarlier, trjLatter;
@@ -235,7 +235,7 @@ double areCoherent( TrajectoryElement& trj1, TrajectoryElement& trj2, double thr
     return 0.0;
 }
 
-void _connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > combination, int nElements, double* tableConnectable )
+void _connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > combination, int nCluster, int nElements, double* tableConnectable )
 {
     sort( combination.begin(), combination.end() );
     pDst->push_back( combination );
@@ -243,17 +243,43 @@ void _connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > comb
     for( int i = 0; i < combination.size(); ++i ) {
         for( int j = i + 1; j < combination.size(); ++j ) {
             // see if trajectories in combination[ i ] and combination[ j ] are connectable
-            bool flgConnectable = true;
-            vector<int> trajectories;
-            trajectories.insert( trajectories.end(), combination[ i ].begin(), combination[ i ].end() );
-            trajectories.insert( trajectories.end(), combination[ j ].begin(), combination[ j ].end() );
-            sort( trajectories.begin(), trajectories.end() );
-            for( int iTrj1 = 0; flgConnectable && iTrj1 < trajectories.size(); ++iTrj1 ) {
-                for( int iTrj2 = iTrj1 + 1; flgConnectable && iTrj2 < trajectories.size(); ++iTrj2 ) {
-                    int index = trajectories[ iTrj1 ] + trajectories[ iTrj2 ] * nElements;
-                    flgConnectable = ( tableConnectable[ index ] == 0.0 );
+            bool flgConnectable = false;
+            bool flgInvalid = false;
+
+            for( vector<int>::iterator itIdxTrj1 = combination[ i ].begin(); itIdxTrj1 != combination[ i ].end(); ++itIdxTrj1 ) {
+                for( vector<int>::iterator itIdxTrj2 = combination[ j ].begin(); itIdxTrj2 != combination[ j ].end(); ++itIdxTrj2 ) {
+                    int index = *itIdxTrj1 + *itIdxTrj2 * nElements;
+                    if( tableConnectable[ index ] == 0.0 ) {
+                        flgConnectable = true;
+                    } else if( tableConnectable[ index ] == -0.5 ) {
+                        flgInvalid = false;
+                    }
                 }
             }
+            
+            vector<int> trajectories;
+            if( flgConnectable && !flgInvalid ) {
+                flgConnectable = true;
+                trajectories.insert( trajectories.end(), combination[ i ].begin(), combination[ i ].end() );
+                trajectories.insert( trajectories.end(), combination[ j ].begin(), combination[ j ].end() );
+            }
+
+            //vector<int> trajectories;
+            //trajectories.insert( trajectories.end(), combination[ i ].begin(), combination[ i ].end() );
+            //trajectories.insert( trajectories.end(), combination[ j ].begin(), combination[ j ].end() );
+            //sort( trajectories.begin(), trajectories.end() );
+            //for( int iTrj1 = 0; !flgInvalid && iTrj1 < trajectories.size(); ++iTrj1 ) {
+            //    for( int iTrj2 = 0; !flgInvalid && iTrj2 < trajectories.size(); ++iTrj2 ) {
+            //        int index = trajectories[ iTrj1 ] + trajectories[ iTrj2 ] * nElements;
+            //        if ( tableConnectable[ index ] == 0.0 ) {
+            //            flgConnectable = true;
+            //        }
+            //        flgInvalid = ( tableConnectable[ index ] == -0.5 );
+            //    }
+            //}
+            //if( flgInvalid ) {
+            //    flgConnectable = false;
+            //}
 
             // Integrate combination[ i ] and combination[ j ] if they are connectable 
             if( flgConnectable ) {
@@ -264,15 +290,15 @@ void _connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > comb
                         new_combination.push_back( combination[ k ] );
                     }
                 }
-                _connect( pDst, new_combination, nElements, tableConnectable );
+                _connect( pDst, new_combination, nElements, nCluster, tableConnectable );
             }
         }
     }
 }
 
-void connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > init, vector<int>& combination, int nElements, double* tableConnectable )
+void connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > init, vector<int>& combination, int nCluster, int nElements, double* tableConnectable )
 {
-    _connect( pDst, init, nElements, tableConnectable );
+    _connect( pDst, init, nCluster, nElements, tableConnectable );
     
     return;
 }
@@ -1377,7 +1403,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 }
             }
 
-            connect( &connection_patterns, init, combination_highscored[ i ], sizeTableConnectable, tableConnectable );
+            connect( &connection_patterns, init, combination_highscored[ i ], nCluster, sizeTableConnectable, tableConnectable );
         }
         sort( connection_patterns.begin(), connection_patterns.end() );
         connection_patterns.erase( unique( connection_patterns.begin(), connection_patterns.end() )
