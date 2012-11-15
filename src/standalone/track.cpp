@@ -1340,9 +1340,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     double value;
                     if( iTrj1 > nCluster && iTrj2 > nCluster ) {
                         value = -1.0;
-                    } else if( iTrj1 > nCluster ) {
+                    } else if( iTrj1 >= nCluster ) {
                         value = areConnectable( trajectoriesPrevResult[ iTrj1 - nCluster ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold );
-                    } else if( iTrj2 > nCluster ) {
+                    } else if( iTrj2 >= nCluster ) {
                         value = areConnectable( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesPrevResult[ iTrj2 - nCluster ].front(), threshold );
                     } else {
                         value = areConnectable( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold );                   
