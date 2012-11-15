@@ -305,7 +305,10 @@ void DivideIntoSections( TrajectoriesInfo* pInfoTrj, std::map<int,int>* pPointId
                     vx2 = ( itConnect->x - itPoint->x ) / dt;
                     vy2 = ( itConnect->y - itPoint->y ) / dt;
                     dv = sqrt( ( vx2 - vx1 ) * ( vx2 - vx1 ) + ( vy2 - vy1 ) * ( vy2 - vy1 ) ); // should be corrected. Sometimes vx is used without initialization
-                    flgConnectable = dv < 4.0/*1.5*/;
+                    double v = sqrt( ( itPoint->x - itConnect->x ) * ( itPoint->x - itConnect->x )
+                                   + ( itPoint->y - itConnect->y ) * ( itPoint->y - itConnect->y ) )
+                             / ( (double)( itConnect->t - itPoint->t ) * 1.0e-6 );
+                    flgConnectable = dv < 1.5 && v < 5.0;
                 }
                 if( flgConnectable ) {
                     infoTrj.connectable[ index ].push_back( (int)distance( infoTrj.points.begin(), itConnect ) );

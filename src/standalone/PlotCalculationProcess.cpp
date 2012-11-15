@@ -384,3 +384,54 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
     }
 */
 }
+
+void OutputProcess( TIME_MICRO_SEC timeBegin
+                     , TIME_MICRO_SEC timeEnd
+                     , TIME_MICRO_SEC offset
+                     , vector<int>& combination
+                     , int idxCombination
+                     , vector<CTrajectory>& trajectories
+                     , string strDir
+                     , string strExtention
+                     , const PARAM_PLOT* pPlotParam )
+{
+    timeBegin -= offset;
+    timeEnd -= offset;
+    double timeBegin_d = (double)timeBegin / 1.0e6;
+    double timeEnd_d = (double)timeEnd / 1.0e6;
+    string strSampleFile;
+    {
+        ostringstream oss;
+        oss << strDir << "samples_" << timeBegin << ".csv";
+        strSampleFile = oss.str();
+    }
+
+    // GNUPLOTのスクリプト
+    {
+        ofstream ofs;
+        ostringstream oss;
+
+        oss << strDir << "plot_combination" << idxCombination << "_" << timeBegin << "_" << strExtention << ".plt";
+        string strScriptFile = oss.str();
+        ofs.open( strScriptFile.c_str() );
+        ofs << "set nokey" << endl;
+        ofs << "set xrange[" << pPlotParam->rangeLeft << ":" << pPlotParam->rangeRight << "]" << endl;
+        ofs << "set yrange[" << timeBegin_d << ":" << timeEnd_d << "]" << endl;
+        ofs << "set zrange[" << pPlotParam->rangeBottom << ":" << pPlotParam->rangeTop << "]" << endl;
+        ofs << "set ticslevel 0" << endl;
+        ofs << "splot '" << strSampleFile << "' using 1:3:2 with points,\\" << endl;
+        for( int i = 0; i < combination.size(); ++i ) {
+            ostringstream oss;
+            oss << strDir << "trajectories_class_" << combination[ i ] << "_" << timeBegin << "_" << strExtention << ".csv";
+            
+            ofs << "'" << oss.str() << "' using 1:3:2 with lines";
+            if( i != combination.size() - 1 ) {
+                ofs << ",\\";
+            }
+            ofs << endl;
+        }
+        ofs.flush();
+        ofs.close();
+    }
+}
+

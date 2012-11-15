@@ -90,6 +90,80 @@ double dist_trajectory_element( TrajectoryElement& trj1, TrajectoryElement& trj2
     return 0.0;
 }
 
+double areIndependent( TrajectoryElement& trj1, TrajectoryElement& trj2, double threshold )
+{
+    TIME_MICRO_SEC timeBegin; // 距離を評価する開始時間
+    TIME_MICRO_SEC timeEnd; // 距離を評価する終了時間
+
+    // 共通する時間（距離を評価する時間範囲）を調べる
+    timeBegin = max( trj1.begin()->t, trj2.begin()->t );
+    timeEnd = min( trj1.rbegin()->t, trj2.rbegin()->t );
+
+    // 共通時間がない場合は'独立'を返す
+    if( timeBegin > timeEnd ) {
+        return 0.0;
+    }
+
+    // 共通時間がminCommonTimeRange[usec]未満の場合は'独立'を返す
+    if( ( timeEnd - timeBegin ) < clusteringParam.minCommonTimeRange ) {
+        return 0.0;
+    }
+
+    // 共通する全ての時刻で距離がthresholdより大きければ'独立'を返す。
+    // 一度でもthConnectより小さくなる場合は'干渉あり'と判断。
+    TrajectoryElement::iterator it1, it2;
+    it1 = trj1.find( PosXYT( 0.0, 0.0, timeBegin ) );
+    it2 = trj2.find( PosXYT( 0.0, 0.0, timeBegin ) );
+    for( ; it1 != trj1.end() && it1->t <= timeEnd && it2 != trj2.end() && it2->t <= timeEnd; ++it1, ++it2 ) {
+        const double dx = it1->x - it2->x;
+        const double dy = it1->y - it2->y;
+        const double dist = sqrt( dx * dx + dy * dy );
+        if( dist <= threshold ) {
+            return -1.0;
+        }
+    }
+
+    return 0.0;
+}
+
+double fitting_score( vector<int>& combination, vector<CTrajectory>& trajectories, map<unsigned long long,set<int> >& time_to_hash_where_occupied, vector< map<unsigned long long,set<int> > >& trj_time_to_hash_where_occupied )
+{
+    map<unsigned long long,map<int,bool> > isOccupied;
+    unsigned long total = 0;
+    {
+        map<unsigned long long,set<int> >::iterator itTimeToHash = time_to_hash_where_occupied.begin();
+        for( ; itTimeToHash != time_to_hash_where_occupied.end(); ++itTimeToHash ) {
+            for( set<int>::iterator itHash = itTimeToHash->second.begin(); itHash != itTimeToHash->second.end(); ++itHash ) {
+                isOccupied[ itTimeToHash->first ][ *itHash ] = false;
+                ++total;
+            }
+        }
+    }
+
+    for( int i = 0; i < combination.size(); ++i ) {
+        map<unsigned long long,set<int> >::iterator itTimeToHash = trj_time_to_hash_where_occupied[ combination[ i ] ].begin();
+        for( ; itTimeToHash != trj_time_to_hash_where_occupied[ combination[ i ] ].end(); ++itTimeToHash ) {
+            for( set<int>::iterator itHash = itTimeToHash->second.begin(); itHash != itTimeToHash->second.end(); ++itHash ) {
+                if( isOccupied[ itTimeToHash->first ].find( *itHash ) != isOccupied[ itTimeToHash->first ].end() ) {
+                    isOccupied[ itTimeToHash->first ][ *itHash ] = true;
+                }
+            }
+        }
+    }
+
+    map<unsigned long long,map<int,bool> >::iterator itTimeToMapHash = isOccupied.begin();
+    unsigned long occupied = 0;
+    for( ; itTimeToMapHash != isOccupied.end(); ++itTimeToMapHash ) {
+        for( map<int,bool>::iterator itMapHash = itTimeToMapHash->second.begin(); itMapHash != itTimeToMapHash->second.end(); ++itMapHash ) {
+            if( itMapHash->second ) {
+                ++occupied;
+            }
+        }
+    }
+
+    return (double)occupied / (double)total;
+}
+
 bool load_track_parameters( std::string strPath, std::string strFileName )
 {
     commonParam.termTracking = 10000000;//8500000;//10000000;
@@ -119,7 +193,7 @@ bool load_track_parameters( std::string strPath, std::string strFileName )
     clusteringParam.minCommonTimeRange = 250000;
     clusteringParam.distVerifyCluster = 0.28;
     rnvtrjParam.lambda1 = 10.0;
-    rnvtrjParam.lambda2 = 200.0;
+    rnvtrjParam.lambda2 = 400.0;//200.0;
     rnvtrjParam.lambda3 = 6.0;
     rnvtrjParam.territory = 0.12;//0.12;//0.07;
     rnvtrjParam.territoryVeryNear = 0.01;//0.07;//min( 0.1, rnvtrjParam.territory );;
@@ -437,6 +511,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             videoWriter.open( oss.str(), CV_FOURCC('X','V','I','D'), 10, Size( (int)img.cols, (int)img.rows ) );
         }
 
+        map<unsigned long long,set<int> > time_to_hash_where_occupied;
+
         map<unsigned long long, map<int,PosXYTID> >::iterator itTrjIdxToPos = time_to_TrjIdx_and_pos.begin();
         for( ; itTrjIdxToPos != time_to_TrjIdx_and_pos.end(); ++itTrjIdxToPos ) {
             const unsigned long long time = itTrjIdxToPos->first;
@@ -446,6 +522,15 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             // Make a distance table at 'time'
             map<int,PosXYTID>::iterator itPos1 = itTrjIdxToPos->second.begin();
             for( int idx1 = 0; idx1 < nTrj; ++idx1, ++itPos1 ) {
+
+                {
+                    const int row_on_pepmap = scale_m2px * ( ( itPos1->second.x - roi_x ) + roi_height / 2.0f );
+                    const int col_on_pepmap = scale_m2px * ( ( itPos1->second.y - roi_y ) + roi_width / 2.0f );
+                    const int nCol = (int)( scale_m2px * roi_width );
+                    int keyval = row_on_pepmap * nCol + col_on_pepmap + 1;
+                    time_to_hash_where_occupied[ time ].insert( keyval );
+                }
+
                 map<int,PosXYTID>::iterator itPos2 = itPos1;
                 for( int idx2 = idx1; idx2 < nTrj; ++idx2, ++itPos2 ) {
                     double dist_x, dist_y, d;
@@ -637,7 +722,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         cout << "Integrating Clusters that have similar shape..." << endl;
 
-        const int nCluster = trajectoriesClustered.size();
+        const int nCluster_before_integration = trajectoriesClustered.size();
         //vector<CTrajectory> trajectoriesAveraged( nCluster );
         //for( int i = 0; i < nCluster; ++i ) {
         //    trajectoriesClustered[ i ].Integrate( &trajectoriesAveraged[ i ] );
@@ -666,7 +751,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 //        }
 
         CTrajectory_Distance distanceTrajectory( clusteringParam.distanceLimit, clusteringParam.nLimit, clusteringParam.minCommonTimeRange, false );
-        double* distTable = new double[ nCluster * nCluster ];
+        double* distTable = new double[ nCluster_before_integration * nCluster_before_integration ];
         {
 //            ostringstream oss;
 //#ifdef WINDOWS_OS
@@ -677,9 +762,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 //#endif
 //            oss << "distTable_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
 //            ofstream ofs( oss.str().c_str() );
-            for( size_t iTrj1 = 0; iTrj1 < nCluster; ++iTrj1 ) {
-                for( size_t iTrj2 = iTrj1; iTrj2 < nCluster; ++iTrj2 ) {
-                    distTable[ iTrj1 * nCluster + iTrj2 ] = distTable[ iTrj2 * nCluster + iTrj1 ]
+            for( size_t iTrj1 = 0; iTrj1 < nCluster_before_integration; ++iTrj1 ) {
+                for( size_t iTrj2 = iTrj1; iTrj2 < nCluster_before_integration; ++iTrj2 ) {
+                    distTable[ iTrj1 * nCluster_before_integration + iTrj2 ] = distTable[ iTrj2 * nCluster_before_integration + iTrj1 ]
                     //= distanceTrajectory( trajectoriesAveraged[ iTrj1 ], trajectoriesAveraged[ iTrj2 ] );
                     = distanceTrajectory( trajectoriesClustered[ iTrj1 ], trajectoriesClustered[ iTrj2 ] );
                     //ofs << "distTable[" << iTrj1 << "][" << iTrj2 << "]=" << distTable[ iTrj1 * nCluster + iTrj2 ] << endl;
@@ -690,7 +775,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 #if 1
         {
             vector< vector<int> > clst;
-            Clustering3( &clst, distTable, nCluster, clusteringParam.thConnect );
+            Clustering3( &clst, distTable, nCluster_before_integration, clusteringParam.thConnect );
             vector<CTrajectory> tmp( clst.size() );
             for( int i = 0; i < clst.size(); ++i ) {
                 for( int j = 0; j < clst[ i ].size(); ++j ) {
@@ -740,12 +825,15 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 //                            , NULL
 //                            , &plotParam );
 //        }
-        {
-            vector<CTrajectory> trajectoriesAveraged( trajectoriesClustered.size() );
-            for( int i = 0; i < trajectoriesClustered.size(); ++i ) {
-                trajectoriesClustered[ i ].Integrate( &trajectoriesAveraged[ i ] );
-            }
 
+        const int nCluster = trajectoriesClustered.size();
+
+        vector<CTrajectory> trajectoriesAveraged( nCluster );
+        for( int i = 0; i < nCluster; ++i ) {
+            trajectoriesClustered[ i ].Integrate( &trajectoriesAveraged[ i ] );
+        }
+        
+        {
             double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
             unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
             OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
@@ -965,6 +1053,117 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
 #endif
         //logTracking.clustering( TrackingProcessLogger::End );
+
+
+        //
+        // Selection of the best combination of the clusters which fits
+        // to the temporal stack of the occupancy maps.
+        
+        cout << endl;
+        cout << "Selecting the best combination of the clusters..." << endl;
+        cout << " creating a hash table...";
+        // Create a hash table that maps a trajectory (CTrajectory) to where it occupied on plan-view map.
+        vector< map<unsigned long long, set<int> > > trj_time_to_hash_where_occupied( nCluster );
+        for( int i = 0; i < trajectoriesClustered.size(); ++i ) {
+            for( CTrajectory::iterator itTrj = trajectoriesClustered[ i ].begin(); itTrj != trajectoriesClustered[ i ].end(); ++itTrj ) {
+                for( TrajectoryElement::iterator itPos = itTrj->begin(); itPos != itTrj->end(); ++itPos ) {
+                    const int row_on_pepmap = scale_m2px * ( ( itPos->x - roi_x ) + roi_height / 2.0f );
+                    const int col_on_pepmap = scale_m2px * ( ( itPos->y - roi_y ) + roi_width / 2.0f );
+                    const int nCol = (int)( scale_m2px * roi_width );
+                    int keyval = row_on_pepmap * nCol + col_on_pepmap + 1;
+                    trj_time_to_hash_where_occupied[ i ][ itPos->t ].insert( keyval );
+                }
+            }
+        }   
+        cout << endl;
+
+        // Create an 'independence' table for every two trajectories. 
+        // '0' if they don't mutually interfere, which means they can exist coincidently in a tracking result.
+        // '<0' otherwise.
+        cout << " creating an independence table...";
+        double* tableIndependent = new double[ nCluster * nCluster ];
+        {
+             ostringstream oss;
+#ifdef WINDOWS_OS
+		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+#endif
+#ifdef LINUX_OS
+			oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+#endif
+            oss << "independence_table_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
+            ofstream ofs( oss.str().c_str() );
+            
+            for( int iTrj1 = 0; iTrj1 < nCluster; ++iTrj1 ) {
+                for( int iTrj2 = iTrj1; iTrj2 < nCluster; ++iTrj2 ) {
+                    tableIndependent[ iTrj1 + iTrj2 * nCluster ] 
+                        = tableIndependent[ iTrj2 + iTrj1 * nCluster ] 
+                        = areIndependent( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesAveraged[ iTrj2 ].front(), clusteringParam.thConnect );
+                    ofs << "tableIndependent[" << iTrj1 << "][" << iTrj2 << "]=";
+                    if( tableIndependent[ iTrj1 + iTrj2 * nCluster ] == 0.0 ) {
+                        ofs << "true" << endl;
+                    } else {
+                        ofs << "false" << endl;
+                    }
+                }
+            }
+        }
+        cout << "done." << endl;
+
+        // Make all the possible combinations in which trajectories are independent.
+        cout << " making all the possible combinations..." << endl;
+        {
+            vector< vector<int> > combination;
+            Clustering3( &combination, tableIndependent, nCluster, 0.1 );
+ 
+            ostringstream oss;
+#ifdef WINDOWS_OS
+		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+#endif
+#ifdef LINUX_OS
+			oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+#endif
+            oss << "possible_combinations_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
+            ofstream ofs( oss.str().c_str() );
+
+            for( int i = 0; i < combination.size(); ++i ) {
+                double score = fitting_score( combination[ i ], trajectoriesAveraged, time_to_hash_where_occupied, trj_time_to_hash_where_occupied );
+                ofs << "Combination " << i << ": "
+                     << "fitting_score=" << score
+                     << ", ";
+                cout << "  Combination " << i << ": "
+                     << "fitting_score=" << score
+                     << ", ";
+                for( int j = 0; j < combination[ i ].size(); ++j ) {
+                    ofs << combination[ i ][ j ] << " ";
+                }
+                ofs << endl;
+                cout << endl;
+
+                OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+                             , timeTracking//tableLUMSlice.rbegin()->first
+                                , timeEarliestPEPMap
+                                , combination[ i ]
+                                , i
+                                , trajectoriesAveraged
+#ifdef WINDOWS_OS
+			                    , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+#endif
+#ifdef LINUX_OS
+			                    , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
+#endif
+                                , "averaged"
+                                , &plotParam );         
+            }
+        }
+        cout << endl;
+
+        // Scoring the combinations
+
+
+        cout << "Done." << endl;
+
+        delete [] tableIndependent;
+
 
         //logTracking.renovation( TrackingProcessLogger::Start );
         //viewer.SetTrackingStatus( 2 );

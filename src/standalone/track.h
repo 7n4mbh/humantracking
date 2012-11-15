@@ -130,5 +130,14 @@ void OutputProcess( TIME_MICRO_SEC timeBegin
                      , std::map<int,CTrajectory>* pResult
                      , FILE* pipeGnuplot
                      , const PARAM_PLOT* pPlotParam );
+void OutputProcess( TIME_MICRO_SEC timeBegin
+                     , TIME_MICRO_SEC timeEnd
+                     , TIME_MICRO_SEC offset
+                     , std::vector<int>& combination
+                     , int idxCombination
+                     , std::vector<CTrajectory>& trajectories
+                     , std::string strDir
+                     , std::string strExtention
+                     , const PARAM_PLOT* pPlotParam );
 
 #endif
