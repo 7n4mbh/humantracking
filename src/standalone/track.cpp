@@ -330,7 +330,7 @@ bool load_track_parameters( std::string strPath, std::string strFileName )
     clusteringParam.minLength = 1000000;
     clusteringParam.distanceLimit = 0.1;//0.35;//clusteringParam.thDistance;
     clusteringParam.nLimit = 1;
-    clusteringParam.minCommonTimeRange = 250000;
+    clusteringParam.minCommonTimeRange = 0;///250000;
     clusteringParam.distVerifyCluster = 0.28;
     rnvtrjParam.lambda1 = 10.0;
     rnvtrjParam.lambda2 = 400.0;//200.0;
