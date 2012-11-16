@@ -237,6 +237,7 @@ double areCoherent( TrajectoryElement& trj1, TrajectoryElement& trj2, double thr
 
 void _connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > combination, int nCluster, int nElements, double* tableConnectable )
 {
+    bool flgEmpty = combination.empty();
     sort( combination.begin(), combination.end() );
     pDst->push_back( combination );
 
@@ -258,8 +259,8 @@ void _connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > comb
             }
             
             vector<int> trajectories;
-            if( flgConnectable && !flgInvalid ) {
-                flgConnectable = true;
+            if( flgConnectable = ( flgConnectable && !flgInvalid ) ) {
+                //flgConnectable = true;
                 trajectories.insert( trajectories.end(), combination[ i ].begin(), combination[ i ].end() );
                 trajectories.insert( trajectories.end(), combination[ j ].begin(), combination[ j ].end() );
             }
@@ -290,7 +291,7 @@ void _connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > comb
                         new_combination.push_back( combination[ k ] );
                     }
                 }
-                _connect( pDst, new_combination, nElements, nCluster, tableConnectable );
+                _connect( pDst, new_combination, nCluster, nElements, tableConnectable );
             }
         }
     }
@@ -1339,7 +1340,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             int idx = nCluster;
             for( map<int,CTrajectory>::iterator itResult = resultTrajectory.begin(); itResult != resultTrajectory.end(); ++itResult, ++idx ) {
                 trajectoriesPrevResult.push_back( itResult->second );
-                idxResultTrjToID[ nCluster ] = itResult->first;
+                idxResultTrjToID[ idx ] = itResult->first;
             }
         }
 
@@ -1411,7 +1412,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         cout << " done." << endl;
         
         {
-             ostringstream oss;
+            ostringstream oss;
 #ifdef WINDOWS_OS
 		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
 #endif
@@ -1429,7 +1430,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     cout << "(";
                     for( int k = 0; k < connection_patterns[ i ][ j ].size(); ++k ) {
                         cout << connection_patterns[ i ][ j ][ k ];
-			ofs << connection_patterns[ i ][ j ][ k ];
+                        ofs << connection_patterns[ i ][ j ][ k ];
                         if( k != connection_patterns[ i ][ j ].size() - 1 ) {
                             ofs << ",";
                             cout << ",";
@@ -1448,83 +1449,113 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
 
         // Find the optimum
-	cout << " Started optimization." << endl;
+	    cout << " Started optimization." << endl;
         vector<TrajectoryElement> opt;
         vector<int> idOpt;
+        {
+            ostringstream oss;
+#ifdef WINDOWS_OS
+		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+#endif
+#ifdef LINUX_OS
+			oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+#endif
+            oss << "optimization_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
+            ofstream ofs( oss.str().c_str() );
 
-        vector< vector<TrajectoryElement> > trajectories_for_pattern( connection_patterns.size() );
-        for( int i = 0; i < connection_patterns.size(); ++i ) {
-            for( int j = 0; j < connection_patterns[ i ].size(); ++j ) {
-                trajectories_for_pattern[ i ].resize( connection_patterns[ i ].size() );
-                for( int k = 0; k < connection_patterns[ i ][ j ].size(); ++k ) {
-                    int idxCluster = connection_patterns[ i ][ j ][ k ];
-		    if( idxCluster < nCluster ) {
-			trajectories_for_pattern[ i ][ j ].insert( trajectoriesAveraged[ idxCluster ].front().begin(), trajectoriesAveraged[ idxCluster ].front().end() );
-		    }
-                }
-            }
-        }
-        
-        int idxOptPattern = -1;
-        if( connection_patterns.size() >= 2 ) {
-            cout << " scoring the patterns..." << endl;
-            vector<double> score( connection_patterns.size() );
+            vector< vector<TrajectoryElement> > trajectories_for_pattern( connection_patterns.size() );
             for( int i = 0; i < connection_patterns.size(); ++i ) {
-                vector<double> speed( trajectories_for_pattern[ i ].size(), 0.0 );
-                vector<int> count( trajectories_for_pattern[ i ].size(), 0 );
-                double speed_overall = 0.0;
-                int count_total = 0;
-                for( int j = 0; j < trajectories_for_pattern[ i ].size(); ++j ) {
-                    PosXYTID posPrev;
-                    for( TrajectoryElement::iterator itPos = trajectories_for_pattern[ i ][ j ].begin(); itPos != trajectories_for_pattern[ i ][ j ].end(); ++itPos ) {
-                        if( itPos != trajectories_for_pattern[ i ][ j ].begin() ) {
-                            double dx = itPos->x - posPrev.x;
-                            double dy = itPos->y - posPrev.y;
-                            double dt = (double)( itPos->t - posPrev.t ) * 1.0e-6;
-                            double v = sqrt( dx * dx + dy * dy );
-                            speed[ j ] += v;
-                            count[ j ] += 1;
-                            speed_overall += v;
-                            ++count_total;
-                        }
-                        posPrev = *itPos;
+                for( int j = 0; j < connection_patterns[ i ].size(); ++j ) {
+                    trajectories_for_pattern[ i ].resize( connection_patterns[ i ].size() );
+                    for( int k = 0; k < connection_patterns[ i ][ j ].size(); ++k ) {
+                        int idxCluster = connection_patterns[ i ][ j ][ k ];
+		        if( idxCluster < nCluster ) {
+			    trajectories_for_pattern[ i ][ j ].insert( trajectoriesAveraged[ idxCluster ].front().begin(), trajectoriesAveraged[ idxCluster ].front().end() );
+		        }
                     }
-                    speed[ j ] /= (double)count[ j ];
                 }
-                speed_overall /= (double)count_total;
-                double _score = speed_overall + 200.0 * (double)trajectories_for_pattern[ i ].size();
-                score[ i ] = _score;
-                cout << "  Pattern " << i << ": " << speed_overall << "(speed), " << trajectories_for_pattern[ i ].size() << "(# of people) -> " << _score << endl;
             }
-            cout << " done." << endl;
+        
+            int idxOptPattern = -1;
+            if( connection_patterns.size() >= 2 ) {
+                cout << " scoring the patterns..." << endl;
+                vector<double> score( connection_patterns.size() );
+                for( int i = 0; i < connection_patterns.size(); ++i ) {
+                    vector<double> speed( trajectories_for_pattern[ i ].size(), 0.0 );
+                    vector<int> count( trajectories_for_pattern[ i ].size(), 0 );
+                    double speed_overall = 0.0;
+                    int count_total = 0;
+                    for( int j = 0; j < trajectories_for_pattern[ i ].size(); ++j ) {
+                        PosXYTID posPrev;
+                        for( TrajectoryElement::iterator itPos = trajectories_for_pattern[ i ][ j ].begin(); itPos != trajectories_for_pattern[ i ][ j ].end(); ++itPos ) {
+                            if( itPos != trajectories_for_pattern[ i ][ j ].begin() ) {
+                                double dx = itPos->x - posPrev.x;
+                                double dy = itPos->y - posPrev.y;
+                                double dt = (double)( itPos->t - posPrev.t ) * 1.0e-6;
+                                double v = sqrt( dx * dx + dy * dy );
+                                speed[ j ] += v;
+                                count[ j ] += 1;
+                                speed_overall += v;
+                                ++count_total;
+                            }
+                            posPrev = *itPos;
+                        }
+                        speed[ j ] /= (double)count[ j ];
+                    }
+                    speed_overall /= (double)count_total;
+                    double _score = speed_overall + 200.0 * (double)trajectories_for_pattern[ i ].size();
+                    score[ i ] = _score;
+                    cout << "  Pattern " << i << ": " << speed_overall << "(speed), " << trajectories_for_pattern[ i ].size() << "(# of people) -> " << _score << endl;
+                    ofs << "Pattern " << i << ": " << speed_overall << "(speed), " << trajectories_for_pattern[ i ].size() << "(# of people) -> " << _score << endl;
+                }
+                cout << " done." << endl;
 
-            double min = -1.0;
-            for( int i = 0; i < score.size(); ++i ) {
-                if( score[ i ] < min || min < 0.0 ) {
-                    min = score[ i ];
-                    idxOptPattern = i;
+                double min = -1.0;
+                for( int i = 0; i < score.size(); ++i ) {
+                    if( score[ i ] < min || min < 0.0 ) {
+                        min = score[ i ];
+                        idxOptPattern = i;
+                    }
                 }
-            }
-            opt = trajectories_for_pattern[ idxOptPattern ];
-        } else {
-            idxOptPattern = 0;
-            opt = trajectories_for_pattern[ 0 ];
-        }
-        //Debug code!
-        idOpt.resize( opt.size(), -1 );
-        for( int i = 0; i < opt.size(); ++i ) {
-            for( int j = 0; j < connection_patterns[ idxOptPattern ][ i ].size(); ++j ) {
-                map<int,int>::iterator it = idxResultTrjToID.find( connection_patterns[ idxOptPattern ][ i ][ j ] );
-                if( it != idxResultTrjToID.end() ) {
-                    idOpt[ i ] = it->second;
-                }
+                opt = trajectories_for_pattern[ idxOptPattern ];
+            } else {
+                idxOptPattern = 0;
+                opt = trajectories_for_pattern[ 0 ];
             }
 
+            cout << "  Pattern " << idxOptPattern << "has been chosen as a final result." << endl;
+            ofs << "  Pattern " << idxOptPattern << "has been chosen as a final result." << endl;
+            //Debug code!
+            idOpt.resize( opt.size(), -1 );
+            for( int i = 0; i < opt.size(); ++i ) {
+                for( int j = 0; j < connection_patterns[ idxOptPattern ][ i ].size(); ++j ) {
+                    map<int,int>::iterator it = idxResultTrjToID.find( connection_patterns[ idxOptPattern ][ i ][ j ] );
+                    if( it != idxResultTrjToID.end() ) {
+                        idOpt[ i ] = it->second;
+                    }
+                }
+
+            }
+            cout << "  ID: ";
+            for( int j = 0; j < connection_patterns[ idxOptPattern ].size(); ++j ) {
+                ofs << "(";
+                cout << "(";
+                for( int k = 0; k < connection_patterns[ idxOptPattern ][ j ].size(); ++k ) {
+                    cout << connection_patterns[ idxOptPattern ][ j ][ k ];
+                    ofs << connection_patterns[ idxOptPattern ][ j ][ k ];
+                    if( k != connection_patterns[ idxOptPattern ][ j ].size() - 1 ) {
+                        ofs << ",";
+                        cout << ",";
+                    }
+                }
+                ofs << ")->" << idOpt[ j ] << " ";
+                cout << ")->" << idOpt[ j ] << " ";
+
+            }
         }
+
 
         cout << "Done." << endl;
-
-
 
 
         //logTracking.renovation( TrackingProcessLogger::Start );
