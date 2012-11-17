@@ -702,7 +702,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             cout << " time=" << time << ", nClass=" << nClass << ", nTrj=" << nTrj << endl;
 
             {
-                img = Scalar( 0, 0, 0 );
+                img = Scalar( 255, 255, 255 );
 
                 map<int,PosXYTID>::iterator itPos = itTrjIdxToPos->second.begin();
                 for( int i = 0; i < nTrj; ++i, ++itPos ) {
@@ -854,25 +854,25 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         //
         // Output process information of clustering
-//        {
-//            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-//            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
-//            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-//                            , timeTracking//tableLUMSlice.rbegin()->first
-//                            , timeEarliestPEPMap
-//                            , &sampler
-//                            , nSample
-//                            , &trajectoriesClustered
-//#ifdef WINDOWS_OS
-//			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
-//#endif
-//#ifdef LINUX_OS
-//			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
-//#endif
-//                            , "before-integration"//oss.str()
-//                            , NULL
-//                            , &plotParam );
-//        }
+        {
+            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
+            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
+            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+                           , timeTracking//tableLUMSlice.rbegin()->first
+                            , timeEarliestPEPMap
+                            , &sampler
+                            , nSample
+                            , &trajectoriesClustered
+#ifdef WINDOWS_OS
+			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+#endif
+#ifdef LINUX_OS
+			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
+#endif
+                            , "before-integration"//oss.str()
+                            , NULL
+                            , &plotParam );
+        }
 
 
         cout << "Integrating Clusters that have similar shape..." << endl;
@@ -1411,13 +1411,13 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             vector< vector< vector<int> > > connection_patterns;
             for( int i = 0; i < combination_highscored.size(); ++i ) {
                 vector< vector<int> > init( combination_highscored[ i ].size() );
-                for( int j = 0; j < combination_highscored[ i ].size(); ++j ) {
+                set<int> idxPrevResultCluster;
+                for( int i = 0; i < resultTrajectory.size(); ++ i ) {
+                    idxPrevResultCluster.insert( nCluster + i );
+                }
+               for( int j = 0; j < combination_highscored[ i ].size(); ++j ) {
                     init[ j ].push_back( combination_highscored[ i ][ j ] );
                     int k = 0;
-                    set<int> idxPrevResultCluster;
-                    for( int i = 0; i < resultTrajectory.size(); ++ i ) {
-                        idxPrevResultCluster.insert( nCluster + k );
-                    }
                     for( map<int,CTrajectory>::iterator itResult = resultTrajectory.begin(); itResult != resultTrajectory.end(); ++itResult, ++k ) {
                         if( areCoherent( trajectoriesAveraged[ combination_highscored[ i ][ j ] ].front()
                                        , itResult->second.front(), clusteringParam.thConnect ) == 0.0 ) {
@@ -1426,13 +1426,12 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                             sort( init[ j ].begin(), init[ j ].end() );
                         }
                     }
-                    for( set<int>::iterator it = idxPrevResultCluster.begin(); it != idxPrevResultCluster.end(); ++it ) {
-                        // Add the result trajectory which didn't match with any trajectories in trajectoriesAveraged.
-                        vector<int> cluster( 1, *it );
-                        init.push_back( cluster );
-                    }
                 }
-
+                for( set<int>::iterator it = idxPrevResultCluster.begin(); it != idxPrevResultCluster.end(); ++it ) {
+                    // Add the result trajectory which didn't match with any trajectories in trajectoriesAveraged.
+                    vector<int> cluster( 1, *it );
+                    init.push_back( cluster );
+                }
                 connect( &connection_patterns, init, combination_highscored[ i ], nCluster, sizeTableConnectable, tableConnectable );
             }
             sort( connection_patterns.begin(), connection_patterns.end() );
