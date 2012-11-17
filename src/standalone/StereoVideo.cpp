@@ -584,7 +584,7 @@ void StereoVideo::create_pepmap()
         //    }
         //}
 
-        GaussianBlur( occupancy, occupancy, Size( 7, 7 ), 1.9 );
+        GaussianBlur( occupancy, occupancy, Size( 7, 7 ), 1.8 );
         for( int row = 0; row < occupancy.rows; ++row ) {
             for( int col = 0; col < occupancy.cols; ++col ) {
                 if( occupancy.at<unsigned short>( row, col ) < 55/*10*/ ) {

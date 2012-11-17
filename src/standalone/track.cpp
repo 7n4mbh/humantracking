@@ -220,17 +220,32 @@ double areCoherent( TrajectoryElement& trj1, TrajectoryElement& trj2, double thr
         return -0.4;
     }
 
-    // 共通する全ての時刻で距離がthreshold以下ならば十分に近いと判断
+    // 共通する全ての時刻で距離を計算が
     TrajectoryElement::iterator it1, it2;
     it1 = trj1.find( PosXYT( 0.0, 0.0, timeBegin ) );
     it2 = trj2.find( PosXYT( 0.0, 0.0, timeBegin ) );
+    vector<double> distance;
+    double distance_average = 0.0;
     for( ; it1 != trj1.end() && it1->t <= timeEnd && it2 != trj2.end() && it2->t <= timeEnd; ++it1, ++it2 ) {
         double dx = it1->x - it2->x;
         double dy = it1->y - it2->y;
-        if( sqrt( dx * dx + dy * dy ) > threshold ) {
-            return -1.0;
-        }
+        double dist = sqrt( dx * dx + dy * dy );
+        distance.push_back( dist );
+        distance_average += dist;
+        //if( sqrt( dx * dx + dy * dy ) > threshold ) {
+        //    return -1.0;
+        //}
     }
+    distance_average /= (double)distance.size();
+
+    // 外れ値を除くすべての距離がthreshold以下ならば十分に近いと判断
+    for( int i = 0 ; i < distance.size(); ++i ) {
+        if( ( distance[ i ] - distance_average ) < 0.2 ) {
+            if( distance[ i ] > threshold ) {
+                return -1.0;
+            }
+        }
+    } 
 
     return 0.0;
 }
@@ -1399,12 +1414,22 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 for( int j = 0; j < combination_highscored[ i ].size(); ++j ) {
                     init[ j ].push_back( combination_highscored[ i ][ j ] );
                     int k = 0;
+                    set<int> idxPrevResultCluster;
+                    for( int i = 0; i < resultTrajectory.size(); ++ i ) {
+                        idxPrevResultCluster.insert( nCluster + k );
+                    }
                     for( map<int,CTrajectory>::iterator itResult = resultTrajectory.begin(); itResult != resultTrajectory.end(); ++itResult, ++k ) {
                         if( areCoherent( trajectoriesAveraged[ combination_highscored[ i ][ j ] ].front()
                                        , itResult->second.front(), clusteringParam.thConnect ) == 0.0 ) {
                             init[ j ].push_back( nCluster + k );
+                            idxPrevResultCluster.erase( nCluster + k );
                             sort( init[ j ].begin(), init[ j ].end() );
                         }
+                    }
+                    for( set<int>::iterator it = idxPrevResultCluster.begin(); it != idxPrevResultCluster.end(); ++it ) {
+                        // Add the result trajectory which didn't match with any trajectories in trajectoriesAveraged.
+                        vector<int> cluster( 1, *it );
+                        init.push_back( cluster );
                     }
                 }
 
