@@ -287,6 +287,8 @@ void ResultRenderer2::Render()
             //itTimeStamp_SerialNuer = bufTimeStamp.erase( itTimeStamp_SerialNumber );
         }
 
+	bufTimeStamp.erase( bufTimeStamp.begin(), itTimeStamp_SerialNumber );
+
         // ìÆâÊèoóÕ
         Mat tmp( image_occupancy_record.size(), CV_8UC3 );
         Point2d center( image_occupancy_record.cols * 0.5, image_occupancy_record.rows * 0.5 );
@@ -349,6 +351,5 @@ void ResultRenderer2::Render()
         time_video = time_start + ( ( 1000000ULL  * (unsigned long long)frame ) / (unsigned long long)fps );
     }
 
-    bufTimeStamp.erase( bufTimeStamp.begin(), itTimeStamp_SerialNumber );
     flgFirst = false;
 }
