@@ -58,9 +58,11 @@ private:
     cv::Mat image_occupancy_record;
     std::map<unsigned long long,cv::Mat> image_camera_record;
     std::map<int, std::map<unsigned long long,cv::Mat> > image_silhouette;
+    std::map<int,cv::Mat> image_silhouette2;
     cv::VideoWriter pepmapVideoWriter;
     cv::VideoWriter cameraVideoWriter;
     std::map<int,cv::VideoWriter> silhouetteVideoWriter;
+    std::map<int,cv::VideoWriter> silhouetteVideoWriter2;
 
 public:
     ResultRenderer2();

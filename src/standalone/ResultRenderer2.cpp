@@ -221,21 +221,38 @@ void ResultRenderer2::Render()
                     const int id = it_id_to_count->first;
                     if( image_silhouette.find( id ) == image_silhouette.end() ) {
                         image_silhouette[ id ];
+                        image_silhouette2[ id ];
                         
-                        ostringstream oss;
+                        {
+                            ostringstream oss;
 #ifdef WINDOWS_OS
-                        oss << strVideoFilePath << "result_silhouette\\silhouette_" << id << ".avi";
+                            oss << strVideoFilePath << "result_silhouette\\silhouette_" << id << ".avi";
 #endif
 #ifdef LINUX_OS
-                        oss << strVideoFilePath << "result_silhouette/silhouette_" << id << ".avi";
+                            oss << strVideoFilePath << "result_silhouette/silhouette_" << id << ".avi";
 #endif
-                        if( !silhouetteVideoWriter[ id ].open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( (int)( scale_m2px_silhouette * roi_height ) * 2, (int)( scale_m2px_silhouette * 3.0 ) * 2 ) ) ) {
-                            cerr << "Couldn't open " << oss.str() << "." <<  endl;
-                            exit( 1 );
-                        }   
+                            if( !silhouetteVideoWriter[ id ].open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( (int)( scale_m2px_silhouette * roi_height ) * 2, (int)( scale_m2px_silhouette * 3.0 ) * 2 ) ) ) {
+                                cerr << "Couldn't open " << oss.str() << "." <<  endl;
+                                exit( 1 );
+                            }   
+                        }
+                        {
+                            ostringstream oss;
+#ifdef WINDOWS_OS
+                            oss << strVideoFilePath << "result_silhouette\\silhouette2_" << id << ".avi";
+#endif
+#ifdef LINUX_OS
+                            oss << strVideoFilePath << "result_silhouette/silhouette2_" << id << ".avi";
+#endif
+                            if( !silhouetteVideoWriter2[ id ].open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( (int)( scale_m2px_silhouette * roi_height ) * 2, (int)( scale_m2px_silhouette * 3.0 ) * 2 ) ) ) {
+                                cerr << "Couldn't open " << oss.str() << "." <<  endl;
+                                exit( 1 );
+                            }   
+                        }  
                     }
                     if( image_silhouette[ id ].find( serialNumber ) == image_silhouette[ id ].end() ) {
                         image_silhouette[ id ][ serialNumber ].create( it_id_to_count->second.size(), CV_8U );
+                        image_silhouette2[ id ].create( it_id_to_count->second.size(), CV_8U );
                     }
 
                     Mat tmp( it_id_to_count->second.size(), it_id_to_count->second.type() );
@@ -244,12 +261,13 @@ void ResultRenderer2::Render()
                         for( int row = 0; row < tmp.rows; ++row ) {
                             image_silhouette[ id ][ serialNumber ].at<unsigned char>( row, col ) 
                                 = ( tmp.at<unsigned short>( row, col ) > 3 ) ? 255 : 0;
+                            image_silhouette2[ id ] = image_silhouette[ id ][ serialNumber ].clone();
                         }
                     }
                     
                 }
             }
-            count_silhouette.clear();
+            //count_silhouette.clear();
 
 
             // 利用済みのデータを削除
@@ -319,6 +337,8 @@ void ResultRenderer2::Render()
                 copy( image_silhouette_record, w, h, tmp, 0, 0, w, h );
             }
             silhouetteVideoWriter[ id ].write( image_silhouette_record );
+            cvtColor( image_silhouette2[ id ], tmp, CV_GRAY2BGR );
+            silhouetteVideoWriter2[ id ].write( tmp );
         }
 
         imshow( "Tracking Result", image_occupancy_record );
