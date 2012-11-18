@@ -177,6 +177,8 @@ void ResultRenderer2::Render()
 
             // カメラ画像上に人物領域を描画。Silhouette作成用のデータも作る。
             map<int,Mat> count_silhouette;
+            const int silhouette_width = (int)( scale_m2px_silhouette * roi_height );
+            const int silhouette_height = (int)( scale_m2px_silhouette * 3.0 );
             for( int x = 0; x < itGeometryMap->second.geometry.cols; ++x ) {
                 for( int y = 0; y < itGeometryMap->second.geometry.rows; ++y ) {
                     const int keyval = itGeometryMap->second.geometry.at<unsigned short>( y, x );
@@ -203,13 +205,15 @@ void ResultRenderer2::Render()
 
                     if( itSilhouetteMap != bufSilhouette.end() && id_assigned >= 1 ) {
                         if( count_silhouette.find( id_assigned ) == count_silhouette.end() ) {
-                            count_silhouette[ id_assigned ] = Mat::zeros( (int)( scale_m2px_silhouette * 3.0 ), (int)( scale_m2px_silhouette * roi_height ), CV_16U );
+                            count_silhouette[ id_assigned ] = Mat::zeros( silhouette_height, silhouette_width, CV_16U );
                         }
                         const int keyval = itSilhouetteMap->second.geometry.at<unsigned short>( y, x );
-                        const int col_on_silhouette = ( keyval - 1 ) % count_silhouette[ id_assigned ].cols;
-                        const int row_on_silhouette = ( keyval - 1 ) / count_silhouette[ id_assigned ].cols;
-                        count_silhouette[ id_assigned ].at<unsigned short>( row_on_silhouette, col_on_silhouette )
-                            = count_silhouette[ id_assigned ].at<unsigned short>( row_on_silhouette, col_on_silhouette ) + 1;
+                        const int col_on_silhouette = ( keyval - 1 ) % silhouette_width;//p_count_silhouette[ id_assigned ]->cols;
+                        const int row_on_silhouette = ( keyval - 1 ) / silhouette_width;//p_count_silhouette[ id_assigned ]->cols;
+                        if( col_on_silhouette >= 0 && col_on_silhouette < silhouette_width && row_on_silhouette >= 0 && row_on_silhouette < silhouette_height ) {
+                            count_silhouette[ id_assigned ].at<unsigned short>( row_on_silhouette, col_on_silhouette )
+                                = count_silhouette[ id_assigned ].at<unsigned short>( row_on_silhouette, col_on_silhouette ) + 1;
+                        }
                     }
                 }
             }
@@ -250,24 +254,20 @@ void ResultRenderer2::Render()
                         }  
                     }
                     if( image_silhouette[ id ].find( serialNumber ) == image_silhouette[ id ].end() ) {
-                        image_silhouette[ id ][ serialNumber ].create( it_id_to_count->second.size(), CV_8U );
-                        image_silhouette2[ id ].create( it_id_to_count->second.size(), CV_8U );
+                        image_silhouette[ id ][ serialNumber ].create( silhouette_height, silhouette_width, CV_8U );
+                        image_silhouette2[ id ].create( silhouette_height, silhouette_width, CV_8U );
                     }
 
-                    Mat tmp( it_id_to_count->second.size(), it_id_to_count->second.type() );
-                    GaussianBlur( it_id_to_count->second, tmp, Size( 5, 5 ), 0.75 );
-                    for( int col = 0; col < tmp.cols; ++col ) {
-                        for( int row = 0; row < tmp.rows; ++row ) {
+                    GaussianBlur( count_silhouette[ id ], count_silhouette[ id ], Size( 5, 5 ), 0.75 );
+                    for( int col = 0; col < count_silhouette[ id ].cols; ++col ) {
+                        for( int row = 0; row < count_silhouette[ id ].rows; ++row ) {
                             image_silhouette[ id ][ serialNumber ].at<unsigned char>( row, col ) 
-                                = ( tmp.at<unsigned short>( row, col ) > 3 ) ? 255 : 0;
+                                = ( count_silhouette[ id ].at<unsigned short>( row, col ) > 3 ) ? 255 : 0;
                             image_silhouette2[ id ] = image_silhouette[ id ][ serialNumber ].clone();
                         }
                     }
-                    
                 }
             }
-            //count_silhouette.clear();
-
 
             // 利用済みのデータを削除
             if( itPEPMap != bufPEPMap.end() ) {
