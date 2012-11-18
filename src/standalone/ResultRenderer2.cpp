@@ -116,8 +116,9 @@ void ResultRenderer2::Render()
         frame = 0;
     }
 
+    set<string>::iterator itTimeStamp_SerialNumber;
     while( time_video <= time_render_end ) {
-        for( set<string>::iterator itTimeStamp_SerialNumber = bufTimeStamp.begin(); itTimeStamp_SerialNumber != bufTimeStamp.end(); ) {
+        for( itTimeStamp_SerialNumber = bufTimeStamp.begin(); itTimeStamp_SerialNumber != bufTimeStamp.end(); ++itTimeStamp_SerialNumber ) {
             int idxDelimiter = itTimeStamp_SerialNumber->find( '_' );
             string strTimeStamp = itTimeStamp_SerialNumber->substr( 0, idxDelimiter );
             string strSerialNumber = itTimeStamp_SerialNumber->substr( idxDelimiter + 1, itTimeStamp_SerialNumber->length() - idxDelimiter - 1 );
@@ -265,7 +266,7 @@ void ResultRenderer2::Render()
                 bufSilhouette.erase( itSilhouetteMap );
             }
 
-            itTimeStamp_SerialNumber = bufTimeStamp.erase( itTimeStamp_SerialNumber );
+            //itTimeStamp_SerialNuer = bufTimeStamp.erase( itTimeStamp_SerialNumber );
         }
 
         // ìÆâÊèoóÕ
@@ -328,5 +329,6 @@ void ResultRenderer2::Render()
         time_video = time_start + ( ( 1000000ULL  * (unsigned long long)frame ) / (unsigned long long)fps );
     }
 
+    bufTimeStamp.erase( bufTimeStamp.begin(), itTimeStamp_SerialNumber );
     flgFirst = false;
 }
