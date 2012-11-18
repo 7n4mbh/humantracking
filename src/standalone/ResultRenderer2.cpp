@@ -116,9 +116,8 @@ void ResultRenderer2::Render()
         frame = 0;
     }
 
-    set<string>::iterator itTimeStamp_SerialNumber;
     while( time_video <= time_render_end ) {
-        for( itTimeStamp_SerialNumber = bufTimeStamp.begin(); itTimeStamp_SerialNumber != bufTimeStamp.end(); ++itTimeStamp_SerialNumber ) {
+        for( set<string>::iterator  itTimeStamp_SerialNumber = bufTimeStamp.begin(); itTimeStamp_SerialNumber != bufTimeStamp.end(); ) {
             int idxDelimiter = itTimeStamp_SerialNumber->find( '_' );
             string strTimeStamp = itTimeStamp_SerialNumber->substr( 0, idxDelimiter );
             string strSerialNumber = itTimeStamp_SerialNumber->substr( idxDelimiter + 1, itTimeStamp_SerialNumber->length() - idxDelimiter - 1 );
@@ -284,10 +283,8 @@ void ResultRenderer2::Render()
                 bufSilhouette.erase( itSilhouetteMap );
             }
 
-            //itTimeStamp_SerialNuer = bufTimeStamp.erase( itTimeStamp_SerialNumber );
+            bufTimeStamp.erase( itTimeStamp_SerialNumber++ );
         }
-
-	bufTimeStamp.erase( bufTimeStamp.begin(), itTimeStamp_SerialNumber );
 
         // ìÆâÊèoóÕ
         Mat tmp( image_occupancy_record.size(), CV_8UC3 );
