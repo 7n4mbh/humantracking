@@ -14,7 +14,7 @@
 #include "../humantracking.h"
 #include "track.h"
 //#include "TrackingResultResources.h"
-#include "ResultRenderer.h"
+#include "ResultRenderer2.h"
 #include "StereoVideo.h"
 
 #ifdef LINUX_OS
@@ -38,8 +38,8 @@ const int stereo_width = 512, stereo_height = 384;
 bool flgOutputTrackingProcessData2Files = true;
 
 //TrackingResultResources resTracking;
-ResultRenderer resultRenderer;
-
+ResultRenderer2 resultRenderer;
+/*
 inline void copy( Mat& img_dst, int dst_x, int dst_y, Mat& img_src, int src_x, int src_y, int width, int height )
 {
     //cout << "copy(): "
@@ -70,7 +70,7 @@ inline void copy( Mat& img_dst, int dst_x, int dst_y, Mat& img_src, int src_x, i
 	//cout << " done." << endl;
     }
 }
-
+*/
 void getfilename( const string src, string* p_str_path, string* p_str_name, string* p_str_noextname )
 {
     int idxExt = src.rfind( ".", src.npos );
@@ -207,20 +207,22 @@ int main( int argc, char *argv[] )
     resTracking.clear();
     resTracking.EnableViewWindow();
 */  
-    map<unsigned long long,string> result_cameravideo_filename;
-    for( int i = 0; i < serialNumber.size(); ++i ) {
-        ostringstream oss, oss2;
-        oss << strStereoVideoFilePath << "Segmentation_" << serialNumber[ i ] << ".avi"; 
-        result_cameravideo_filename[ serialNumber[ i ] ] = oss.str();
-    }
-    resultRenderer.init( strStereoVideoFilePath + "result_pepmap.avi", result_cameravideo_filename );
+    //map<unsigned long long,string> result_cameravideo_filename;
+    //for( int i = 0; i < serialNumber.size(); ++i ) {
+    //    ostringstream oss, oss2;
+    //    oss << strStereoVideoFilePath << "Segmentation_" << serialNumber[ i ] << ".avi"; 
+    //    result_cameravideo_filename[ serialNumber[ i ] ] = oss.str();
+    //}
+    const int fps = 30;
+
+    resultRenderer.init( strStereoVideoFilePath + "result_pepmap.avi", strStereoVideoFilePath + "segmentation.avi", fps );
 
     Mat image_record( 960, 1280, CV_8UC3 );
     Mat image_depth_record( stereo_height * 2, stereo_width * 2, CV_8U );
     Mat image_occupancy_record( (int)( scale_m2px * roi_height ) * 2, (int)( scale_m2px * roi_width ) * 2, CV_8U );
-    const int fps = 30;
+    Mat image_occupancy_record2( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
 
-    VideoWriter video_camera, video_depth, video_occupancy;
+    VideoWriter video_camera, video_depth, video_occupancy, video_occupancy2;
     {
         ostringstream oss;
         oss << strStereoVideoFilePath << "integrated_cameraview.avi";
@@ -241,6 +243,14 @@ int main( int argc, char *argv[] )
         ostringstream oss;
         oss << strStereoVideoFilePath << "integrated_occupancymap.avi";
         if( !video_occupancy.open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( image_occupancy_record.size().width, image_occupancy_record.size().height ) ) ) {
+            cerr << "Couldn't open " <<  oss.str() << "." <<  endl;
+            exit( 1 );
+        }
+    }
+    {
+        ostringstream oss;
+        oss << strStereoVideoFilePath << "integrated_occupancymap2.avi";
+        if( !video_occupancy2.open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( image_occupancy_record2.size().width, image_occupancy_record2.size().height ) ) ) {
             cerr << "Couldn't open " <<  oss.str() << "." <<  endl;
             exit( 1 );
         }
@@ -277,9 +287,10 @@ int main( int argc, char *argv[] )
 
                 if( flgPlaying ) {
                     // Create an occupancy map
-		    cout << "create_pepmap()...";
+                    cout << "create_pepmap()...";
                     stereoVideo[ i ].create_pepmap();
                     cout << "done." << endl;
+                    image_occupancy_record2 = stereoVideo[ i ].image_occupancy.clone();
 
                     //resTracking.UpdateView();
 
@@ -303,6 +314,13 @@ int main( int argc, char *argv[] )
                     geometry.height = stereo_height;
                     geometry.geometry = stereoVideo[ i ].geometry.clone();
 
+                    GeometryMapInfoEx silhouette;
+                    silhouette.serialNumber = serialNumber[ i ];
+                    silhouette.timeStamp = timestamp;
+                    silhouette.width = stereo_width;
+                    silhouette.height = stereo_height;
+                    silhouette.geometry = stereoVideo[ i ].silhouette.clone();
+
                     CameraImageInfoEx camera;
                     camera.serialNumber = serialNumber[ i ];
                     camera.timeStamp = timestamp;
@@ -313,6 +331,7 @@ int main( int argc, char *argv[] )
                     resultRenderer.AddPEPMapInfo( pepmap );
                     resultRenderer.AddCameraImageInfo( camera );
                     resultRenderer.AddGeometryMapInfo( geometry );
+                    resultRenderer.AddSilhouetteMapInfo( silhouette );
                     
 
                     for( ; ; ) {
@@ -362,7 +381,7 @@ int main( int argc, char *argv[] )
             copy( image_record, 0, 480, stereoVideo[ 2 ].image, 640, 0, 640, 480 );
             copy( image_record, 640, 480, stereoVideo[ 3 ].image, 640, 0, 640, 480 );
             //cout << "copy done." << endl;
-	    imshow( "Record", image_record );
+            imshow( "Record", image_record );
 	    //cout << "imshow( \"Record\", image_record );" << endl;
             video_camera.write( image_record );
         }
@@ -392,6 +411,11 @@ int main( int argc, char *argv[] )
             Mat tmp( image_occupancy_record.size(), CV_8UC3 );
             cvtColor( image_occupancy_record, tmp, CV_GRAY2BGR );
             video_occupancy.write( tmp/*image_occupancy_record*/ );
+
+            tmp.create( image_occupancy_record2.size(), CV_8UC3 );
+            cvtColor( image_occupancy_record2, tmp, CV_GRAY2BGR );
+            video_occupancy2.write( tmp );
+
         }
 	//cout << "imshow( \"Occupancy map\", image_occupancy_record );" << endl;
 

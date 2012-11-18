@@ -78,4 +78,29 @@ inline unsigned long long getTimeStamp()
 #endif
 }
 
+inline void copy( cv::Mat& img_dst, int dst_x, int dst_y, cv::Mat& img_src, int src_x, int src_y, int width, int height )
+{
+    //cout << "copy(): "
+    //     << "width=" << width
+    //     << ", height=" << height 
+    //     << ", img_src.size().width=" << img_src.size().width
+    //     << ", img_src.size().heigh=" << img_src.size().height
+    //     << ", img_dst.size().width=" << img_dst.size().width
+    //     << ", img_dst.size().height=" << img_dst.size().height
+    //     << endl;
+
+    if( img_src.size().width < width || img_src.size().height < height ) {
+        return;
+    }
+
+    for( int x = 0; x < width; ++x ) {
+        for( int y = 0; y < height; ++y ) {
+            for ( int channel = 0; channel < img_dst.channels(); ++channel ) {
+                *(unsigned char*)( img_dst.data + ( dst_y + y ) * img_dst.step + ( dst_x + x ) * img_dst.channels() + channel )
+                    = *(unsigned char*)( img_src.data + ( src_y + y ) * img_src.step + ( src_x + x ) * img_src.channels() + channel );
+            }
+        }
+    }
+}
+
 #endif

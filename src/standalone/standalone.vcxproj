@@ -161,7 +161,7 @@
     <ClCompile Include="MakeLUMSlice.cpp" />
     <ClCompile Include="PlotCalculationProcess.cpp" />
     <ClCompile Include="RenovateTrajectory.cpp" />
-    <ClCompile Include="ResultRenderer.cpp" />
+    <ClCompile Include="ResultRenderer2.cpp" />
     <ClCompile Include="StereoVideo.cpp" />
     <ClCompile Include="track.cpp" />
     <ClCompile Include="Trajectory.cpp" />
@@ -174,7 +174,7 @@
     <ClInclude Include="ProbSampleReplace.h" />
     <ClInclude Include="pttype.h" />
     <ClInclude Include="RenovateTrajectory.h" />
-    <ClInclude Include="ResultRenderer.h" />
+    <ClInclude Include="ResultRenderer2.h" />
     <ClInclude Include="StereoVideo.h" />
     <ClInclude Include="track.h" />
     <ClInclude Include="Trajectory.h" />

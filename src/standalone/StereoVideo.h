@@ -20,6 +20,7 @@ public:
     cv::Mat image_occupancy;
     cv::Mat occupancy;
     cv::Mat geometry;
+    cv::Mat silhouette;
 
 private:
     FlyCapture2::CameraInfo camInfo;

@@ -507,7 +507,7 @@ void StereoVideo::create_pepmap()
     //Mat occupancy_2 = Mat::zeros( (int)( 3.0 * scale_m2px ), (int)( roi_height * scale_m2px ), CV_16U );
     //Mat occupancy_3 = Mat::zeros( (int)( roi_height * scale_m2px ), (int)( roi_width * scale_m2px ), CV_16U );
     /*Mat*/ geometry = Mat::zeros( height, width, CV_16U );
-    //Mat geometry_2 = Mat::zeros( height, width, CV_16U );
+    /*Mat*/ silhouette = Mat::zeros( height, width, CV_16U );
     Mat disparitymap = Mat::zeros( height, width, CV_16U );
     int row, col;
     if( 1/*!flgNullPEPMap*/ ) {
@@ -522,7 +522,7 @@ void StereoVideo::create_pepmap()
                     || abs( img_depth.at<float>( y, x ) - img_background.at<float>( y, x ) ) < 0.2f ) {
                     img_depth.at<float>( y, x ) = 0.0f;
                     geometry.at<unsigned short>( y, x ) = 0;
-                    //geometry_2.at<unsigned short>( y, x ) = 0;
+                    silhouette.at<unsigned short>( y, x ) = 0;
                     disparitymap.at<unsigned short>( y, x ) = 0xff00;
                 } else {
                     disparity = *(unsigned short*)((unsigned char*)depthImage16.data + depthImage16.rowinc * y + x * 2 );
@@ -552,14 +552,14 @@ void StereoVideo::create_pepmap()
 
                         //col = row; // X axis is projected on the horizontal axis of the geometry map2.
                         //row = (int)( occupancy_2.rows - scale_m2px * pv_z ); // Z axis is projeted on the vertical axis of the geometry map2.
-                        //col = (int)( scale_m2px_silhouette * ( ( pv_x - roi_x ) + roi_height / 2.0f ) ); // X axis is projected on the horizontal axis of the geometry map2.
-                        //row = (int)( ( 3.0 * scale_m2px_silhouette ) - scale_m2px_silhouette * pv_z ); // Z axis is projeted on the vertical axis of the geometry map2.
-                        //if( row >= 0 && row < ( 3.0 * scale_m2px_silhouette ) && col >= 0 && col < ( scale_m2px_silhouette * roi_height ) ) {
-                        //    //occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
-                        //    geometry_2.at<unsigned short>( y, x ) = row * ( scale_m2px_silhouette * roi_height ) + col + 1;
-                        //} else {
-                        //    geometry_2.at<unsigned short>( y, x ) = 0;
-                        //}
+                        col = (int)( scale_m2px_silhouette * ( ( pv_x - roi_x ) + roi_height / 2.0f ) ); // X axis is projected on the horizontal axis of the geometry map2.
+                        row = (int)( ( 3.0 * scale_m2px_silhouette ) - scale_m2px_silhouette * pv_z ); // Z axis is projeted on the vertical axis of the geometry map2.
+                        if( row >= 0 && row < ( 3.0 * scale_m2px_silhouette ) && col >= 0 && col < ( scale_m2px_silhouette * roi_height ) ) {
+                            //occupancy_2.at<unsigned short>( row, col ) = occupancy_2.at<unsigned short>( row, col ) + 1;
+                            silhouette.at<unsigned short>( y, x ) = row * ( scale_m2px_silhouette * roi_height ) + col + 1;
+                        } else {
+                            silhouette.at<unsigned short>( y, x ) = 0;
+                        }
 
                         //col = (int)( scale_m2px * ( ( pv_x - roi_x ) + roi_width / 2.0f ) );
                         //if( row >= 0 && row < occupancy_3.rows && col >= 0 && col < occupancy_3.cols ) {
@@ -569,7 +569,7 @@ void StereoVideo::create_pepmap()
                     } else {
                         img_depth.at<float>( y, x ) = 0.0f;
                         geometry.at<unsigned short>( y, x ) = 0;
-                        //geometry_2.at<unsigned short>( y, x ) = 0;
+                        silhouette.at<unsigned short>( y, x ) = 0;
                         disparitymap.at<unsigned short>( y, x ) = 0xff00;
                     }
                 }
@@ -596,7 +596,14 @@ void StereoVideo::create_pepmap()
 
     image_occupancy.create( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
     image_depth.create( height, width, CV_8U );
-    occupancy.convertTo( image_occupancy, CV_8U );
+
+    {
+        Mat tmp( image_occupancy.size(), CV_8U );
+        occupancy.convertTo( tmp, CV_8U );
+        Point2d center( image_occupancy.cols * 0.5, image_occupancy.rows * 0.5 );
+        const Mat affine_matrix = getRotationMatrix2D( center, 90.0, 1.0 );
+        warpAffine( tmp, image_occupancy, affine_matrix, image_occupancy.size(), INTER_LINEAR, BORDER_CONSTANT, Scalar::all( 255 ) );
+    }
     img_depth.convertTo( image_depth, CV_8U, 25.0, 0.0 );
 
     // Debug Code!
