@@ -263,9 +263,9 @@ void ResultRenderer2::Render()
                         for( int row = 0; row < count_silhouette[ id ].rows; ++row ) {
                             image_silhouette[ id ][ serialNumber ].at<unsigned char>( row, col ) 
                                 = ( count_silhouette[ id ].at<unsigned short>( row, col ) > 3 ) ? 255 : 0;
-                            image_silhouette2[ id ] = image_silhouette[ id ][ serialNumber ].clone();
                         }
                     }
+                    //image_silhouette2[ id ] = image_silhouette[ id ][ serialNumber ].clone();
                 }
             }
 
@@ -317,24 +317,29 @@ void ResultRenderer2::Render()
             const int w = (int)( scale_m2px_silhouette * roi_height );
             const int h = (int)( scale_m2px_silhouette * 3.0 );
             image_silhouette_record = Mat::zeros( h * 2, w * 2, CV_8UC3 );
+            image_silhouette2[ id ] = Mat::zeros( stereo_height, stereo_width, CV_8U );
             tmp.create( h, w, CV_8UC3 );
             map<unsigned long long,Mat>::iterator it;
             if( ( it = img.find( 7420008 ) ) != img.end() ) {
                 cvtColor( it->second, tmp, CV_GRAY2BGR );
                 copy( image_silhouette_record, 0, 0, tmp, 0, 0 ,w, h );
+                image_silhouette2[ id ] += it->second;
             }
             if( ( it = img.find( 7420015 ) ) != img.end() ) {
                 cvtColor( it->second, tmp, CV_GRAY2BGR );
                 copy( image_silhouette_record,  w, 0, tmp, 0, 0, w, h );
+                image_silhouette2[ id ] += it->second;
             }
             if( ( it = img.find( 7140019 ) ) != img.end() ) {
                 cvtColor( it->second, tmp, CV_GRAY2BGR );
                 copy( image_silhouette_record, 0, h, tmp, 0, 0, w, h );
+                image_silhouette2[ id ] += it->second;
             }
             if( ( it = img.find( 7420005 ) ) != img.end() ) {
                 cvtColor( it->second, tmp, CV_GRAY2BGR );
                 copy( image_silhouette_record, w, h, tmp, 0, 0, w, h );
-            }
+                 image_silhouette2[ id ] += it->second;
+           }
             silhouetteVideoWriter[ id ].write( image_silhouette_record );
             cvtColor( image_silhouette2[ id ], tmp, CV_GRAY2BGR );
             silhouetteVideoWriter2[ id ].write( tmp );
