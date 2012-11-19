@@ -515,7 +515,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                         , &storageLUM[ tk ]
                         , &commonParam
                         , &extractlumParam
-                        , false );
+                        , true/*false*/ );
             addedTime.push_back( tk );
 
         }
@@ -1798,7 +1798,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     pos.x = ( itNext->x - it->x ) / ( (double)( itNext->t - it->t ) * 1.0e-6 ) * ( (double)commonParam.intervalTrajectory * 1.0e-6 ) + it->x;
                     pos.y = ( itNext->y - it->y ) / ( (double)( itNext->t - it->t ) * 1.0e-6 ) * ( (double)commonParam.intervalTrajectory * 1.0e-6 ) + it->y;
                     pos.t = it->t + commonParam.intervalTrajectory;
-                    pos.ID = -1;
+                    pos.ID = nCluster + 1;
                     it = itTrj->insert( it, pos );
                 }
                 ++it;
@@ -1879,7 +1879,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 if( itPos != itResult->second.front().end() ) {
                     (*p_result)[ time ][ itResult->first ] = Point2d( itPos->x, itPos->y );
 
-                    if( itPos->ID >= 0 ) {
+                    if( itPos->ID < nCluster) {
                         set<int>::iterator itKeyval = trj_time_to_hash_where_occupied[ itPos->ID ][ time ].begin();
                         for( ; itKeyval != trj_time_to_hash_where_occupied[ itPos->ID ][ time ].end(); ++itKeyval ) {
                             const int cols = (int)( scale_m2px * roi_width );
