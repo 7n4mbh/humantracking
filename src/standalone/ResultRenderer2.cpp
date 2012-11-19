@@ -117,7 +117,10 @@ void ResultRenderer2::Render()
     }
 
     while( time_video <= time_render_end ) {
+	cout << "time_video=" << time_video << endl << flush;
+	bool flgOccupancyMapUpdated = false;
         for( set<string>::iterator  itTimeStamp_SerialNumber = bufTimeStamp.begin(); itTimeStamp_SerialNumber != bufTimeStamp.end(); ) {
+	    cout << "itTimeStamp_SerialNumber=" << *itTimeStamp_SerialNumber << endl;
             int idxDelimiter = itTimeStamp_SerialNumber->find( '_' );
             string strTimeStamp = itTimeStamp_SerialNumber->substr( 0, idxDelimiter );
             string strSerialNumber = itTimeStamp_SerialNumber->substr( idxDelimiter + 1, itTimeStamp_SerialNumber->length() - idxDelimiter - 1 );
@@ -129,6 +132,9 @@ void ResultRenderer2::Render()
             if( timestamp > time_video ) {
                 break;
             }
+	    
+	    cout << "timestamp=" << timestamp << ", serialNumber=" << serialNumber << endl << flush;
+		 
 
             // 時刻timestamp[usec],シリアルナンバーserialNumberのpepmap, cam_image, geometry, silhouetteのレンダリングを行う
             map<int,Point2d> posHuman = trackingResult.lower_bound( timestamp )->second;
@@ -139,21 +145,27 @@ void ResultRenderer2::Render()
             map<string,GeometryMapInfoEx>::iterator itSilhouetteMap = bufSilhouette.find( *itTimeStamp_SerialNumber );
 
             // カメラ画像更新
+	    cout << "Updating a camera image..." << flush;
             if( itCameraImage != bufCameraImage.end() ) {
                 image_camera_record[ serialNumber ].create( itCameraImage->second.image.size(), CV_8UC3 );
                 cvtColor( itCameraImage->second.image, image_camera_record[ serialNumber ], CV_GRAY2BGR );
             } else {
                 image_camera_record[ serialNumber ] = Scalar( 0, 0, 0 );
             }
+	    cout << "done." << endl << flush;
 
             // Occupancy Map画像更新
+	    cout << "Updating an occupancy map..." << flush;
             if( itPEPMap != bufPEPMap.end() ) {
                 itPEPMap->second.occupancy.convertTo( image_occupancy_gray, CV_8U );
+		cvtColor( image_occupancy_gray, image_occupancy_record, CV_GRAY2BGR );
+		flgOccupancyMapUpdated = true;
             } else {
-                image_occupancy_gray = Scalar( 0 );
+                image_occupancy_record = Scalar( 0, 0, 0 );
             }
-            cvtColor( image_occupancy_gray, image_occupancy_record, CV_GRAY2BGR );
+	    cout << "done." << endl << flush;
 
+	    cout << "Drawing human regions..." << flush;
             // Occupancy Map上に人物領域を描画
             map<int,int> geometry_to_ID;
             for( multimap<int,Point2d>::iterator itHuman = regionHuman.begin(); itHuman != regionHuman.end(); ++itHuman ) {
@@ -217,8 +229,10 @@ void ResultRenderer2::Render()
                     }
                 }
             }
+	    cout << "done." << endl << flush;
 
             // Silhouette作成
+	    cout << "Slihouette Creation..." << flush;
             if( itSilhouetteMap != bufSilhouette.end() ) {
                 for( map<int,Mat>::iterator it_id_to_count = count_silhouette.begin(); it_id_to_count != count_silhouette.end(); ++it_id_to_count ) {
                     const int id = it_id_to_count->first;
@@ -268,6 +282,7 @@ void ResultRenderer2::Render()
                     //image_silhouette2[ id ] = image_silhouette[ id ][ serialNumber ].clone();
                 }
             }
+	    cout << "done." << endl << flush;
 
             // 利用済みのデータを削除
             if( itPEPMap != bufPEPMap.end() ) {
@@ -287,12 +302,16 @@ void ResultRenderer2::Render()
         }
 
         // 動画出力
-        Mat tmp( image_occupancy_record.size(), CV_8UC3 );
-        Point2d center( image_occupancy_record.cols * 0.5, image_occupancy_record.rows * 0.5 );
-        const Mat affine_matrix = getRotationMatrix2D( center, 90.0, 1.0 );
-        warpAffine( image_occupancy_record, tmp, affine_matrix, image_occupancy_record.size(), INTER_LINEAR, BORDER_CONSTANT, Scalar::all( 255 ) );
-        image_occupancy_record = tmp.clone();
+	if( flgOccupancyMapUpdated ) {
+	    Mat tmp( image_occupancy_record.size(), CV_8UC3 );
+	    Point2d center( image_occupancy_record.cols * 0.5, image_occupancy_record.rows * 0.5 );
+	    const Mat affine_matrix = getRotationMatrix2D( center, 90.0, 1.0 );
+	    warpAffine( image_occupancy_record, tmp, affine_matrix, image_occupancy_record.size(), INTER_LINEAR, BORDER_CONSTANT, Scalar::all( 255 ) );
+	    image_occupancy_record = tmp.clone();
+	}
+	cout << "pepmapVideoWriter.write()..." << flush;
         pepmapVideoWriter.write( image_occupancy_record );
+	cout << "done." << endl << flush;
         Mat image_camera_record_integrated( stereo_height * 2, stereo_width * 2, CV_8UC3 );
         {
             map<unsigned long long,Mat>::iterator it;
@@ -308,50 +327,77 @@ void ResultRenderer2::Render()
             if( ( it = image_camera_record.find( 7420005 ) ) != image_camera_record.end() ) {
                 copy( image_camera_record_integrated, stereo_width, stereo_height, it->second, 0, 0, stereo_width, stereo_height );
             }
+	    cout << "cameraVideoWriter.write()..." << flush;
             cameraVideoWriter.write( image_camera_record_integrated );
+	    cout << "done." << endl << flush;
         }
+	cout << "silhouettevideoWriter..." << flush;
         Mat image_silhouette_record;
         for( map<int,map<unsigned long long,Mat> >::iterator it_id_serial_silhouette = image_silhouette.begin(); it_id_serial_silhouette != image_silhouette.end(); ++it_id_serial_silhouette ) {
             const int id = it_id_serial_silhouette->first;
+	    cout << "output silhouette: " << id << endl << flush;
+	    cout << " initializing..." << flush;
             map<unsigned long long,Mat>& img = it_id_serial_silhouette->second;
             const int w = (int)( scale_m2px_silhouette * roi_height );
             const int h = (int)( scale_m2px_silhouette * 3.0 );
             image_silhouette_record = Mat::zeros( h * 2, w * 2, CV_8UC3 );
-            image_silhouette2[ id ] = Mat::zeros( stereo_height, stereo_width, CV_8U );
-            tmp.create( h, w, CV_8UC3 );
+            image_silhouette2[ id ] = Mat::zeros( h, w, CV_8U );
+            Mat tmp( h, w, CV_8UC3 );
+	    cout << "done." << flush;
             map<unsigned long long,Mat>::iterator it;
             if( ( it = img.find( 7420008 ) ) != img.end() ) {
+		cout << " 7420008...";
                 cvtColor( it->second, tmp, CV_GRAY2BGR );
                 copy( image_silhouette_record, 0, 0, tmp, 0, 0 ,w, h );
-                image_silhouette2[ id ] += it->second;
+		cout << " adding...";
+		image_silhouette2[ id ] += it->second;
+		cout << "done." << endl;
             }
             if( ( it = img.find( 7420015 ) ) != img.end() ) {
+		cout << " 7420015...";
                 cvtColor( it->second, tmp, CV_GRAY2BGR );
                 copy( image_silhouette_record,  w, 0, tmp, 0, 0, w, h );
+		cout << " adding...";
                 image_silhouette2[ id ] += it->second;
+ 		cout << "done." << endl;
             }
             if( ( it = img.find( 7140019 ) ) != img.end() ) {
+		cout << " 7140019...";
                 cvtColor( it->second, tmp, CV_GRAY2BGR );
                 copy( image_silhouette_record, 0, h, tmp, 0, 0, w, h );
+		cout << " adding...";
                 image_silhouette2[ id ] += it->second;
+    		cout << "done." << endl;
             }
             if( ( it = img.find( 7420005 ) ) != img.end() ) {
+		cout << " 7420005...";
                 cvtColor( it->second, tmp, CV_GRAY2BGR );
-                copy( image_silhouette_record, w, h, tmp, 0, 0, w, h );
-                 image_silhouette2[ id ] += it->second;
-           }
+		copy( image_silhouette_record, w, h, tmp, 0, 0, w, h );
+		cout << " adding...";
+                image_silhouette2[ id ] += it->second;
+     		cout << "done." << endl;
+            }
+	    cout << "pepmapVideoWriter.write()...";
             silhouetteVideoWriter[ id ].write( image_silhouette_record );
             cvtColor( image_silhouette2[ id ], tmp, CV_GRAY2BGR );
             silhouetteVideoWriter2[ id ].write( tmp );
+	    cout << "done." << endl;
         }
+	cout << "done." << endl;
 
+	cout << "imshow...";
         imshow( "Tracking Result", image_occupancy_record );
         imshow( "Segmentation", image_camera_record_integrated );
         (void)cvWaitKey( 10 );
+	cout << "done." << endl;
 
+	cout << "finalizing..." << flush;
         ++frame;
         time_video = time_start + ( ( 1000000ULL  * (unsigned long long)frame ) / (unsigned long long)fps );
+	cout << "done."<< endl << flush;
     }
 
+    trackingResult.clear();
+    trackingResultExt.clear();
     flgFirst = false;
 }

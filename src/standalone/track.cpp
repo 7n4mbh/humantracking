@@ -515,7 +515,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                         , &storageLUM[ tk ]
                         , &commonParam
                         , &extractlumParam
-                        , true );
+                        , false );
             addedTime.push_back( tk );
 
         }
