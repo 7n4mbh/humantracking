@@ -854,25 +854,25 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         //
         // Output process information of clustering
-        {
-            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
-            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-                           , timeTracking//tableLUMSlice.rbegin()->first
-                            , timeEarliestPEPMap
-                            , &sampler
-                            , nSample
-                            , &trajectoriesClustered
-#ifdef WINDOWS_OS
-			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
-#endif
-#ifdef LINUX_OS
-			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
-#endif
-                            , "before-integration"//oss.str()
-                            , NULL
-                            , &plotParam );
-        }
+//        {
+//            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
+//            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
+//            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+//                           , timeTracking//tableLUMSlice.rbegin()->first
+//                            , timeEarliestPEPMap
+//                            , &sampler
+//                            , nSample
+//                            , &trajectoriesClustered
+//#ifdef WINDOWS_OS
+//			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+//#endif
+//#ifdef LINUX_OS
+//			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
+//#endif
+//                            , "before-integration"//oss.str()
+//                            , NULL
+//                            , &plotParam );
+//        }
 
 
         cout << "Integrating Clusters that have similar shape..." << endl;
@@ -961,25 +961,25 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         //
         // Output process information of clustering
-//        {
-//            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-//            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
-//            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-//                            , timeTracking//tableLUMSlice.rbegin()->first
-//                            , timeEarliestPEPMap
-//                            , &sampler
-//                            , nSample
-//                            , &trajectoriesClustered
-//#ifdef WINDOWS_OS
-//			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
-//#endif
-//#ifdef LINUX_OS
-//			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
-//#endif
-//                            , ""//oss.str()
-//                            , NULL
-//                            , &plotParam );
-//        }
+        {
+            double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
+            unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
+            OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+                            , timeTracking//tableLUMSlice.rbegin()->first
+                            , timeEarliestPEPMap
+                            , &sampler
+                            , nSample
+                            , &trajectoriesClustered
+#ifdef WINDOWS_OS
+			                , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+#endif
+#ifdef LINUX_OS
+			                , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
+#endif
+                            , ""//oss.str()
+                            , NULL
+                            , &plotParam );
+        }
 
         const int nCluster = trajectoriesClustered.size();
 
@@ -1792,11 +1792,13 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             TrajectoryElement::iterator itNext = it;
             advance( itNext, 1 );
             while( itNext != itTrj->end() ) {
+                int idxCluster = it->ID;
                 while( it->t + commonParam.intervalTrajectory < itNext->t ) {
-                    PosXYT pos;
+                    PosXYTID pos;
                     pos.x = ( itNext->x - it->x ) / ( (double)( itNext->t - it->t ) * 1.0e-6 ) * ( (double)commonParam.intervalTrajectory * 1.0e-6 ) + it->x;
                     pos.y = ( itNext->y - it->y ) / ( (double)( itNext->t - it->t ) * 1.0e-6 ) * ( (double)commonParam.intervalTrajectory * 1.0e-6 ) + it->y;
                     pos.t = it->t + commonParam.intervalTrajectory;
+                    pos.ID = -1;
                     it = itTrj->insert( it, pos );
                 }
                 ++it;
@@ -1828,12 +1830,13 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             (*p_result)[ time ];
             (*p_ext_result)[ time ];
 
-            const set<TIME_MICRO_SEC>::iterator it_start_pepmap_time = time_of_received_pepmap.lower_bound( time );
-            const set<TIME_MICRO_SEC>::iterator it_end_pepmap_time = time_of_received_pepmap.lower_bound( time + commonParam.intervalTrajectory );
-            for( set<TIME_MICRO_SEC>::iterator it = it_start_pepmap_time; it != it_end_pepmap_time; ++it ) {
-               (*p_ext_result)[ *it ]; 
-            }
+            //const set<TIME_MICRO_SEC>::iterator it_start_pepmap_time = time_of_received_pepmap.lower_bound( time );
+            //const set<TIME_MICRO_SEC>::iterator it_end_pepmap_time = time_of_received_pepmap.lower_bound( time + commonParam.intervalTrajectory );
+            //for( set<TIME_MICRO_SEC>::iterator it = it_start_pepmap_time; it != it_end_pepmap_time; ++it ) {
+            //   (*p_ext_result)[ *it ]; 
+            //}
 
+#if 0
             map<int,CTrajectory>::const_iterator itResult = resultTrajectory.begin();
             for( ; itResult != resultTrajectory.end(); ++itResult ) {
                 const CTrajectory& trajectory = itResult->second;
@@ -1844,7 +1847,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                             (*p_result)[ time ][ itResult->first ] = Point2d( itPos->x, itPos->y );
 
                             const int trj_no = itPos->ID;
-                            if( trj_no < trajectoriesClustered.size() ) {
+                            if( trj_no >= 1 && trj_no < trajectoriesClustered.size() ) {
                                 for( CTrajectory::iterator it = trajectoriesClustered[ trj_no ].begin()
                                    ; it != trajectoriesClustered[ trj_no ].end(); ++it ) {
                                     TrajectoryElement::iterator itPos2;
@@ -1869,8 +1872,30 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     }
                 }
             }
-        }
+#endif
+            map<int,CTrajectory>::iterator itResult = resultTrajectory.begin();
+            for( ; itResult != resultTrajectory.end(); ++itResult ) {
+                TrajectoryElement::iterator itPos = itResult->second.front().find( PosXYT( 0.0, 0.0, time ) );
+                if( itPos != itResult->second.front().end() ) {
+                    (*p_result)[ time ][ itResult->first ] = Point2d( itPos->x, itPos->y );
 
+                    if( itPos->ID >= 0 ) {
+                        set<int>::iterator itKeyval = trj_time_to_hash_where_occupied[ itPos->ID ][ time ].begin();
+                        for( ; itKeyval != trj_time_to_hash_where_occupied[ itPos->ID ][ time ].end(); ++itKeyval ) {
+                            const int cols = (int)( scale_m2px * roi_width );
+                            const int row_on_pepmap = ( *itKeyval - 1 ) / cols;
+                            const int col_on_pepmap = ( *itKeyval - 1 ) % cols;
+                        
+                            Point2d pos;
+                            pos.x = ( (double)row_on_pepmap / scale_m2px ) + roi_x - ( roi_height / 2.0f );
+                            pos.y = ( (double)col_on_pepmap / scale_m2px ) + roi_y - ( roi_width / 2.0f );
+                            (*p_ext_result)[ time ].insert( pair<int,Point2d>( itResult->first, Point2d( pos.x, pos.y ) ) );                                            
+                        }
+                    }
+                }
+            }
+        }
+        /*
         remainedExtendedResult.clear();
         for( ; time < timeTracking; time += commonParam.intervalTrajectory ) {
             const set<TIME_MICRO_SEC>::iterator it_start_pepmap_time = time_of_received_pepmap.lower_bound( time );
@@ -1910,9 +1935,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                         }
                     }
                 }
-            }       
-        }
-
+            }   
+        }*/
 
         //viewer.SetResult( *p_result );
 

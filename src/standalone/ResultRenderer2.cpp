@@ -9,6 +9,8 @@
 using namespace std;
 using namespace cv;
 
+extern bool flgCompatible;
+
 extern float roi_width, roi_height;
 extern float roi_x, roi_y;
 extern float scale_m2px, scale_m2px_silhouette;
@@ -208,7 +210,9 @@ void ResultRenderer2::Render()
                             const int diff_row = row_on_pepmap - _row_on_pepmap;
                             const int diff_col = col_on_pepmap - _col_on_pepmap;
                             const double dist = sqrt( (double)( diff_row * diff_row + diff_col * diff_col ) );
-                            if( dist < 6 ) {
+                            
+                            const double adaptive_threshold = ( itHuman->first == 1 ) ? 10 : 6; // test code
+                            if( dist < ( flgCompatible ? 6 : adaptive_threshold ) ) {
                                 line( image_camera_record[ serialNumber ], Point( x, y ), Point( x, y ), color_table[ itHuman->first % sizeColorTable ], 1 );
                                 id_assigned = itHuman->first;
                             }
@@ -302,7 +306,7 @@ void ResultRenderer2::Render()
         }
 
         // ìÆâÊèoóÕ
-	if( flgOccupancyMapUpdated ) {
+	if( flgOccupancyMapUpdated && flgCompatible ) {
 	    Mat tmp( image_occupancy_record.size(), CV_8UC3 );
 	    Point2d center( image_occupancy_record.cols * 0.5, image_occupancy_record.rows * 0.5 );
 	    const Mat affine_matrix = getRotationMatrix2D( center, 90.0, 1.0 );

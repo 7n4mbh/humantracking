@@ -10,6 +10,8 @@
 #include "../humantracking.h"
 #include "StereoVideo.h"
 
+extern bool flgCompatible;
+
 extern float roi_width, roi_height;
 extern float roi_x, roi_y;
 extern float scale_m2px, scale_m2px_silhouette;
@@ -597,13 +599,16 @@ void StereoVideo::create_pepmap()
     image_occupancy.create( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
     image_depth.create( height, width, CV_8U );
 
-    {
+    if( flgCompatible ) {
         Mat tmp( image_occupancy.size(), CV_8U );
         occupancy.convertTo( tmp, CV_8U );
         Point2d center( image_occupancy.cols * 0.5, image_occupancy.rows * 0.5 );
         const Mat affine_matrix = getRotationMatrix2D( center, 90.0, 1.0 );
         warpAffine( tmp, image_occupancy, affine_matrix, image_occupancy.size(), INTER_LINEAR, BORDER_CONSTANT, Scalar::all( 255 ) );
+    } else {
+        occupancy.convertTo( image_occupancy, CV_8U );
     }
+
     img_depth.convertTo( image_depth, CV_8U, 25.0, 0.0 );
 
     // Debug Code!
