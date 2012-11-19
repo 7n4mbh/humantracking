@@ -389,10 +389,10 @@ int main( int argc, char *argv[] )
         //imshow( "Rectified", stereoVideo[ 0 ].image_rectified );
 
         {
-            copy( image_depth_record, 0, 0, stereoVideo[ 0 ].image_depth, stereo_width, 0, stereo_width, stereo_height );
-            copy( image_depth_record, stereo_width, 0, stereoVideo[ 1 ].image_depth, stereo_width, 0, stereo_width, stereo_height );
-            copy( image_depth_record, 0, stereo_height, stereoVideo[ 2 ].image_depth, stereo_width, 0, stereo_width, stereo_height );
-            copy( image_depth_record, stereo_width, stereo_height, stereoVideo[ 3 ].image_depth, stereo_width, 0, stereo_width, stereo_height );
+            copy( image_depth_record, 0, 0, stereoVideo[ 0 ].image_depth, 0, 0, stereo_width, stereo_height );
+            copy( image_depth_record, stereo_width, 0, stereoVideo[ 1 ].image_depth, 0, 0, stereo_width, stereo_height );
+            copy( image_depth_record, 0, stereo_height, stereoVideo[ 2 ].image_depth, 0, 0, stereo_width, stereo_height );
+            copy( image_depth_record, stereo_width, stereo_height, stereoVideo[ 3 ].image_depth, 0, 0, stereo_width, stereo_height );
             imshow( "Depth Map", image_depth_record );
             Mat tmp( image_depth_record.size(), CV_8UC3 );
             cvtColor( image_depth_record, tmp, CV_GRAY2BGR );
@@ -403,10 +403,10 @@ int main( int argc, char *argv[] )
         {
             const int width = (int)( scale_m2px * roi_width );
             const int height = (int)( scale_m2px * roi_height );
-            copy( image_occupancy_record, 0, 0, stereoVideo[ 0 ].image_occupancy, width, 0, width, height );
-            copy( image_occupancy_record, width, 0, stereoVideo[ 1 ].image_occupancy, width, 0, width, height );
-            copy( image_occupancy_record, 0, height, stereoVideo[ 2 ].image_occupancy, width, 0, width, height );
-            copy( image_occupancy_record, width, height, stereoVideo[ 3 ].image_occupancy, width, 0, width, height );
+            copy( image_occupancy_record, 0, 0, stereoVideo[ 0 ].image_occupancy, 0, 0, width, height );
+            copy( image_occupancy_record, width, 0, stereoVideo[ 1 ].image_occupancy, 0, 0, width, height );
+            copy( image_occupancy_record, 0, height, stereoVideo[ 2 ].image_occupancy, 0, 0, width, height );
+            copy( image_occupancy_record, width, height, stereoVideo[ 3 ].image_occupancy, 0, 0, width, height );
             imshow( "Occupancy map", image_occupancy_record );
             Mat tmp( image_occupancy_record.size(), CV_8UC3 );
             cvtColor( image_occupancy_record, tmp, CV_GRAY2BGR );

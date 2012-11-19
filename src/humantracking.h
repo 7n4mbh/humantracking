@@ -89,9 +89,16 @@ inline void copy( cv::Mat& img_dst, int dst_x, int dst_y, cv::Mat& img_src, int 
     //     << ", img_dst.size().height=" << img_dst.size().height
     //     << endl;
 
-    if( img_src.size().width < width || img_src.size().height < height ) {
+    if( dst_x + width > img_dst.size().width || dst_y + height > img_dst.size().height ) {
         return;
     }
+    if( src_x + width > img_src.size().width || src_y + height > img_src.size().height ) {
+        return;
+    }
+
+    //cv::Mat dst_roi( img_dst, cv::Rect( dst_x, dst_y, width, height ) );
+    //cv::Mat src_roi( img_src, cv::Rect( src_x, src_y, width, height ) );
+    //dst_roi = src_roi.clone();
 
     for( int x = 0; x < width; ++x ) {
         for( int y = 0; y < height; ++y ) {
