@@ -169,6 +169,7 @@ void ResultRenderer2::Render()
 
 	    cout << "Drawing human regions..." << flush;
             // Occupancy Map上に人物領域を描画
+#if 0
             map<int,int> geometry_to_ID;
             for( multimap<int,Point2d>::iterator itHuman = regionHuman.begin(); itHuman != regionHuman.end(); ++itHuman ) {
                 int _row_on_pepmap = scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_height / 2.0f );
@@ -188,6 +189,13 @@ void ResultRenderer2::Render()
                 int col = (int)( ( (float)image_occupancy_record.size().width / (float)image_occupancy_record.size().width ) * scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_width / 2.0f ) );
                 circle( image_occupancy_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
             }
+#else
+            for( map<int,Point2d>::iterator itHuman = posHuman.begin(); itHuman != posHuman.end(); ++itHuman ) {
+                int row = (int)( ( (float)image_occupancy_record.size().height / (float)image_occupancy_record.size().height ) * scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_height / 2.0f ) );
+                int col = (int)( ( (float)image_occupancy_record.size().width / (float)image_occupancy_record.size().width ) * scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_width / 2.0f ) );
+                circle( image_occupancy_record, Point( col, row ), 7, color_table[ itHuman->first % sizeColorTable ], 1 );
+            }
+#endif
 
             // カメラ画像上に人物領域を描画。Silhouette作成用のデータも作る。
             map<int,Mat> count_silhouette;
@@ -198,7 +206,8 @@ void ResultRenderer2::Render()
                     const int keyval = itGeometryMap->second.geometry.at<unsigned short>( y, x );
                     int id_assigned = -1;
                     map<int,int>::iterator itID;
-                    if( ( itID = geometry_to_ID.find( keyval ) ) != geometry_to_ID.end() ) {
+                    //if( ( itID = geometry_to_ID.find( keyval ) ) != geometry_to_ID.end() ) {
+		    if( false ) {
                         line( image_camera_record[ serialNumber ], Point( x, y ), Point( x, y ), color_table[ itID->second % sizeColorTable ], 1 );
                         id_assigned = itID->second;
                     } else if( keyval != 0 ) {
@@ -211,7 +220,7 @@ void ResultRenderer2::Render()
                             const int diff_col = col_on_pepmap - _col_on_pepmap;
                             const double dist = sqrt( (double)( diff_row * diff_row + diff_col * diff_col ) );
                             
-                            const double adaptive_threshold = ( itHuman->first == 1 ) ? 10 : 6; // test code
+                            const double adaptive_threshold = ( itHuman->first == 1 ) ? 10 : 7/*6*/; // test code
                             if( dist < ( flgCompatible ? 6 : adaptive_threshold ) ) {
                                 line( image_camera_record[ serialNumber ], Point( x, y ), Point( x, y ), color_table[ itHuman->first % sizeColorTable ], 1 );
                                 id_assigned = itHuman->first;
