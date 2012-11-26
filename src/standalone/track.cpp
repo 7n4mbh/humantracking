@@ -326,8 +326,8 @@ bool load_track_parameters( std::string strPath, std::string strFileName )
     commonParam.intervalTrajectory = 100000;
     extractlumParam.term = 1500000;
     extractlumParam.interval = 500000;
-    extractlumParam.minPEPMapValue = 50.0;
-    extractlumParam.maxPEPMapValue = 70.0;//1500.0;
+    extractlumParam.minPEPMapValue = 0.0;//50.0;
+    extractlumParam.maxPEPMapValue = UINT_MAX;//70.0;//1500.0;
     extractlumParam.minDiffTime = 600000;
     extractlumParam.maxSpeed = 8.0;//10.44;
     extractlumParam.kLUM = 1.2e-1;//4.0e-1;//6.0e-1;//3.5e-1;//3.0e-2;
@@ -515,7 +515,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                         , &storageLUM[ tk ]
                         , &commonParam
                         , &extractlumParam
-                        , true/*false*/ );
+                        , /*true*/false );
             addedTime.push_back( tk );
 
         }
@@ -635,7 +635,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         int iTrj = 0;
         for( ; it != storageTrajectoryElement.end(); ++it, ++iTrj ) {
             if( it->rbegin()->t - it->begin()->t >= clusteringParam.minLength ) {
-                if( rand() < (int)( (float)RAND_MAX * 0.25f/*0.6f*//*0.4f*/ ) ) { 
+                if( rand() < (int)( (float)RAND_MAX * 0.1f /*0.25f*//*0.6f*//*0.4f*/ ) ) { 
                     trajectoryForClustering[ iTrj ].push_back( *it );
                     idxTrajectoryForClustering.push_back( iTrj );
                 }

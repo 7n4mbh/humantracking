@@ -36,6 +36,7 @@ float scale_m2px, scale_m2px_silhouette;
 const int stereo_width = 512, stereo_height = 384;
 
 bool flgOutputTrackingProcessData2Files = true;
+bool flgSegmentationComparisonMode = false;
 
 //TrackingResultResources resTracking;
 ResultRenderer2 resultRenderer;
@@ -149,6 +150,8 @@ int main( int argc, char *argv[] )
             iss >> time_start;
         } else if( strOpt == "--compatible" ) {
             flgCompatible = true;
+        } else if( strOpt == "--segmentation-comparison" ) {
+            flgSegmentationComparisonMode = true;
         } else {
             serialNumber.push_back( atoi( argv[ i ]) );
         }
