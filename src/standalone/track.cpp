@@ -278,6 +278,7 @@ void _connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > comb
                 //flgConnectable = true;
                 trajectories.insert( trajectories.end(), combination[ i ].begin(), combination[ i ].end() );
                 trajectories.insert( trajectories.end(), combination[ j ].begin(), combination[ j ].end() );
+		sort( trajectories.begin(), trajectories.end() );
             }
 
             //vector<int> trajectories;
@@ -1385,7 +1386,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     for( int iTrj2 = iTrj1; iTrj2 < sizeTableConnectable; ++iTrj2 ) {
                         double value;
                         if( iTrj1 >= nCluster && iTrj2 >= nCluster ) {
-                            value = -1.0;
+                            value = -0.5;//-1.0
                         } else if( iTrj1 >= nCluster ) {
                             value = areConnectable( trajectoriesPrevResult[ iTrj1 - nCluster ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold );
                         } else if( iTrj2 >= nCluster ) {
@@ -1583,7 +1584,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             cout << "No cluster found." << endl;
         }
 
-        cout << "Done." << endl;
+        cout << "Done." << endl << flush;
 
 
         //logTracking.renovation( TrackingProcessLogger::Start );
@@ -1787,7 +1788,13 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         }
 
         // ãOê’ÇÃï‚ä‘ÇçsÇ§
+	cout << "Interpolation of the trajectories (opt.size()=" << opt.size() << ")..." << flush;
+	int _count_debug = 0;
         for( vector<TrajectoryElement>::iterator itTrj = opt.begin(); itTrj != opt.end(); ++itTrj ) {
+	    cout << " opt[" << _count_debug << "](size=" << itTrj->size() << "):" << flush;
+	    if( itTrj->empty() ) {
+		continue;
+	    }
             TrajectoryElement::iterator it = itTrj->begin();
             TrajectoryElement::iterator itNext = it;
             advance( itNext, 1 );
@@ -1800,13 +1807,19 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     pos.t = it->t + commonParam.intervalTrajectory;
                     pos.ID = nCluster + 1;
                     it = itTrj->insert( it, pos );
+		    cout << "+" << flush;
                 }
                 ++it;
                 ++itNext;
+		cout << "-" << flush;
             }
+	    cout << " done." << endl << flush;
+	    ++_count_debug;
         }
+	cout << "done." << endl << flush;
 
         // åãâ ÇÃï€ë∂
+	cout << "Preparing 'resultTrajectory'..." << flush;
         p_result->clear();
         resultTrajectory.clear();
         vector<int>::iterator itID = idOpt.begin();
@@ -1818,9 +1831,11 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             //trj.Clip( 0, timeTracking - ( commonParam.termTracking - commonParam.intervalTracking ) );
             //(*p_result)[ id ] = trj; // $BI=<(MQ(B
         }
+	cout << "done." << endl << flush;
 
         //map<unsigned long long, multimap<int,Point2d> > ext_result;
 
+	cout << "Preparing 'p_result' and 'p_ext_result'..." << flush;
         unsigned long long time;
         p_ext_result->insert( remainedExtendedResult.begin(), remainedExtendedResult.end() );
         for( /*unsigned long long*/ time = max( timeTracking - commonParam.termTracking, timeEarliestPEPMap )
@@ -1873,6 +1888,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 }
             }
 #endif
+	    cout << " time=" << time << "..." << flush;
             map<int,CTrajectory>::iterator itResult = resultTrajectory.begin();
             for( ; itResult != resultTrajectory.end(); ++itResult ) {
                 TrajectoryElement::iterator itPos = itResult->second.front().find( PosXYT( 0.0, 0.0, time ) );
@@ -1894,7 +1910,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     }
                 }
             }
+	    cout << "done." << endl << flush;
         }
+	cout << "done." << endl << flush;
         /*
         remainedExtendedResult.clear();
         for( ; time < timeTracking; time += commonParam.intervalTrajectory ) {
@@ -1943,6 +1961,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         //
         // Output process information of renovation
         //if( myRank == 0 ) {
+	cout << "Output the result to the file..." << flush;
         if( flgOutputTrackingProcessData2Files ) {
             {
                 double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
@@ -1957,10 +1976,12 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                              , &plotParam );
             }
         }
+	cout << "done." << endl << flush;
 
 #ifndef NEW_CLUSTERING_ALGORITHM
         delete [] distTable;
 #endif
+	cout << "Finalizing..." << flush;
         //
         // sampler
         sampler.erase( sampler.begin()
@@ -2003,7 +2024,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         //logTracking.end_and_output2file();
         flgTrackingStarts = true;
+	cout << "done." << endl << flush;
     }
+    cout << "Exitting track()." << endl << flush;
 
     return ret;
 }
