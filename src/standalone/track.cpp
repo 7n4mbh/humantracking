@@ -1502,7 +1502,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                             int idxCluster = connection_patterns[ i ][ j ][ k ];
 		            if( idxCluster < nCluster ) {
 			        trajectories_for_pattern[ i ][ j ].insert( trajectoriesAveraged[ idxCluster ].front().begin(), trajectoriesAveraged[ idxCluster ].front().end() );
-		            }
+		            } else {
+				trajectories_for_pattern[ i ][ j ].insert( trajectoriesPrevResult[ idxCluster - nCluster ].front().begin(), trajectoriesPrevResult[ idxCluster - nCluster ].front().end() );
+			    }
                         }
                     }
                 }
