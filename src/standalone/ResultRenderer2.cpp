@@ -29,7 +29,7 @@ ResultRenderer2::~ResultRenderer2()
 {
 }
 
-void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string result_cameravideo_filename, double fps/*, std::string result_cameravideo_filename, std::string silhouette_path*/ )
+void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string result_pepmapvideo_widthout_region_filename, std::string result_cameravideo_filename, double fps/*, std::string result_cameravideo_filename, std::string silhouette_path*/ )
 {
     bufPEPMap.clear();
     trackingResult.clear();
@@ -41,6 +41,7 @@ void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string
     flgFirst = true;
 
     strResultPEPMapVideoFilename = result_pepmapvideo_filename;
+    strResultPEPMapWithoutRegionFilename = result_pepmapvideo_widthout_region_filename;
     strResultCameraVideoFilename = result_cameravideo_filename;
     this->fps = fps;
 
@@ -49,6 +50,11 @@ void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string
 
     if( !pepmapVideoWriter.open( strResultPEPMapVideoFilename, CV_FOURCC('X','V','I','D'), fps, Size( (int)( roi_width * 80 ), (int)( roi_height * 80 ) ) ) ) {
         cerr << "Couldn't open " << strResultPEPMapVideoFilename << "." <<  endl;
+        exit( 1 );
+    }
+    
+    if( !pepmapWithoutRegionVideoWriter.open( strResultPEPMapWithoutRegionFilename, CV_FOURCC('X','V','I','D'), fps, Size( (int)( roi_width * 80 ), (int)( roi_height * 80 ) ) ) ) {
+        cerr << "Couldn't open " << strResultPEPMapWithoutRegionFilename << "." <<  endl;
         exit( 1 );
     }
 
@@ -111,6 +117,7 @@ void ResultRenderer2::Render()
 {
     Mat image_camera( (int)stereo_height, (int)stereo_width, CV_8U );
     Mat image_occupancy_gray( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
+    Mat image_occupancy_without_regioin_record;
 
     const unsigned long long time_render_begin = trackingResult.begin()->first;
     const unsigned long long time_render_end = trackingResult.rbegin()->first;
@@ -168,6 +175,7 @@ void ResultRenderer2::Render()
             } else {
                 image_occupancy_record = Scalar( 0, 0, 0 );
             }
+            image_occupancy_without_regioin_record = image_occupancy_record.clone();
             cout << "done." << endl << flush;
 
             cout << "Drawing human regions..." << flush;
@@ -191,6 +199,7 @@ void ResultRenderer2::Render()
                     int row = (int)( ( (float)image_occupancy_record.size().height / (float)image_occupancy_record.size().height ) * scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_height / 2.0f ) );
                     int col = (int)( ( (float)image_occupancy_record.size().width / (float)image_occupancy_record.size().width ) * scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_width / 2.0f ) );
                     circle( image_occupancy_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
+                    circle( image_occupancy_without_regioin_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
                 }
             } else {
                 for( map<int,Point2d>::iterator itHuman = posHuman.begin(); itHuman != posHuman.end(); ++itHuman ) {
@@ -326,6 +335,7 @@ void ResultRenderer2::Render()
         }
         cout << "pepmapVideoWriter.write()..." << flush;
         pepmapVideoWriter.write( image_occupancy_record );
+        pepmapWithoutRegionVideoWriter.write( image_occupancy_without_regioin_record );
         cout << "done." << endl << flush;
         Mat image_camera_record_integrated( stereo_height * 2, stereo_width * 2, CV_8UC3 );
         {

@@ -51,7 +51,7 @@ private:
     std::map<unsigned long long, std::multimap<int,cv::Point2d> > trackingResultExt;
     std::deque< std::map<int,cv::Point2d> > result_buffer;
     
-    std::string strResultPEPMapVideoFilename;
+    std::string strResultPEPMapVideoFilename, strResultPEPMapWithoutRegionFilename;
     std::string strResultCameraVideoFilename;
     std::string strVideoFilePath;
     double fps;
@@ -59,7 +59,7 @@ private:
     std::map<unsigned long long,cv::Mat> image_camera_record;
     std::map<int, std::map<unsigned long long,cv::Mat> > image_silhouette;
     std::map<int,cv::Mat> image_silhouette2;
-    cv::VideoWriter pepmapVideoWriter;
+    cv::VideoWriter pepmapVideoWriter, pepmapWithoutRegionVideoWriter;
     cv::VideoWriter cameraVideoWriter;
     std::map<int,cv::VideoWriter> silhouetteVideoWriter;
     std::map<int,cv::VideoWriter> silhouetteVideoWriter2;
@@ -67,7 +67,7 @@ private:
 public:
     ResultRenderer2();
     virtual ~ResultRenderer2();
-    void init( std::string result_pepmapvideo_filename, std::string result_cameravideo_filename, double fps/*, std::string result_cameravideo_filename, std::string silhouette_path*/ );
+    void init( std::string result_pepmapvideo_filename, std::string result_pepmapvideo_widthout_region_filename, std::string result_cameravideo_filename, double fps/*, std::string result_cameravideo_filename, std::string silhouette_path*/ );
     void AddPEPMapInfo( PEPMapInfoEx& pepmap );
     void AddCameraImageInfo( CameraImageInfoEx& cam_image );
     void AddGeometryMapInfo( GeometryMapInfoEx& geometry );

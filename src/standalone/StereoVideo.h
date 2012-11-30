@@ -17,6 +17,7 @@ public:
     cv::Mat image;
     cv::Mat image_rectified;
     cv::Mat image_depth;
+    cv::Mat image_depth_before_subtraction;
     cv::Mat image_occupancy;
     cv::Mat occupancy;
     cv::Mat geometry;

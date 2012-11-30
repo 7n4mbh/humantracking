@@ -218,14 +218,15 @@ int main( int argc, char *argv[] )
     //}
     const int fps = 30;
 
-    resultRenderer.init( strStereoVideoFilePath + "result_pepmap.avi", strStereoVideoFilePath + "segmentation.avi", fps );
+    resultRenderer.init( strStereoVideoFilePath + "result_pepmap.avi", strStereoVideoFilePath + "result_pepmap_without_region.avi", strStereoVideoFilePath + "segmentation.avi", fps );
 
     Mat image_record( 960, 1280, CV_8UC3 );
     Mat image_depth_record( stereo_height * 2, stereo_width * 2, CV_8U );
+    Mat image_depth_before_subtraction_record( stereo_height * 2, stereo_width * 2, CV_8U );
     Mat image_occupancy_record( (int)( scale_m2px * roi_height ) * 2, (int)( scale_m2px * roi_width ) * 2, CV_8U );
     Mat image_occupancy_record2( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
 
-    VideoWriter video_camera, video_depth, video_occupancy, video_occupancy2;
+    VideoWriter video_camera, video_depth, video_depth_without_subtraction, video_occupancy, video_occupancy2;
     {
         ostringstream oss;
         oss << strStereoVideoFilePath << "integrated_cameraview.avi";
@@ -238,6 +239,14 @@ int main( int argc, char *argv[] )
         ostringstream oss;
         oss << strStereoVideoFilePath << "integrated_depthmap.avi";
         if( !video_depth.open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( image_depth_record.size().width, image_depth_record.size().height ) ) ) {
+            cerr << "Couldn't open " <<  oss.str() << "." <<  endl;
+            exit( 1 );
+        }
+    }
+    {
+        ostringstream oss;
+        oss << strStereoVideoFilePath << "integrated_depthmap_without_subtraction.avi";
+        if( !video_depth_without_subtraction.open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( image_depth_before_subtraction_record.size().width, image_depth_before_subtraction_record.size().height ) ) ) {
             cerr << "Couldn't open " <<  oss.str() << "." <<  endl;
             exit( 1 );
         }
@@ -401,6 +410,18 @@ int main( int argc, char *argv[] )
             cvtColor( image_depth_record, tmp, CV_GRAY2BGR );
             video_depth.write( tmp/*image_depth_record*/ );
         }
+        
+        {
+            copy( image_depth_before_subtraction_record, 0, 0, stereoVideo[ 0 ].image_depth_before_subtraction, 0, 0, stereo_width, stereo_height );
+            copy( image_depth_before_subtraction_record, stereo_width, 0, stereoVideo[ 1 ].image_depth_before_subtraction, 0, 0, stereo_width, stereo_height );
+            copy( image_depth_before_subtraction_record, 0, stereo_height, stereoVideo[ 2 ].image_depth_before_subtraction, 0, 0, stereo_width, stereo_height );
+            copy( image_depth_before_subtraction_record, stereo_width, stereo_height, stereoVideo[ 3 ].image_depth_before_subtraction, 0, 0, stereo_width, stereo_height );
+            //imshow( "Depth Map (Before Subtraction)", image_depth_before_subtraction_record );
+            Mat tmp( image_depth_before_subtraction_record.size(), CV_8UC3 );
+            cvtColor( image_depth_before_subtraction_record, tmp, CV_GRAY2BGR );
+            video_depth_without_subtraction.write( tmp/*image_depth_before_subtraction_record*/ );
+        }
+
 	//cout << "imshow( \"Depth Map\", image_depth_record );" << endl;
 
         {

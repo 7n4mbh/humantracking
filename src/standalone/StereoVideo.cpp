@@ -49,6 +49,7 @@ StereoVideo::StereoVideo( const StereoVideo& obj )
     image = obj.image.clone();
     image_rectified = obj.image_rectified.clone();
     image_depth = obj.image_depth.clone();
+    image_depth_before_subtraction = obj.image_depth_before_subtraction.clone();
     image_occupancy = obj.image_occupancy.clone();
     occupancy = obj.occupancy.clone();
     H = obj.H.clone();
@@ -501,6 +502,7 @@ void StereoVideo::create_pepmap()
             }
         }
     }
+    img_depth.convertTo( image_depth_before_subtraction, CV_8U, 25.0, 0.0 );
 
     // 
     // Create an occupancy map with foreground data
