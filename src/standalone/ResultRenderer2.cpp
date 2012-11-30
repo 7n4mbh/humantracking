@@ -52,7 +52,7 @@ void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string
         exit( 1 );
     }
 
-    if( !cameraVideoWriter.open( strResultCameraVideoFilename, CV_FOURCC('X','V','I','D'), fps, Size( (int)stereo_width, (int)stereo_height ) ) ) {
+    if( !cameraVideoWriter.open( strResultCameraVideoFilename, CV_FOURCC('X','V','I','D'), fps, Size( (int)stereo_width * 2, (int)stereo_height * 2 ) ) ) {
         cerr << "Couldn't open " << strResultCameraVideoFilename << "." <<  endl;
         exit( 1 );
     }        

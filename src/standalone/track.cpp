@@ -1378,13 +1378,16 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
     #ifdef LINUX_OS
 			    oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
     #endif
-                oss << "connectable_table_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
+                oss << "connectable_table_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt" << flush;
                 ofstream ofs( oss.str().c_str() );
            
+                cout << "(nCluster=" << nCluster << ",nPrevResultTrj=" << nPrevResultTrj << ")" << endl << flush;
+
                 const double threshold = 3.0;
                 for( int iTrj1 = 0; iTrj1 < sizeTableConnectable; ++iTrj1 ) {
                     for( int iTrj2 = iTrj1; iTrj2 < sizeTableConnectable; ++iTrj2 ) {
                         double value;
+                        cout << "  tableConnectable[" << iTrj1 << "][" << iTrj2 << "]=" << flush;
                         if( iTrj1 >= nCluster && iTrj2 >= nCluster ) {
                             value = -0.5;//-1.0
                         } else if( iTrj1 >= nCluster ) {
@@ -1394,17 +1397,18 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                         } else {
                             value = areConnectable( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold );                   
                         }
+                        cout << value << endl << flush;
                         tableConnectable[ iTrj1 + iTrj2 * sizeTableConnectable ] = tableConnectable[ iTrj2 + iTrj1 * sizeTableConnectable ] = value;
-                        ofs << "tableConnectable[" << iTrj1 << "][" << iTrj2 << "]=";
+                        ofs << "tableConnectable[" << iTrj1 << "][" << iTrj2 << "]=" << flush;
                         if( tableConnectable[ iTrj1 + iTrj2 * sizeTableConnectable ] == 0.0 ) {
-                            ofs << "true" << endl;
+                            ofs << "true" << endl << flush;
                         } else {
-                            ofs << "false" << endl;
+                            ofs << "false" << endl << flush;
                         }
                     }
                 }
             }
-            cout << "done." << endl;
+            cout << "done." << endl << flush;
 
 
             // Try to connect trajectories in each combination if possible
