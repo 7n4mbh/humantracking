@@ -35,6 +35,7 @@ void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string
     trackingResult.clear();
     trackingResultExt.clear();
     result_buffer.clear();
+    id_to_trace.clear();
     image_silhouette.clear();
 
     time_video = 0;
@@ -200,6 +201,19 @@ void ResultRenderer2::Render()
                     int col = (int)( ( (float)image_occupancy_record.size().width / (float)image_occupancy_record.size().width ) * scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_width / 2.0f ) );
                     circle( image_occupancy_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
                     circle( image_occupancy_without_regioin_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
+                    id_to_trace[ itHuman->first ][ time_video ] = Point( col, row );
+                }
+                for( map< int, std::map<unsigned long long,Point> >::iterator it_id_to_trace = id_to_trace.begin(); it_id_to_trace != id_to_trace.end(); ++it_id_to_trace ) {
+                    // 3•bˆÈ‘O‚ÌˆÊ’uî•ñ‚ðíœ
+                    it_id_to_trace->second.erase( it_id_to_trace->second.begin()
+                                                , it_id_to_trace->second.lower_bound( time_video - 3000000 ) );
+                    if( !it_id_to_trace->second.empty() ) {
+                        vector< vector<Point> > pts( 1 );
+                        for( map<unsigned long long,Point>::iterator itPoint = it_id_to_trace->second.begin(); itPoint != it_id_to_trace->second.end(); ++itPoint ) {
+                            pts[ 0 ].push_back( itPoint->second );
+                        }
+                        polylines( image_occupancy_without_regioin_record, pts, false, color_table[ it_id_to_trace->first % sizeColorTable ] );
+                    }
                 }
             } else {
                 for( map<int,Point2d>::iterator itHuman = posHuman.begin(); itHuman != posHuman.end(); ++itHuman ) {

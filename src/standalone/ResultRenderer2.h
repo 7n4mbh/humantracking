@@ -50,6 +50,7 @@ private:
     std::map<unsigned long long, std::map<int,cv::Point2d> > trackingResult;
     std::map<unsigned long long, std::multimap<int,cv::Point2d> > trackingResultExt;
     std::deque< std::map<int,cv::Point2d> > result_buffer;
+    std::map< int, std::map<unsigned long long,cv::Point> > id_to_trace;
     
     std::string strResultPEPMapVideoFilename, strResultPEPMapWithoutRegionFilename;
     std::string strResultCameraVideoFilename;

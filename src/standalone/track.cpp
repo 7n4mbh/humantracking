@@ -126,7 +126,7 @@ double areIndependent( TrajectoryElement& trj1, TrajectoryElement& trj2, double 
     return 0.0;
 }
 
-double areConnectable( TrajectoryElement& trj1, TrajectoryElement& trj2, double threshold )
+double areConnectable( TrajectoryElement& trj1, TrajectoryElement& trj2, double threshold, unsigned long long termConnect )
 {
     TIME_MICRO_SEC timeBegin; // 距離を評価する開始時間
     TIME_MICRO_SEC timeEnd; // 距離を評価する終了時間
@@ -138,6 +138,11 @@ double areConnectable( TrajectoryElement& trj1, TrajectoryElement& trj2, double 
     // 共通時間がある場合は'接続不可能'を返す
     if( timeBegin <= timeEnd ) {
         return -0.5;
+    }
+
+    // termConnect以上の時間長離れている場合は -1 を返す
+    if( timeBegin - timeEnd >= termConnect ) {
+        return -1.0;
     }
 
     TrajectoryElement trjEarlier, trjLatter;
@@ -1391,11 +1396,11 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                         if( iTrj1 >= nCluster && iTrj2 >= nCluster ) {
                             value = -0.5;//-1.0
                         } else if( iTrj1 >= nCluster ) {
-                            value = areConnectable( trajectoriesPrevResult[ iTrj1 - nCluster ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold );
+                            value = areConnectable( trajectoriesPrevResult[ iTrj1 - nCluster ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold, rnvtrjParam.termConnect );
                         } else if( iTrj2 >= nCluster ) {
-                            value = areConnectable( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesPrevResult[ iTrj2 - nCluster ].front(), threshold );
+                            value = areConnectable( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesPrevResult[ iTrj2 - nCluster ].front(), threshold, rnvtrjParam.termConnect );
                         } else {
-                            value = areConnectable( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold );                   
+                            value = areConnectable( trajectoriesAveraged[ iTrj1 ].front(), trajectoriesAveraged[ iTrj2 ].front(), threshold, rnvtrjParam.termConnect );                   
                         }
                         cout << value << endl << flush;
                         tableConnectable[ iTrj1 + iTrj2 * sizeTableConnectable ] = tableConnectable[ iTrj2 + iTrj1 * sizeTableConnectable ] = value;
