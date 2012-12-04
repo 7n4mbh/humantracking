@@ -118,7 +118,7 @@ void ResultRenderer2::Render()
 {
     Mat image_camera( (int)stereo_height, (int)stereo_width, CV_8U );
     Mat image_occupancy_gray( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
-    Mat image_occupancy_without_regioin_record;
+    Mat image_occupancy_without_region_record;
 
     const unsigned long long time_render_begin = trackingResult.begin()->first;
     const unsigned long long time_render_end = trackingResult.rbegin()->first;
@@ -176,7 +176,7 @@ void ResultRenderer2::Render()
             } else {
                 image_occupancy_record = Scalar( 0, 0, 0 );
             }
-            image_occupancy_without_regioin_record = image_occupancy_record.clone();
+            image_occupancy_without_region_record = image_occupancy_record.clone();
             cout << "done." << endl << flush;
 
             cout << "Drawing human regions..." << flush;
@@ -200,7 +200,7 @@ void ResultRenderer2::Render()
                     int row = (int)( ( (float)image_occupancy_record.size().height / (float)image_occupancy_record.size().height ) * scale_m2px * ( ( itHuman->second.x - roi_x ) + roi_height / 2.0f ) );
                     int col = (int)( ( (float)image_occupancy_record.size().width / (float)image_occupancy_record.size().width ) * scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_width / 2.0f ) );
                     circle( image_occupancy_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
-                    circle( image_occupancy_without_regioin_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
+                    circle( image_occupancy_without_region_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
                     id_to_trace[ itHuman->first ][ time_video ] = Point( col, row );
                 }
                 for( map< int, std::map<unsigned long long,Point> >::iterator it_id_to_trace = id_to_trace.begin(); it_id_to_trace != id_to_trace.end(); ++it_id_to_trace ) {
@@ -212,7 +212,8 @@ void ResultRenderer2::Render()
                         for( map<unsigned long long,Point>::iterator itPoint = it_id_to_trace->second.begin(); itPoint != it_id_to_trace->second.end(); ++itPoint ) {
                             pts[ 0 ].push_back( itPoint->second );
                         }
-                        polylines( image_occupancy_without_regioin_record, pts, false, color_table[ it_id_to_trace->first % sizeColorTable ] );
+			cout << " polylines(): id=" << it_id_to_trace->first << flush << endl;
+                        polylines( image_occupancy_without_region_record, pts, false, color_table[ it_id_to_trace->first % sizeColorTable ] );
                     }
                 }
             } else {
@@ -270,7 +271,7 @@ void ResultRenderer2::Render()
             cout << "done." << endl << flush;
 
             // Silhouetteì¬
-            cout << "Slihouette Creation..." << flush;
+            cout << "Slihouette Creation..." << endl << flush;
             if( itSilhouetteMap != bufSilhouette.end() ) {
                 for( map<int,Mat>::iterator it_id_to_count = count_silhouette.begin(); it_id_to_count != count_silhouette.end(); ++it_id_to_count ) {
                     const int id = it_id_to_count->first;
@@ -291,6 +292,7 @@ void ResultRenderer2::Render()
                                 exit( 1 );
                             }   
                         }
+			cout << " silhouette_" << id << ".avi prepared." << endl << flush; 
                         {
                             ostringstream oss;
 #ifdef WINDOWS_OS
@@ -303,20 +305,27 @@ void ResultRenderer2::Render()
                                 cerr << "Couldn't open " << oss.str() << "." <<  endl;
                                 exit( 1 );
                             }   
-                        }  
+			}
+			cout << " silhouette2_" << id << ".avi prepared." << endl << flush; 
+                        
                     }
+		    cout << " image_silhouette[" << id << "] and image_silhouette2[" << id << "]" << flush;
                     if( image_silhouette[ id ].find( serialNumber ) == image_silhouette[ id ].end() ) {
                         image_silhouette[ id ][ serialNumber ].create( silhouette_height, silhouette_width, CV_8U );
                         image_silhouette2[ id ].create( silhouette_height, silhouette_width, CV_8U );
                     }
+		    cout << " prepared." << endl << flush;
 
                     GaussianBlur( count_silhouette[ id ], count_silhouette[ id ], Size( 5, 5 ), 0.75 );
+		    cout << " Blur applied." << endl << flush;
+		    cout << " Creating image_silhouette[" << id << "]..." << flush;
                     for( int col = 0; col < count_silhouette[ id ].cols; ++col ) {
                         for( int row = 0; row < count_silhouette[ id ].rows; ++row ) {
                             image_silhouette[ id ][ serialNumber ].at<unsigned char>( row, col ) 
                                 = ( count_silhouette[ id ].at<unsigned short>( row, col ) > 3 ) ? 255 : 0;
                         }
                     }
+		    cout << "done." << flush << endl;
                     //image_silhouette2[ id ] = image_silhouette[ id ][ serialNumber ].clone();
                 }
             }
@@ -346,10 +355,12 @@ void ResultRenderer2::Render()
             const Mat affine_matrix = getRotationMatrix2D( center, 90.0, 1.0 );
             warpAffine( image_occupancy_record, tmp, affine_matrix, image_occupancy_record.size(), INTER_LINEAR, BORDER_CONSTANT, Scalar::all( 255 ) );
             image_occupancy_record = tmp.clone();
+            warpAffine( image_occupancy_without_region_record, tmp, affine_matrix, image_occupancy_without_region_record.size(), INTER_LINEAR, BORDER_CONSTANT, Scalar::all( 255 ) );
+            image_occupancy_without_region_record = tmp.clone();
         }
         cout << "pepmapVideoWriter.write()..." << flush;
         pepmapVideoWriter.write( image_occupancy_record );
-        pepmapWithoutRegionVideoWriter.write( image_occupancy_without_regioin_record );
+        pepmapWithoutRegionVideoWriter.write( image_occupancy_without_region_record );
         cout << "done." << endl << flush;
         Mat image_camera_record_integrated( stereo_height * 2, stereo_width * 2, CV_8UC3 );
         {

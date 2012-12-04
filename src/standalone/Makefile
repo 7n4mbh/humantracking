@@ -14,7 +14,7 @@ else
     LIBDIR = `pkg-config opencv --libs-only-L` -L/usr/lib -L/opt/intel/Compiler/11.0/081/ipp/em64t/sharedlib
     LIB = `pkg-config opencv --libs-only-l` -lz -lippcoreem64t -lippiem64t -lippsem64t -lippmem64t -ltriclops -lpnmutils
 endif
-CFLAGS = $(INCLUDEDIR) -O2
+CFLAGS = $(INCLUDEDIR) -g -O2
 LDFLAGS = $(LIBDIR) $(LIB)
 
 $(EXENAME): $(OBJ)
