@@ -29,7 +29,7 @@ ResultRenderer2::~ResultRenderer2()
 {
 }
 
-void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string result_pepmapvideo_widthout_region_filename, std::string result_cameravideo_filename, double fps/*, std::string result_cameravideo_filename, std::string silhouette_path*/ )
+void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string result_pepmapvideo_widthout_region_filename, std::string resut_trajectoryvideo_filename, std::string result_cameravideo_filename, double fps/*, std::string result_cameravideo_filename, std::string silhouette_path*/ )
 {
     bufPEPMap.clear();
     trackingResult.clear();
@@ -43,6 +43,7 @@ void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string
 
     strResultPEPMapVideoFilename = result_pepmapvideo_filename;
     strResultPEPMapWithoutRegionFilename = result_pepmapvideo_widthout_region_filename;
+    strResultTrajectoryVideoFilename = resut_trajectoryvideo_filename;
     strResultCameraVideoFilename = result_cameravideo_filename;
     this->fps = fps;
 
@@ -56,6 +57,11 @@ void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string
     
     if( !pepmapWithoutRegionVideoWriter.open( strResultPEPMapWithoutRegionFilename, CV_FOURCC('X','V','I','D'), fps, Size( (int)( roi_width * 80 ), (int)( roi_height * 80 ) ) ) ) {
         cerr << "Couldn't open " << strResultPEPMapWithoutRegionFilename << "." <<  endl;
+        exit( 1 );
+    }
+
+    if( !trajectoryVideoWriter.open( strResultTrajectoryVideoFilename, CV_FOURCC('X','V','I','D'), fps, Size( (int)( roi_width * 80 ), (int)( roi_height * 80 ) ) ) ) {
+        cerr << "Couldn't open " << strResultTrajectoryVideoFilename << "." <<  endl;
         exit( 1 );
     }
 
@@ -119,6 +125,7 @@ void ResultRenderer2::Render()
     Mat image_camera( (int)stereo_height, (int)stereo_width, CV_8U );
     Mat image_occupancy_gray( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8U );
     Mat image_occupancy_without_region_record;
+    Mat image_trajectory_record( (int)( scale_m2px * roi_height ), (int)( scale_m2px * roi_width ), CV_8UC3 );
 
     const unsigned long long time_render_begin = trackingResult.begin()->first;
     const unsigned long long time_render_end = trackingResult.rbegin()->first;
@@ -181,6 +188,7 @@ void ResultRenderer2::Render()
 
             cout << "Drawing human regions..." << flush;
             // Occupancy Mapã‚Él•¨—Ìˆæ‚ð•`‰æ   
+            image_trajectory_record = Scalar( 255, 255, 255 );
             map<int,int> geometry_to_ID;
             if( !flgSegmentationComparisonMode ) {
                 for( multimap<int,Point2d>::iterator itHuman = regionHuman.begin(); itHuman != regionHuman.end(); ++itHuman ) {
@@ -201,6 +209,7 @@ void ResultRenderer2::Render()
                     int col = (int)( ( (float)image_occupancy_record.size().width / (float)image_occupancy_record.size().width ) * scale_m2px * ( ( itHuman->second.y - roi_y ) + roi_width / 2.0f ) );
                     circle( image_occupancy_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
                     circle( image_occupancy_without_region_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
+                    circle( image_trajectory_record, Point( col, row ), 1, color_table[ itHuman->first % sizeColorTable ], -1 );
                     id_to_trace[ itHuman->first ][ time_video ] = Point( col, row );
                 }
                 for( map< int, std::map<unsigned long long,Point> >::iterator it_id_to_trace = id_to_trace.begin(); it_id_to_trace != id_to_trace.end(); ++it_id_to_trace ) {
@@ -214,6 +223,7 @@ void ResultRenderer2::Render()
                         }
 			cout << " polylines(): id=" << it_id_to_trace->first << flush << endl;
                         polylines( image_occupancy_without_region_record, pts, false, color_table[ it_id_to_trace->first % sizeColorTable ] );
+                        polylines( image_trajectory_record, pts, false, color_table[ it_id_to_trace->first % sizeColorTable ] );
                     }
                 }
             } else {
@@ -357,10 +367,13 @@ void ResultRenderer2::Render()
             image_occupancy_record = tmp.clone();
             warpAffine( image_occupancy_without_region_record, tmp, affine_matrix, image_occupancy_without_region_record.size(), INTER_LINEAR, BORDER_CONSTANT, Scalar::all( 255 ) );
             image_occupancy_without_region_record = tmp.clone();
+            warpAffine( image_trajectory_record, tmp, affine_matrix, image_trajectory_record.size(), INTER_LINEAR, BORDER_CONSTANT, Scalar::all( 255 ) );
+            image_trajectory_record = tmp.clone();
         }
         cout << "pepmapVideoWriter.write()..." << flush;
         pepmapVideoWriter.write( image_occupancy_record );
         pepmapWithoutRegionVideoWriter.write( image_occupancy_without_region_record );
+        trajectoryVideoWriter.write( image_trajectory_record );
         cout << "done." << endl << flush;
         Mat image_camera_record_integrated( stereo_height * 2, stereo_width * 2, CV_8UC3 );
         {
