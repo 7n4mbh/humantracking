@@ -141,9 +141,9 @@ double areConnectable( TrajectoryElement& trj1, TrajectoryElement& trj2, double 
     }
 
     // termConnectˆÈã‚ÌŠÔ’·—£‚ê‚Ä‚¢‚éê‡‚Í -1 ‚ğ•Ô‚·
-    if( timeBegin - timeEnd >= termConnect ) {
-        return -1.0;
-    }
+    //if( timeBegin - timeEnd >= termConnect ) {
+    //    return -1.0;
+    //}
 
     TrajectoryElement trjEarlier, trjLatter;
     if( trj1.rbegin()->t == timeEnd ) {
