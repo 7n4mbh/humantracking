@@ -218,7 +218,11 @@ int main( int argc, char *argv[] )
     //}
     const int fps = 30;
 
-    resultRenderer.init( strStereoVideoFilePath + "result_pepmap.avi", strStereoVideoFilePath + "result_pepmap_without_region.avi", strStereoVideoFilePath + "segmentation.avi", fps );
+    resultRenderer.init( strStereoVideoFilePath + "result_pepmap.avi"
+                       , strStereoVideoFilePath + "result_pepmap_without_region.avi"
+                       , strStereoVideoFilePath + "result_trajectory.avi"
+                       , strStereoVideoFilePath + "segmentation.avi"
+                       , fps );
 
     Mat image_record( 960, 1280, CV_8UC3 );
     Mat image_depth_record( stereo_height * 2, stereo_width * 2, CV_8U );
