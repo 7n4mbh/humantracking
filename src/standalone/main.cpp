@@ -392,10 +392,10 @@ int main( int argc, char *argv[] )
 
         {
             //image_record = stereoVideo[ 0 ].image;
-            copy( image_record, 0, 0, stereoVideo[ 0 ].image, 640, 0, 640, 480 );
-            copy( image_record, 640, 0, stereoVideo[ 1 ].image, 640, 0, 640, 480 );
-            copy( image_record, 0, 480, stereoVideo[ 2 ].image, 640, 0, 640, 480 );
-            copy( image_record, 640, 480, stereoVideo[ 3 ].image, 640, 0, 640, 480 );
+            copy( image_record, 0, 0, stereoVideo[ 0 ].image, 0/*640*/, 0, 640, 480 );
+            copy( image_record, 640, 0, stereoVideo[ 1 ].image, 0/*640*/, 0, 640, 480 );
+            copy( image_record, 0, 480, stereoVideo[ 2 ].image, 0/*640*/, 0, 640, 480 );
+            copy( image_record, 640, 480, stereoVideo[ 3 ].image, 0/*640*/, 0, 640, 480 );
             //cout << "copy done." << endl;
             imshow( "Record", image_record );
 	    //cout << "imshow( \"Record\", image_record );" << endl;
