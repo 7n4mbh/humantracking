@@ -320,7 +320,7 @@ void ResultRenderer2::Render()
 #ifdef LINUX_OS
                             oss << strVideoFilePath << "result_silhouette/silhouette2_" << id << ".avi";
 #endif
-                            if( !silhouetteVideoWriter2[ id ].open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( (int)( scale_m2px_silhouette * roi_height ) * 2, (int)( scale_m2px_silhouette * 3.0 ) * 2 ) ) ) {
+                            if( !silhouetteVideoWriter2[ id ].open( oss.str(), CV_FOURCC('X','V','I','D'), fps, Size( (int)( scale_m2px_silhouette * roi_height ) , (int)( scale_m2px_silhouette * 3.0 ) ) ) ) {
                                 cerr << "Couldn't open " << oss.str() << "." <<  endl;
                                 exit( 1 );
                             }   
@@ -455,7 +455,7 @@ void ResultRenderer2::Render()
             cvtColor( image_silhouette2[ id ], tmp, CV_GRAY2BGR );
             cout << "Gesture Recognition..." << flush;
             gesture.clear_silhouette( id );
-            gesture.set_silhouette( id, time_video, image_silhouette2[ id ] );
+            gesture.set_silhouette( id, time_video, tmp );
             gesture.recognize( id, time_video );
             if( gesture.status[ id ] ) {
                 rectangle( tmp
