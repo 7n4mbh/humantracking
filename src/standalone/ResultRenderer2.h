@@ -15,6 +15,7 @@
 #include "opencv/highgui.h"
 
 #include "Trajectory.h"
+#include "GestureRecognition.h"
 
 struct _PEPMapInfoEx : public PEPMapInfo
 {
@@ -66,6 +67,8 @@ private:
     cv::VideoWriter cameraVideoWriter;
     std::map<int,cv::VideoWriter> silhouetteVideoWriter;
     std::map<int,cv::VideoWriter> silhouetteVideoWriter2;
+
+    GestureRecognition gesture;
 
 public:
     ResultRenderer2();

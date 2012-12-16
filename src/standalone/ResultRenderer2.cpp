@@ -69,6 +69,15 @@ void ResultRenderer2::init( std::string result_pepmapvideo_filename, std::string
         cerr << "Couldn't open " << strResultCameraVideoFilename << "." <<  endl;
         exit( 1 );
     }        
+
+    ostringstream oss;
+#ifdef WINDOWS_OS
+    oss << strVideoFilePath << "result_silhouette\\";
+#endif
+#ifdef LINUX_OS
+    oss << strVideoFilePath << "result_silhouette/";
+#endif
+    gesture.init( oss.str() );
 }
 
 void ResultRenderer2::AddPEPMapInfo( PEPMapInfoEx& pepmap )
@@ -440,11 +449,25 @@ void ResultRenderer2::Render()
                 image_silhouette2[ id ] += it->second;
                 cout << "done." << endl;
             }
-            cout << "pepmapVideoWriter.write()...";
+            cout << "silhouetteVideoWriter.write()..." << flush;
             silhouetteVideoWriter[ id ].write( image_silhouette_record );
+            cout << "done." << endl << flush;
             cvtColor( image_silhouette2[ id ], tmp, CV_GRAY2BGR );
+            cout << "Gesture Recognition..." << flush;
+            gesture.clear_silhouette( id );
+            gesture.set_silhouette( id, time_video, image_silhouette2[ id ] );
+            gesture.recognize( id, time_video );
+            if( gesture.status[ id ] ) {
+                rectangle( tmp
+                         , Point( 0, 0 )
+                         , Point( 10, 10 )
+                         , color_table[ 1 % sizeColorTable ]
+                         , CV_FILLED );
+            }
+            cout << "done." << endl << flush;
+            cout << "silhouetteVideoWriter2.write()..." << flush;
             silhouetteVideoWriter2[ id ].write( tmp );
-            cout << "done." << endl;
+            cout << "done." << endl << flush;
         }
         cout << "done." << endl;
 
