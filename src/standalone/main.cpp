@@ -152,6 +152,8 @@ int main( int argc, char *argv[] )
             flgCompatible = true;
         } else if( strOpt == "--segmentation-comparison" ) {
             flgSegmentationComparisonMode = true;
+        } else if( strOpt == "--no-logfiles" ) {
+            flgOutputTrackingProcessData2Files = false;
         } else {
             serialNumber.push_back( atoi( argv[ i ]) );
         }

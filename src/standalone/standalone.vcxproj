@@ -164,6 +164,7 @@
     <ClCompile Include="ResultRenderer2.cpp" />
     <ClCompile Include="StereoVideo.cpp" />
     <ClCompile Include="track.cpp" />
+    <ClCompile Include="TrackingProcessLogger.cpp" />
     <ClCompile Include="Trajectory.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -177,6 +178,7 @@
     <ClInclude Include="ResultRenderer2.h" />
     <ClInclude Include="StereoVideo.h" />
     <ClInclude Include="track.h" />
+    <ClInclude Include="TrackingProcessLogger.h" />
     <ClInclude Include="Trajectory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

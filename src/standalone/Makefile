@@ -4,7 +4,7 @@ CC = icc
 CXX = icpc
 
 EXENAME = ../../bin/standalone
-SRC = main.cpp StereoVideo.cpp track.cpp ClusterTrajectories.cpp ExtendTrajectories.cpp ExtractLUM.cpp GestureRecognition.cpp MakeLUMSlice.cpp PlotCalculationProcess.cpp RenovateTrajectory.cpp ResultRenderer2.cpp Trajectory.cpp
+SRC = main.cpp StereoVideo.cpp track.cpp ClusterTrajectories.cpp ExtendTrajectories.cpp ExtractLUM.cpp GestureRecognition.cpp MakeLUMSlice.cpp PlotCalculationProcess.cpp RenovateTrajectory.cpp ResultRenderer2.cpp Trajectory.cpp TrackingProcessLogger.cpp
 OBJ = $(SRC:%.cpp=%.o)
 INCLUDEDIR = -I/usr/include/i386-linux-gnu `pkg-config opencv --cflags-only-I` -I/usr/include/triclops -I/usr/include/flycapture
 ifeq ($(LBITS),32)

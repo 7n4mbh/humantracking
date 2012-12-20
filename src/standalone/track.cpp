@@ -6,13 +6,13 @@
 
 #include "../humantracking.h"
 #include "track.h"
-//#include "TrackingProcessLogger.h"
+#include "TrackingProcessLogger.h"
 //#include "Viewer.h"
 
 using namespace std;
 using namespace cv;
 
-//extern TrackingProcessLogger logTracking;
+TrackingProcessLogger logTracking;
 //extern Viewer viewer;
 
 PARAM_COMMON commonParam; // ã§í ÉpÉâÉÅÅ[É^
@@ -484,16 +484,26 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         //timeTracking = commonParam.termTracking + 1000000000; // debug code
         flgFirst = false;
         flgTrackingStarts = true;
-        //logTracking.init( "tracking.log" );
+        logTracking.init( "tracking.log" );
         //viewer.SetStartTime( timeEarliestPEPMap );
+        ostringstream oss;
+#ifdef WINDOWS_OS
+		oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+#endif
+#ifdef LINUX_OS
+		oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+#endif
+        oss << "tracking.csv";
+        ofstream ofs( oss.str().c_str(), std::ios::out );
+        ofs << "time, # of clusters, # of combinations, # of connection patterns" << endl;
     }
 
     // debug code
     //time_stamp = time_stamp - timeEarliestPEPMap + 1000000000;
 
     if( flgTrackingStarts ) {
-        //logTracking.set_tracking_block( timeTracking - commonParam.termTracking, timeTracking );
-        //logTracking.start();
+        logTracking.set_tracking_block( timeTracking - commonParam.termTracking, timeTracking );
+        logTracking.start();
         //viewer.SetTrackingStatus( 0 );
         //viewer.SetTrackingBlock( timeTracking - commonParam.termTracking, timeTracking );
         flgTrackingStarts = false;
@@ -501,7 +511,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
     
     time_of_received_pepmap.insert( time_stamp );
 
-    //logTracking.making_trajectory( TrackingProcessLogger::Start );
+    logTracking.making_trajectory( TrackingProcessLogger::Start );
 
     // PEPMapÇÉTÉìÉvÉâÇ…í«â¡Ç∑ÇÈ
     AddPEPMapToSampler( occupancy
@@ -596,7 +606,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         }
     }
 
-    //logTracking.making_trajectory( TrackingProcessLogger::End );
+    logTracking.making_trajectory( TrackingProcessLogger::End );
 
     if( !tableLUMSlice.empty() && tableLUMSlice.rbegin()->first >= timeTracking ) {
         cout << "Done with making trajectories." << endl;
@@ -625,14 +635,11 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         //
         // Clustering the trajectories
         //
-        //logTracking.clustering( TrackingProcessLogger::Start );
+        logTracking.clustering( TrackingProcessLogger::Start );
         //viewer.SetTrackingStatus( 1 );
 
-#define NEW_CLUSTERING_ALGORITHM
-#ifdef NEW_CLUSTERING_ALGORITHM
-
         vector<CTrajectory> trajectoriesClustered;
-#if 1
+
         cout << "Started Clustering. " ;
         map<int,CTrajectory> trajectoryForClustering;
         vector<int> idxTrajectoryForClustering;
@@ -660,7 +667,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         const float scale_m2px_for_clustering_video = 100.0f;
         Mat img( (int)( roi_height * scale_m2px_for_clustering_video ), (int)( roi_width * scale_m2px_for_clustering_video ), CV_8UC3 );
         VideoWriter videoWriter;
-        {
+        if( flgOutputTrackingProcessData2Files ) {
             ostringstream oss;
 #ifdef WINDOWS_OS
 	        oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
@@ -721,7 +728,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     //line( img, Point( col, row ), Point( col, row ), color_table[ classID[ itPos->first ] % sizeColorTable ], 1 );
                 }
 
-                videoWriter.write( img );
+                if( flgOutputTrackingProcessData2Files ) {
+                    videoWriter.write( img );
+                }
             }
 
             // Set classID to the field of 'ID' of PosXYTID at each trajectory.
@@ -741,80 +750,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
             delete [] dist;
         }
-#else
-        //
-        // ÉNÉâÉXÉ^ÉäÉìÉOÇ…ópÇ¢ÇÈãOê’Åií∑Ç≥Ç™clusterigParam.minLengthà»è„ÅjÇéÊÇËèoÇ∑
-        vector<TrajectoryElement> trajectoryElementOfMyProc;
-        vector<TrajectoryElement>::iterator it = storageTrajectoryElement.begin();
-        for( ; it != storageTrajectoryElement.end(); ++it ) {
-            if( it->rbegin()->t - it->begin()->t >= clusteringParam.minLength ) {
-                trajectoryElementOfMyProc.push_back( *it );
-            }
-        }
 
-        cerr << "Started Clustering. " 
-             << trajectoryElementOfMyProc.size() << " trajectories out of " << storageTrajectoryElement.size() << " are chosen for clustering."
-             << endl;
-
-        size_t nAllTrj; // ëçãOê’êî
-        nAllTrj = trajectoryElementOfMyProc.size();
-        map<int,CTrajectory> trajectoryForClustering;
-        int iTrj = 0;
-        for( vector<TrajectoryElement>::iterator it = trajectoryElementOfMyProc.begin(); it != trajectoryElementOfMyProc.end(); ++it ) {
-            trajectoryForClustering[ iTrj ].push_back( *it );
-            //(*pRecv)[ iTrj ].push_back( *it );
-            ++iTrj;
-        }
-
-
-        map<unsigned long long, map<int,PosXYTID> > time_to_TrjIdx_and_pos;
-        for( map<int,CTrajectory>::iterator itTrj = trajectoryForClustering.begin(); itTrj != trajectoryForClustering.end(); ++itTrj ) {
-            TrajectoryElement::iterator itPosID = itTrj->second.begin()->begin();
-            for( ; itPosID != itTrj->second.begin()->end(); ++itPosID ) {
-                time_to_TrjIdx_and_pos[ itPosID->t ][ itTrj->first ] = *itPosID;//&(PosXYTID)(*itPosID);
-            }
-        }
-
-        map<unsigned long long, map<int,PosXYTID> >::iterator itTrjIdxToPos = time_to_TrjIdx_and_pos.begin();
-        for( ; itTrjIdxToPos != time_to_TrjIdx_and_pos.end(); ++itTrjIdxToPos ) {
-            const unsigned long long time = itTrjIdxToPos->first;
-            const int nTrj = itTrjIdxToPos->second.size();
-            double* dist = new double[ nTrj * nTrj ];
-
-            // Make a distance table at 'time'
-            map<int,PosXYTID>::iterator itPos1 = itTrjIdxToPos->second.begin();
-            for( int idx1 = 0; idx1 < nTrj; ++idx1, ++itPos1 ) {
-                map<int,PosXYTID>::iterator itPos2 = itPos1;
-                for( int idx2 = idx1; idx2 < nTrj; ++idx2, ++itPos2 ) {
-                    double dist_x, dist_y, d;
-                    dist_x = ( itPos1->second.x - itPos2->second.x );
-                    dist_y = ( itPos1->second.y - itPos2->second.y );
-                    d = sqrt( dist_x * dist_x + dist_y * dist_y );
-                    dist[ idx1 + idx2 * nTrj ] = dist[ idx2 + idx1 * nTrj ] = d;
-                }
-            }
-
-            // clustering
-            vector<int> classID( nTrj, -1 );
-            Clustering( &classID, dist, nTrj, 0.22/*0.2*//*0.07*/ );
-
-            // Set classID to the field of 'ID' of PosXYTID at each trajectory.
-            map<int,PosXYTID>::iterator itPos = itTrjIdxToPos->second.begin();
-            for( int idx = 0; idx < nTrj; ++idx, ++itPos ) {
-                //itPos->second->ID = classID[ idx ];
-                TrajectoryElement::iterator it = trajectoryForClustering[ itPos->first ].begin()->find( PosXYT( 0.0, 0.0, time ) );
-                if( it != trajectoryForClustering[ itPos->first ].begin()->end() ) {
-                    PosXYTID pos_id = *it;
-                    trajectoryForClustering[ itPos->first ].begin()->erase( it );
-                    pos_id.ID = classID[ idx ];
-                    trajectoryForClustering[ itPos->first ].begin()->insert( pos_id );
-                }
-                //it->ID = itPos->second.ID;
-            }
-
-            delete [] dist;
-        }
-#endif
         // Make a distance table among every trajectory
         cout << " Make a distance table among every trajectory...";
         const int nTrj = trajectoryForClustering.size();
@@ -933,7 +869,6 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             }
         }
        
-#if 1
         {
             vector< vector<int> > clst;
             Clustering3( &clst, distTable, nCluster_before_integration, clusteringParam.thConnect );
@@ -947,27 +882,14 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             }
             trajectoriesClustered = tmp;
         }
-#else
-        vector<int> classID( nCluster, -1 );
-        int nClass = Clustering( &classID, distTable , nCluster, clusteringParam.thConnect );
 
-        {
-            vector<CTrajectory> tmp( nClass );
-            for( int i = 0; i < nCluster; ++i ) {
-                tmp[ classID[ i ] ].insert( tmp[ classID[ i ] ].end()
-                                          , trajectoriesClustered[ i ].begin()
-                                          , trajectoriesClustered[ i ].end() );
-            }
-            trajectoriesClustered = tmp;
-        }
-#endif
         delete [] distTable;
 
         cout << "Done. # of the cluster is " << trajectoriesClustered.size() << "." << endl;
 
         //
         // Output process information of clustering
-        {
+        if( flgOutputTrackingProcessData2Files ) {
             double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
             unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
             OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
@@ -1006,7 +928,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             trajectoriesAveraged[ i ].push_back( trjElement );
         }
         
-        {
+        if( flgOutputTrackingProcessData2Files ) {
             double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
             unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
             OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
@@ -1025,209 +947,10 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                             , NULL
                             , &plotParam );
         }
-#else
-        cerr << "Calculating a distance table..." << endl;
 
-        //
-        // ÉNÉâÉXÉ^ÉäÉìÉOÇ…ópÇ¢ÇÈãOê’Åií∑Ç≥Ç™clusterigParam.minLengthà»è„ÅjÇéÊÇËèoÇ∑
-        vector<TrajectoryElement> trajectoryElementOfMyProc;
-        vector<TrajectoryElement>::iterator it = storageTrajectoryElement.begin();
-        for( ; it != storageTrajectoryElement.end(); ++it ) {
-            if( it->rbegin()->t - it->begin()->t >= clusteringParam.minLength ) {
-                trajectoryElementOfMyProc.push_back( *it );
-            }
-        }
+        logTracking.clustering( TrackingProcessLogger::End );
 
-        size_t nAllTrj; // ëçãOê’êî
-        nAllTrj = trajectoryElementOfMyProc.size();
-        map<int,CTrajectory> trajectoryForClustering;
-        int iTrj = 0;
-        for( vector<TrajectoryElement>::iterator it = trajectoryElementOfMyProc.begin(); it != trajectoryElementOfMyProc.end(); ++it ) {
-            trajectoryForClustering[ iTrj ].push_back( *it );
-            //(*pRecv)[ iTrj ].push_back( *it );
-            ++iTrj;
-        }
-
-
-        // ãóó£ÉeÅ[ÉuÉãÇÃèâä˙âª
-        double* distTable = new double[ nAllTrj * nAllTrj ];
-        for( size_t i = 0; i < nAllTrj * nAllTrj; ++i ) {
-            distTable[ i ] = -2.0;
-        }
-        CTrajectory_Distance distanceTrajectory( clusteringParam.distanceLimit, clusteringParam.nLimit, clusteringParam.minCommonTimeRange );
-        vector<size_t> iTrjToCol( nAllTrj ); // äeÉvÉçÉZÉXÇÃãóó£ÉeÅ[ÉuÉãÇ…Ç®Ç¢ÇƒóÒî‘çÜÇ∆ãOê’î‘çÜÇÃëŒâûÇé¶ÇµÇΩÇ‡ÇÃ
-        for( size_t i = 0; i < nAllTrj; ++i ) {
-            iTrjToCol[ i ] = i;
-        }
-        CalculateDistanceTable( distTable
-                              , &iTrjToCol
-                              , nAllTrj
-                              , trajectoryForClustering.begin()
-                              , trajectoryForClustering.end()
-                              , &trajectoryForClustering
-                              , distanceTrajectory );
-
-
-        // ÉNÉâÉXÉ^ÉäÉìÉO
-        vector<CTrajectory> trajectoriesClustered;
-
-        // èâä˙ÉNÉâÉXÉ^ÇÃèÓïÒÇÅCéÛêMÇµÇΩãOê’àÍÇ¬Ç∏Ç¬Ç©ÇÁê¨ÇÈÉNÉâÉXÉ^Ç™ê∂ê¨Ç≥ÇÍÇÈÇÊÇ§èÄîıÇ∑ÇÈÅB
-        vector< vector<int> > indexCluster;
-        vector<int> classID( nAllTrj, -1 );
-        for( int i = 0; i < (int)nAllTrj; ++i ) {
-            indexCluster.push_back( vector<int>( 1, i ) );
-        }
-
-        double* dist;
-
-        size_t nCluster;// = indexCluster.size();
-        size_t prevNumOfCluster;// = nCluster;
-        int cnt_loop = 0;
-        do {
-            vector< vector<int> > tmpIndexCluster;
-            trajectoriesClustered.clear();
-            for( vector< vector<int> >::iterator itCluster = indexCluster.begin(); itCluster != indexCluster.end(); ++itCluster ) {
-                CTrajectory trj;
-                for( vector<int>::iterator itIdxTrj = itCluster->begin(); itIdxTrj != itCluster->end(); ++itIdxTrj ) {
-                    map<int,CTrajectory>::iterator itTrj;
-                    if( ( itTrj = trajectoryForClustering.find( *itIdxTrj ) ) != trajectoryForClustering.end() ) {
-                        trj.insert( trj.end(), itTrj->second.begin(), itTrj->second.end() );
-                    } else {
-                        cerr << "Trajectory no." << *itIdxTrj << " Not Found(" << nAllTrj << ")." << endl;
-                        //exit( 1 );
-                    }
-                }
-                if( !trj.empty() && VerifyClusteredTrajectories( trj, clusteringParam.distVerifyCluster ) ) {
-                    trajectoriesClustered.push_back( trj );
-                    tmpIndexCluster.push_back( *itCluster );
-                }
-            }
-
-            // ãóó£ÉeÅ[ÉuÉãîzíu
-            nCluster = trajectoriesClustered.size();
-            dist = new double[ nCluster * nCluster ];
-
-            //cerr << "çƒÉNÉâÉXÉ^ÉäÉìÉOÅiåªç›ÇÃÉNÉâÉXÉ^ÅF" << nCluster << "[$B8D(B], $BMxMQ50@W!'(B" << usetrj.size() << "[$BK\(B]$B!K(B...";
-            cerr << cnt_loop << "âÒñ⁄...";
-
-            vector<CTrajectory> tmpTrajectoriesClustered( trajectoriesClustered.size() );
-            vector<CTrajectory>::iterator itTmpTrj = tmpTrajectoriesClustered.begin();
-            for( vector<CTrajectory>::iterator itTrj = trajectoriesClustered.begin(); itTrj != trajectoriesClustered.end(); ++itTrj, ++itTmpTrj ) {
-                itTrj->Integrate( &(*itTmpTrj) );
-                //cerr << "itTrj->front().size():" << itTrj->front().size() << ", itTmpTrj->front().size():" << itTmpTrj->front().size() << endl;
-                //if( itTmpTrj->front().size() == 0 ) {
-                //    exit( 1 );
-                //}
-            }
-
-            for( size_t idx1 = 0; idx1 < tmpTrajectoriesClustered.size(); ++idx1 ) {
-                for( size_t idx2 = idx1; idx2 < tmpTrajectoriesClustered.size(); ++idx2 ) {
-                    size_t index1 = idx1 * nCluster + idx2;
-                    size_t index2 = idx2 * nCluster + idx1;
-                    //cerr << "nCluster = " << nCluster << endl;
-                    //cerr << "idx1 = " << idx1 << ", $BMWAG?t(B = " << tmpTrajectoriesClustered[ idx1 ].size() << endl;
-                    //cerr << "idx2 = " << idx2 << ", $BMWAG?t(B = " << tmpTrajectoriesClustered[ idx2 ].size() << endl;
-                    if( false/*cnt_loop == 0*/ ) {
-                        // $B:G=i$N%/%i%9%?%j%s%0$N$H$-$O@h$K5a$a$?5wN%%F!<%V%k$r;HMQ$9$k!#(B
-                        dist[ index1 ] = dist[ index2 ] = distTable[ idx1 * nAllTrj + idx2 ];
-                    } else {
-                        dist[ index1 ] = dist[ index2 ] = distanceTrajectory( tmpTrajectoriesClustered[ idx1 ]
-                                                                            , tmpTrajectoriesClustered[ idx2 ] );
-                    }
-                    //TrajectoryElement_Distance distanceTrajectoryElement( clusteringParam.distanceLimit, clusteringParam.nLimit, clusteringParam.minCommonTimeRange );
-                    //cerr << "idx1:" << tmpTrajectoriesClustered[ idx1 ].front().size() << ", idx2:" << tmpTrajectoriesClustered[ idx2 ].front().size() << ", ";
-                    //cerr << "$B5wN%(B = ";
-                    //dist[ index1 ] = dist[ index2 ] = distanceTrajectoryElement( tmpTrajectoriesClustered[ idx1 ].front()
-                    //                                                           , tmpTrajectoriesClustered[ idx2 ].front() );
-                    //cerr << dist[ index1 ] << endl;
-                }
-            }
-
-#if 1
-
-            // ÉNÉâÉXÉ^Çä‘à¯Ç≠
-            cerr << "óòópÉNÉâÉXÉ^ÇÃëIíË...";
-            vector<int> idxClusterUse;
-            if( !tmpTrajectoriesClustered.empty() ) {
-                vector<double> frequency( tmpTrajectoriesClustered.size(), 0.0 );
-                CalcFrequency( (double*)&(frequency[ 0 ]), dist, tmpTrajectoriesClustered.size(), 0.1, clusteringParam.thDistance );
-                ReduceTrajectory( &idxClusterUse, (double*)&(frequency[0]), frequency.size(), 55.0/*80.0*/ );
-            }
-            cerr << "äÆóπÅi" << idxClusterUse.size() << "[å¬]Åj...";
-
-            // ãóó£ÉeÅ[ÉuÉãçƒîzíu
-            double* dist2 = new double[ idxClusterUse.size() * idxClusterUse.size() ];
-            for( vector<int>::iterator itIdxCluster = idxClusterUse.begin(); itIdxCluster != idxClusterUse.end(); ++itIdxCluster ) {
-                for( vector<int>::iterator it = idxClusterUse.begin(); it != idxClusterUse.end(); ++it ) {
-                    size_t idxDst = distance( idxClusterUse.begin(), itIdxCluster ) * idxClusterUse.size()
-                                    + distance( idxClusterUse.begin(), it );
-                    size_t idxSrc = *itIdxCluster * nCluster + *it;
-                    dist2[ idxDst ] = dist[ idxSrc ];
-                }
-            }
-
-            vector<int> classID( idxClusterUse.size(), -1 );
-            Clustering( &classID, dist2, idxClusterUse.size(), clusteringParam.distVerifyCluster );
-
-            vector< vector<int> > tmp;
-            Clustering2( &tmp, classID, dist2, idxClusterUse.size(), clusteringParam.thConnect, clusteringParam.thDistance );
-
-            delete [] dist2;
-
-
-            indexCluster.clear();
-            for( vector< vector<int> >::iterator itClusterIdx = tmp.begin(); itClusterIdx != tmp.end(); ++itClusterIdx ) {
-                vector<int> clusterIdx;
-                for( vector<int>::iterator it = itClusterIdx->begin(); it != itClusterIdx->end(); ++it ) {
-                    clusterIdx.insert( clusterIdx.end()
-                                        , tmpIndexCluster[ idxClusterUse[ *it ] ].begin()
-                                        , tmpIndexCluster[ idxClusterUse[ *it ] ].end() );
-                }
-                sort( clusterIdx.begin(), clusterIdx.end() );
-                clusterIdx.erase( unique( clusterIdx.begin(), clusterIdx.end() ), clusterIdx.end() );
-                indexCluster.push_back( clusterIdx );
-            }
-
-            prevNumOfCluster = nCluster;//idxClusterUse.size();// nCluster;
-            nCluster = indexCluster.size();
-            cerr << "èIóπÅiÉNÉâÉXÉ^ÅF" << nCluster << "[å¬], trajectoriesClustered.size()=" << trajectoriesClustered.size() << "Åj";
-            cerr << endl;
-
-            //
-            // Output process information of clustering
-            if( flgOutputTrackingProcessData2Files ) {
-                ++cnt_loop;
-                if( trajectoriesClustered.size() < 30 ) {
-                    ostringstream oss;
-                    oss << cnt_loop;
-                    double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-                    unsigned int nSample = (unsigned int)( plotParam.kSample /*3.0e-2*//*1.04e-4*/ * sumValue );
-                    OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-                                    , timeTracking//tableLUMSlice.rbegin()->first
-                                    , timeEarliestPEPMap
-                                    , &sampler
-                                    , nSample
-                                    , &trajectoriesClustered
-#ifdef WINDOWS_OS
-			            , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
-#endif
-#ifdef LINUX_OS
-			            , "/home/kumalab/project/HumanTracking/bin/tmp_trajectories/"
-#endif
-                                    , oss.str()
-                                    , NULL
-                                    , &plotParam );
-                }
-                
-            }
-#endif
-            delete [] dist;
-        } while( prevNumOfCluster != nCluster );
-
-#endif
-        //logTracking.clustering( TrackingProcessLogger::End );
-
-
+        logTracking.renovation( TrackingProcessLogger::Start );
         //
         // Selection of the best combination of the clusters which fits
         // to the temporal stack of the occupancy maps.
@@ -1316,20 +1039,22 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 ofs << endl;
                 cout << endl;
 
-                OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-                             , timeTracking//tableLUMSlice.rbegin()->first
-                                , timeEarliestPEPMap
-                                , combination[ i ]
-                                , i
-                                , trajectoriesAveraged
+                if( flgOutputTrackingProcessData2Files ) {
+                    OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
+                                 , timeTracking//tableLUMSlice.rbegin()->first
+                                    , timeEarliestPEPMap
+                                    , combination[ i ]
+                                    , i
+                                    , trajectoriesAveraged
 #ifdef WINDOWS_OS
-			                    , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
+			                        , "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\"
 #endif
 #ifdef LINUX_OS
-			                    , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
+			                        , "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/"
 #endif
-                                , "averaged"
-                                , &plotParam );         
+                                    , "averaged"
+                                    , &plotParam );    
+                }
             }
         }
         cout << endl;
@@ -1351,6 +1076,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             //    cout << i << " ";
             //}
         }
+
+        int nConnectionPattern_for_record = 0;
 
         vector<TrajectoryElement> opt;
         vector<int> idOpt;
@@ -1449,6 +1176,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                                      , connection_patterns.end() );
             cout << " done." << endl;
         
+            nConnectionPattern_for_record = connection_patterns.size();
             {
                 ostringstream oss;
     #ifdef WINDOWS_OS
@@ -1596,199 +1324,26 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         }
 
         cout << "Done." << endl << flush;
-
-
-        //logTracking.renovation( TrackingProcessLogger::Start );
-        //viewer.SetTrackingStatus( 2 );
-
-#if 0
-        //
-        // Renovate the trajectories
-        TrajectoriesInfo infoTrj;
-        infoTrj.section.resize( 1 );
-
-        cerr << "Started renovation: [ " << timeTracking - commonParam.termTracking - timeEarliestPEPMap
-                << ", " <<  timeTracking - timeEarliestPEPMap << " )" << endl;
-
-        // ÉNÉâÉXÉ^ÉäÉìÉOÇµÇΩãOê’ÇïΩãœÇµÇƒinfoTrjÇ…äiî[Ç∑ÇÈ
-        infoTrj.trjElement.resize( trajectoriesClustered.size() );
-        for( int i = 0; i < (int)trajectoriesClustered.size(); ++i ) {
-            CTrajectory trj;
-            trajectoriesClustered[ i ].Integrate( &trj );
-            infoTrj.trjElement[ i ] = trj.front();
-        }
-
-//        if( myRank == 0 ) {
-//            cout << "Å@ÉNÉâÉXÉ^ÉäÉìÉOÇµÇΩãOê’Çí«â¡: ëçåv" << infoTrj.trjElement.size() << "[å¬]" << endl;
-//        }
-
-        // ëOâÒÇÃí«ê’åãâ (resultTrajectory)Ç[ timeTracking - commonParam.termTracking, timeTracking )Ç≈
-        // ÉNÉäÉbÉvÇµÇƒinfoTrjÇ…äiî[Ç∑ÇÈ
-        int idx = (int)trajectoriesClustered.size();
-        map<int,int> reserve; // ãOê’î‘çÜÇ∆ä˘ë∂ÇÃIDÇÃëgÇ›çáÇÌÇπ
-        for( map<int,CTrajectory>::iterator itResult = resultTrajectory.begin(); itResult != resultTrajectory.end(); ++itResult ) {
-            CTrajectory trj;
-            trj = itResult->second;
-            trj.Clip( timeTracking - commonParam.termTracking, timeTracking );
-            if( !trj.empty() ) {
-                infoTrj.trjElement.push_back( trj.front() );
-                reserve[ idx ] = itResult->first;
-                ++idx;
-            }
-        }
-
-//        if( myRank == 0 ) {
-//            cout << "Å@ëOâÒÇÃí«ê’åãâ Çí«â¡: ëçåv" << infoTrj.trjElement.size() << "[å¬]" << endl;
-//        }
-
-        //
-        // ãOê’ÇÃèoóÕ
-//            if( myRank == 0 ) {
-//                vector<CTrajectory> vectrj;
-//                for( vector<TrajectoryElement>::iterator it = infoTrj.trjElement.begin(); it != infoTrj.trjElement.end(); ++it ) {
-//                    CTrajectory trj;
-//                    trj.push_back( *it );
-//                    vectrj.push_back( trj );
-//                }
-//                double sumValue = accumulate( sampler.begin(), sampler.end(), 0.0, PosXYTV_Sum() );
-//                unsigned int nSample = (unsigned int)( 1.04e-4 * sumValue );
-//                OutputProcess( timeTracking - commonParam.termTracking//tableLUMSlice.begin()->first
-//                             , timeTracking//tableLUMSlice.rbegin()->first
-//                             , timeEarliestPEPMap
-//                             , &sampler
-//                             , nSample
-//                             , &vectrj
-//                             , "./tmp_preoptimize/"
-//                             , ""
-//                             , NULL
-//                             , &plotParam );
-//            }
-
-        // ÉZÉNÉVÉáÉìï™äÑ
-        map<int,int> pointIdxToTrjNo;
-        DivideIntoSections( &infoTrj, &pointIdxToTrjNo, rnvtrjParam );
+        logTracking.renovation( TrackingProcessLogger::End );
 
         {
-            ostringstream oss;
-#ifdef WINDOWS_OS
-		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
-#endif
-#ifdef LINUX_OS
-			oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
-#endif
-            oss << "DividedIntoSections_" << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ".txt";
-            ofstream ofs( oss.str().c_str() );
-
-            for( int i = 0; i < infoTrj.tableGroupable.size(); ++i ) {
-                for( int j = i; j < infoTrj.tableGroupable.size(); ++j ) {
-                    ofs << "tableGroupable[" << i << "][" << j << "]=" << infoTrj.tableGroupable[ i ].get( j ) << endl;
-                }
-            }
+                ostringstream oss;
+    #ifdef WINDOWS_OS
+		        oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+    #endif
+    #ifdef LINUX_OS
+			    oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+    #endif
+                oss << "tracking.csv";
+                ofstream ofs( oss.str().c_str(), std::ios::out | std::ios::app );
+                
+                ofs << timeTracking - commonParam.termTracking - timeEarliestPEPMap << ", "
+                    << nCluster << ", " 
+                    << combination.size() << ", " 
+                    << nConnectionPattern_for_record << endl;
         }
 
-        // äeÉZÉNÉVÉáÉìÇ≈ÉZÉbÉgÇçÏê¨
-        for( int i = 0; i < (int)infoTrj.section.size(); ++i ) {
-            MakeSet( i, &infoTrj, &reserve );
-//            cout << "Å@Å@ÉZÉNÉVÉáÉì" << i << ": " << infoTrj.section[ i ].trjSet.size() << "[å¬]" << endl;
-        }
-
-//        start_d = MPI_Wtime();
-//        cout << "Optimize()...";
-        // ç≈ìKâÇÃíTçı
-        vector<TrajectoryElement> opt;
-        vector<int> idOpt;
-        double min = -1.0;
-        //if( myRank == 0 ) {
-        cerr << "  Optimum analysis: # of sections" << (int)infoTrj.section.size() << endl;
-        //}
-        for( int idxSec = 0; idxSec < (int)infoTrj.section.size(); ++idxSec ) {
-            min = -1.0;
-            int idxMinSet = -1;
-            vector<TrajectoryElement> optOfSec;
-            vector<int> idOptOfSec;
-            for( int idxSet = 0; idxSet < (int)infoTrj.section[ idxSec ].trjSet.size(); ++idxSet ) {
-                vector<TrajectoryElement> trjElement;
-                vector<int> idTrjElement;
-                double t1 = 0.0, t2 = 0.0, t3 = 0.0;
-                double e = Optimize( &trjElement, &idTrjElement, &reserve, idxSec, idxSet, 20, &infoTrj, &pointIdxToTrjNo, rnvtrjParam, &t1, &t2, &t3 );
-                if( e >= 0.0 && ( min < 0.0 || e < min ) ) {
-                    optOfSec = trjElement;
-                    idOptOfSec = idTrjElement;
-                    idxMinSet = idxSet;
-                    min = e;
-                }
-            }
-            cerr << " Optimization result: Set" << idxMinSet << endl;
-            cerr << "    # of trajectories " << optOfSec.size() << endl;
-
-            opt.insert( opt.end(), optOfSec.begin(), optOfSec.end() );
-            idOpt.insert( idOpt.end(), idOptOfSec.begin(), idOptOfSec.end() );
-        }
-
-//#define RE_RENOVATE
-#ifdef RE_RENOVATE
-        //
-        // $B:F=$I|$r9T$&(B
-        //if( myRank == 0 ) {
-            cerr << "  Re-renovation";
-        //}
-
-        // $B5a$a$?:GE,2r$r%;%C%H(B
-        infoTrj.trjElement = opt;
-
-        // $BM=Ls50@W$r5a$a$k(B
-        reserve.clear();
-        for( int idx = 0; idx < (int)idOpt.size(); ++idx ) {
-            if( idOpt[ idx ] != -1 ) {
-                reserve[ idx ] = idOpt[ idx ];
-            }
-        }
-
-        // $B%;%/%7%g%sJ,3d(B
-        pointIdxToTrjNo.clear();
-        DivideIntoSections( &infoTrj, &pointIdxToTrjNo, rnvtrjParam );
-
-        // $B3F%;%/%7%g%s$G%;%C%H$r:n@.(B
-        for( int i = 0; i < (int)infoTrj.section.size(); ++i ) {
-            MakeSet( i, &infoTrj, &reserve );
-        }
-
-        // $B:GE,2r$NC5:w(B
-        opt.clear();
-        idOpt.clear();
-        min = -1.0;
-        for( int idxSec = 0; idxSec < (int)infoTrj.section.size(); ++idxSec ) {
-            min = -1.0;
-            int idxMinSet = -1;
-            vector<TrajectoryElement> optOfSec;
-            vector<int> idOptOfSec;
-            for( int idxSet = 0; idxSet < (int)infoTrj.section[ idxSec ].trjSet.size(); ++idxSet ) {
-                vector<TrajectoryElement> trjElement;
-                vector<int> idTrjElement;
-                double t1 = 0.0, t2 = 0.0, t3 = 0.0;
-                double e = Optimize( &trjElement, &idTrjElement, &reserve, idxSec, idxSet, 100/*20*/, &infoTrj, &pointIdxToTrjNo, rnvtrjParam, &t1, &t2, &t3 );
-                if( e >= 0.0 && ( min < 0.0 || e < min ) ) {
-                    optOfSec = trjElement;
-                    idOptOfSec = idTrjElement;
-                    idxMinSet = idxSet;
-                    min = e;
-                }
-            }
-
-            opt.insert( opt.end(), optOfSec.begin(), optOfSec.end() );
-            idOpt.insert( idOpt.end(), idOptOfSec.begin(), idOptOfSec.end() );
-        }
-
-        //if( myRank == 0 ) {
-            cerr << "  Done..." << endl;
-        //}
-#endif
-
-	    //logTracking.renovation( TrackingProcessLogger::End );
-        //viewer.SetTrackingStatus( 3 );
-#endif
-
-        //logTracking.finishing( TrackingProcessLogger::Start );
+        logTracking.finishing( TrackingProcessLogger::Start );
 
         // IDñ¢äÑÇËìñÇƒÇÃãOê’Ç…êVÇµÇ¢IDÇêUÇÈ
         for( vector<int>::iterator itID = idOpt.begin(); itID != idOpt.end(); ++itID ) {
@@ -1862,43 +1417,6 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             //   (*p_ext_result)[ *it ]; 
             //}
 
-#if 0
-            map<int,CTrajectory>::const_iterator itResult = resultTrajectory.begin();
-            for( ; itResult != resultTrajectory.end(); ++itResult ) {
-                const CTrajectory& trajectory = itResult->second;
-                if( trajectory.size() > 0 ) {
-                    TrajectoryElement::iterator itPos = trajectory.front().begin();
-                    for( ; itPos != trajectory.front().end(); ++itPos ) {
-                        if( itPos->t == time ) {
-                            (*p_result)[ time ][ itResult->first ] = Point2d( itPos->x, itPos->y );
-
-                            const int trj_no = itPos->ID;
-                            if( trj_no >= 1 && trj_no < trajectoriesClustered.size() ) {
-                                for( CTrajectory::iterator it = trajectoriesClustered[ trj_no ].begin()
-                                   ; it != trajectoriesClustered[ trj_no ].end(); ++it ) {
-                                    TrajectoryElement::iterator itPos2;
-                                    if( ( itPos2 = it->find( PosXYT( 0.0, 0.0, time ) ) ) != it->end() ) {
-                                        (*p_ext_result)[ time ].insert( pair<int,Point2d>( itResult->first, Point2d( itPos2->x, itPos2->y ) ) );
-                                        PosXYT pos0, pos1;
-                                        pos0 = *itPos2;
-                                        advance( itPos2, 1 );
-                                        if( itPos2 != it->end() ) {
-                                            pos1 = *itPos2;
-                                            for( set<TIME_MICRO_SEC>::iterator it = it_start_pepmap_time; it != it_end_pepmap_time; ++it ) {
-                                                PosXYT pos;
-                                                pos.x = ( pos1.x - pos0.x ) / ( (double)( pos1.t - pos0.t ) ) * ( (double)( *it - *it_start_pepmap_time ) ) + pos0.x;
-                                                pos.y = ( pos1.y - pos0.y ) / ( (double)( pos1.t - pos0.t ) ) * ( (double)( *it - *it_start_pepmap_time ) ) + pos0.y;
-                                                (*p_ext_result)[ *it ].insert( pair<int,Point2d>( itResult->first, Point2d( pos.x, pos.y ) ) );
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-#endif
 	    cout << " time=" << time << "..." << flush;
             map<int,CTrajectory>::iterator itResult = resultTrajectory.begin();
             for( ; itResult != resultTrajectory.end(); ++itResult ) {
@@ -2031,9 +1549,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         ret = true;
 
-        //logTracking.finishing( TrackingProcessLogger::End );
+        logTracking.finishing( TrackingProcessLogger::End );
 
-        //logTracking.end_and_output2file();
+        logTracking.end_and_output2file();
         flgTrackingStarts = true;
 	cout << "done." << endl << flush;
     }
