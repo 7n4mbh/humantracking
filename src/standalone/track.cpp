@@ -484,17 +484,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         //timeTracking = commonParam.termTracking + 1000000000; // debug code
         flgFirst = false;
         flgTrackingStarts = true;
-        {
-            ostringstream oss;
-#ifdef WINDOWS_OS
-		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
-#endif
-#ifdef LINUX_OS
-		    oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
-#endif  
-            oss << "tracking.log";
-            logTracking.init( oss.str() );
-        }
+        logTracking.init( "tracking.log" );
         //viewer.SetStartTime( timeEarliestPEPMap );
         {
             ostringstream oss;
