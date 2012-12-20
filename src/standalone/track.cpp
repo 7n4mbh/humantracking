@@ -714,7 +714,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             int nClass = Clustering( &classID, dist, nTrj, 0.07/*0.18*//*0.22*//*0.2*//*0.07*/ );
             cout << " time=" << time << ", nClass=" << nClass << ", nTrj=" << nTrj << endl;
 
-            {
+            if( flgOutputTrackingProcessData2Files ) {
                 img = Scalar( 255, 255, 255 );
 
                 map<int,PosXYTID>::iterator itPos = itTrjIdxToPos->second.begin();
@@ -728,9 +728,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     //line( img, Point( col, row ), Point( col, row ), color_table[ classID[ itPos->first ] % sizeColorTable ], 1 );
                 }
 
-                if( flgOutputTrackingProcessData2Files ) {
-                    videoWriter.write( img );
-                }
+                videoWriter.write( img );
             }
 
             // Set classID to the field of 'ID' of PosXYTID at each trajectory.
