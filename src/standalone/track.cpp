@@ -484,18 +484,30 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         //timeTracking = commonParam.termTracking + 1000000000; // debug code
         flgFirst = false;
         flgTrackingStarts = true;
-        logTracking.init( "tracking.log" );
-        //viewer.SetStartTime( timeEarliestPEPMap );
-        ostringstream oss;
+        {
+            ostringstream oss;
 #ifdef WINDOWS_OS
-		oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
 #endif
 #ifdef LINUX_OS
-		oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+		    oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+#endif  
+            oss << "tracking.log";
+            logTracking.init( oss.str() );
+        }
+        //viewer.SetStartTime( timeEarliestPEPMap );
+        {
+            ostringstream oss;
+#ifdef WINDOWS_OS
+		    oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
 #endif
-        oss << "tracking.csv";
-        ofstream ofs( oss.str().c_str(), std::ios::out );
-        ofs << "time, # of clusters, # of combinations, # of connection patterns" << endl;
+#ifdef LINUX_OS
+		    oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+#endif
+            oss << "tracking.csv";
+            ofstream ofs( oss.str().c_str(), std::ios::out );
+            ofs << "time, # of clusters, # of combinations, # of connection patterns" << endl;
+        }
     }
 
     // debug code
