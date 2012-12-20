@@ -1505,9 +1505,6 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         }
 	cout << "done." << endl << flush;
 
-#ifndef NEW_CLUSTERING_ALGORITHM
-        delete [] distTable;
-#endif
 	cout << "Finalizing..." << flush;
         //
         // sampler
