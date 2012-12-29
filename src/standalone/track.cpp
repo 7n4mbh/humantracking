@@ -741,10 +741,11 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             time_to_hash_where_occupied[ time ].resize( (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) + 1, false );
 
             // Make a distance table at 'time'
+            logTracking.clustering_hashmap( TrackingProcessLogger::Start );
             map<int,PosXYTID>::iterator itPos1 = itTrjIdxToPos->second.begin();
             for( int idx1 = 0; idx1 < nTrj_at_time; ++idx1, ++itPos1 ) {
 
-                logTracking.clustering_hashmap( TrackingProcessLogger::Start );
+                //logTracking.clustering_hashmap( TrackingProcessLogger::Start );
                 {
                     const int row_on_pepmap = scale_m2px * ( ( itPos1->second.x - roi_x ) + roi_height / 2.0f );
                     const int col_on_pepmap = scale_m2px * ( ( itPos1->second.y - roi_y ) + roi_width / 2.0f );
@@ -753,7 +754,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     //time_to_hash_where_occupied[ time ].insert( keyval );
                     time_to_hash_where_occupied[ time ][ keyval ] = true;
                 }
-                logTracking.clustering_hashmap( TrackingProcessLogger::End );
+                //logTracking.clustering_hashmap( TrackingProcessLogger::End );
 
                 map<int,PosXYTID>::iterator itPos2 = itPos1;
                 for( int idx2 = idx1; idx2 < nTrj_at_time; ++idx2, ++itPos2 ) {
@@ -764,14 +765,15 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     dist[ idx1 + idx2 * nTrj_at_time ] = dist[ idx2 + idx1 * nTrj_at_time ] = d;
                 }
             }
+            logTracking.clustering_hashmap( TrackingProcessLogger::End );
 
             // clustering
             vector<int> classID( nTrj_at_time, -1 );
-            cout << " CCL(time=" << time << ")";
+            cout << " CCL(time=" << time << ")" << flush;
             logTracking.clustering_ccl( TrackingProcessLogger::Start );
             int nClass = Clustering( &classID, dist, nTrj_at_time, 0.07/*0.18*//*0.22*//*0.2*//*0.07*/ );
             logTracking.clustering_ccl( TrackingProcessLogger::End );
-            cout << ", nClass=" << nClass << ", nTrj_at_time=" << nTrj_at_time << endl;
+            cout << ", nClass=" << nClass << ", nTrj_at_time=" << nTrj_at_time << endl << flush;
 
             if( flgOutputTrackingProcessData2Files ) {
                 img = Scalar( 255, 255, 255 );
