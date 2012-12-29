@@ -723,9 +723,17 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         //map<unsigned long long,set<int> > time_to_hash_where_occupied;
         map<unsigned long long,vector<bool> > time_to_hash_where_occupied;
-
         map<unsigned long long, map<int,PosXYTID> >::iterator itTrjIdxToPos = time_to_TrjIdx_and_pos.begin();
-        double* dist = new double[ storageTrajectoryElement.size() * storageTrajectoryElement.size() ];
+        // 距離テーブルdistのメモリ確保を各時刻で毎回確保・解放することを避けるために
+        // 最も軌跡が多く含まれる時刻の軌跡数のサイズでdistを確保する
+        int sizeDist = 0;
+        for( ; itTrjIdxToPos != time_to_TrjIdx_and_pos.end(); ++itTrjIdxToPos ) {
+            if( sizeDist < itTrjIdxToPos->second.size() ) {
+                sizeDist = itTrjIdxToPos->second.size();
+            }
+        }
+        double* dist = new double[ sizeDist * sizeDist ];
+        itTrjIdxToPos = time_to_TrjIdx_and_pos.begin();
         for( ; itTrjIdxToPos != time_to_TrjIdx_and_pos.end(); ++itTrjIdxToPos ) {
             const unsigned long long time = itTrjIdxToPos->first;
             const int nTrj_at_time = itTrjIdxToPos->second.size();
@@ -805,6 +813,10 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         // Make a distance table among every trajectory
         cout << " Make a distance table among every trajectory...";
         const int nTrj = trajectoryForClustering.size();
+        if( sizeDist < nTrj ) {
+            delete [] dist;
+            dist = new double[ nTrj * nTrj ];
+        }
         //double* dist = new double[ nTrj * nTrj ];
         map<int,CTrajectory>::iterator itTrj1 = trajectoryForClustering.begin();
         for( int idx1 = 0; idx1 < nTrj; ++idx1, ++itTrj1 ) {
