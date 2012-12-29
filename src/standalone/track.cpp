@@ -167,6 +167,7 @@ double areConnectable( TrajectoryElement& trj1, TrajectoryElement& trj2, double 
     return 0.0;
 }
 
+/*
 double fitting_score( vector<int>& combination, vector<CTrajectory>& trajectories, map<unsigned long long,set<int> >& time_to_hash_where_occupied, vector< map<unsigned long long,set<int> > >& trj_time_to_hash_where_occupied )
 {
     map<unsigned long long,map<int,bool> > isOccupied;
@@ -204,7 +205,46 @@ double fitting_score( vector<int>& combination, vector<CTrajectory>& trajectorie
 
     return (double)occupied / (double)total;
 }
+*/
+double fitting_score( vector<int>& combination, vector<CTrajectory>& trajectories, map<unsigned long long,vector<bool> >& time_to_hash_where_occupied, vector< map<unsigned long long,set<int> > >& trj_time_to_hash_where_occupied )
+{
+    map<unsigned long long,map<int,bool> > isOccupied;
+    unsigned long total = 0;
+    {
+        map<unsigned long long,vector<bool> >::iterator itTimeToHash = time_to_hash_where_occupied.begin();
+        for( ; itTimeToHash != time_to_hash_where_occupied.end(); ++itTimeToHash ) {
+            for( int hash = 0; hash < itTimeToHash->second.size(); ++hash ) {
+                if( itTimeToHash->second.at( hash ) == true ) {
+                    isOccupied[ itTimeToHash->first ][ hash ] = false;
+                    ++total;
+                }
+            }
+        }
+    }
 
+    for( int i = 0; i < combination.size(); ++i ) {
+        map<unsigned long long,set<int> >::iterator itTimeToHash = trj_time_to_hash_where_occupied[ combination[ i ] ].begin();
+        for( ; itTimeToHash != trj_time_to_hash_where_occupied[ combination[ i ] ].end(); ++itTimeToHash ) {
+            for( set<int>::iterator itHash = itTimeToHash->second.begin(); itHash != itTimeToHash->second.end(); ++itHash ) {
+                if( isOccupied[ itTimeToHash->first ].find( *itHash ) != isOccupied[ itTimeToHash->first ].end() ) {
+                    isOccupied[ itTimeToHash->first ][ *itHash ] = true;
+                }
+            }
+        }
+    }
+
+    map<unsigned long long,map<int,bool> >::iterator itTimeToMapHash = isOccupied.begin();
+    unsigned long occupied = 0;
+    for( ; itTimeToMapHash != isOccupied.end(); ++itTimeToMapHash ) {
+        for( map<int,bool>::iterator itMapHash = itTimeToMapHash->second.begin(); itMapHash != itTimeToMapHash->second.end(); ++itMapHash ) {
+            if( itMapHash->second ) {
+                ++occupied;
+            }
+        }
+    }
+
+    return (double)occupied / (double)total;
+}
 
 double areCoherent( TrajectoryElement& trj1, TrajectoryElement& trj2, double threshold )
 {
@@ -681,13 +721,16 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             videoWriter.open( oss.str(), CV_FOURCC('X','V','I','D'), 10, Size( (int)img.cols, (int)img.rows ) );
         }
 
-        map<unsigned long long,set<int> > time_to_hash_where_occupied;
+        //map<unsigned long long,set<int> > time_to_hash_where_occupied;
+        map<unsigned long long,vector<bool> > time_to_hash_where_occupied;
 
         map<unsigned long long, map<int,PosXYTID> >::iterator itTrjIdxToPos = time_to_TrjIdx_and_pos.begin();
         for( ; itTrjIdxToPos != time_to_TrjIdx_and_pos.end(); ++itTrjIdxToPos ) {
             const unsigned long long time = itTrjIdxToPos->first;
             const int nTrj = itTrjIdxToPos->second.size();
             double* dist = new double[ nTrj * nTrj ];
+
+            time_to_hash_where_occupied[ time ].resize( (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) + 1, false );
 
             // Make a distance table at 'time'
             map<int,PosXYTID>::iterator itPos1 = itTrjIdxToPos->second.begin();
@@ -699,7 +742,8 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     const int col_on_pepmap = scale_m2px * ( ( itPos1->second.y - roi_y ) + roi_width / 2.0f );
                     const int nCol = (int)( scale_m2px * roi_width );
                     int keyval = row_on_pepmap * nCol + col_on_pepmap + 1;
-                    time_to_hash_where_occupied[ time ].insert( keyval );
+                    //time_to_hash_where_occupied[ time ].insert( keyval );
+                    time_to_hash_where_occupied[ time ][ keyval ] = true;
                 }
                 logTracking.clustering_hashmap( TrackingProcessLogger::End );
 
@@ -715,10 +759,11 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
             // clustering
             vector<int> classID( nTrj, -1 );
+            cout << " CCL(time=" << time << ")";
             logTracking.clustering_ccl( TrackingProcessLogger::Start );
             int nClass = Clustering( &classID, dist, nTrj, 0.07/*0.18*//*0.22*//*0.2*//*0.07*/ );
             logTracking.clustering_ccl( TrackingProcessLogger::End );
-            cout << " time=" << time << ", nClass=" << nClass << ", nTrj=" << nTrj << endl;
+            cout << ", nClass=" << nClass << ", nTrj=" << nTrj << endl;
 
             if( flgOutputTrackingProcessData2Files ) {
                 img = Scalar( 255, 255, 255 );
