@@ -22,14 +22,16 @@ void TrackingProcessLogger::init( const std::string& filename )
         << ", Process Time[usec]"
         << ", Process Time of Making Trajectories[usec]"
         << ", Process Time of Clustering[usec]"
+        << ", Process Time of Clustering (Hash Map) [usec]"
+        << ", Process Time of Clustering (CCL) [usec]"
+        << ", Process Time of Clustering (Finishing) [usec]"
         << ", Process Time of Renovation[usec]"
+        << ", Process Timee of Renovation (Hash Map) [usec]"
+        << ", Process Time of Renovation (Score) [usec]"
         << ", Finishing Process Time[usec]"
         << ", Percentage of Making Trajectories"
         << ", Percentage of Clustering"
-        << ", Percentage of Clustering (CCL)"
         << ", Percentage of Renovation"
-        << ", Percentage of Renovation (Hash Map)"
-        << ", Percentage of Renovation (Score)"
         << ", Percentage of Finishing"
         << ", Percentage of Finishing_A"
         << ", Percentage of Finishing_B"
@@ -42,7 +44,9 @@ void TrackingProcessLogger::start()
 {
     t_process_of_making_trajectory = t_start_of_making_trajectory = t_end_of_making_trajectory = 0;
     t_process_of_clustering = t_start_of_clustering = t_end_of_clustering = 0;
+    t_process_of_clustering_hashmap = t_start_of_clustering_hashmap = t_end_of_clustering_hashmap = 0;
     t_process_of_clustering_ccl = t_start_of_clustering_ccl = t_end_of_clustering_ccl = 0;
+    t_process_of_clustering_finishing = t_start_of_clustering_finishing = t_end_of_clustering_finishing = 0;
     t_process_of_renovation = t_start_of_renovation = t_end_of_renovation = 0;
     t_process_of_renovation_hashmap = t_start_of_renovation_hashmap = t_end_of_renovation_hashmap = 0;
     t_process_of_renovation_score = t_start_of_renovation_score = t_end_of_renovation_score = 0;
@@ -66,7 +70,9 @@ void TrackingProcessLogger::end_and_output2file()
         << t_process << ", "
         << t_process_of_making_trajectory << ", "
         << t_process_of_clustering << ", "
+        << t_process_of_clustering_hashmap << ", "
         << t_process_of_clustering_ccl << ", "
+        << t_process_of_clustering_finishing << ", "
         << t_process_of_renovation << ", "
         << t_process_of_renovation_hashmap << ", "
         << t_process_of_renovation_score << ", "
@@ -111,6 +117,16 @@ void TrackingProcessLogger::clustering( TrackingProcessLogger::Event evt )
     }
 }
 
+void TrackingProcessLogger::clustering_hashmap( TrackingProcessLogger::Event evt )
+{
+    if( evt == TrackingProcessLogger::Start ) {
+        t_start_of_clustering_hashmap = getTimeStamp();
+    } else if( evt == TrackingProcessLogger::End ) {
+        t_end_of_clustering_hashmap = getTimeStamp();
+        t_process_of_clustering_hashmap += t_end_of_clustering_hashmap - t_start_of_clustering_hashmap;
+    }
+}
+
 void TrackingProcessLogger::clustering_ccl( TrackingProcessLogger::Event evt )
 {
     if( evt == TrackingProcessLogger::Start ) {
@@ -118,6 +134,16 @@ void TrackingProcessLogger::clustering_ccl( TrackingProcessLogger::Event evt )
     } else if( evt == TrackingProcessLogger::End ) {
         t_end_of_clustering_ccl = getTimeStamp();
         t_process_of_clustering_ccl += t_end_of_clustering_ccl - t_start_of_clustering_ccl;
+    }
+}
+
+void TrackingProcessLogger::clustering_finishing( TrackingProcessLogger::Event evt )
+{
+    if( evt == TrackingProcessLogger::Start ) {
+        t_start_of_clustering_finishing = getTimeStamp();
+    } else if( evt == TrackingProcessLogger::End ) {
+        t_end_of_clustering_finishing = getTimeStamp();
+        t_process_of_clustering_finishing += t_end_of_clustering_finishing - t_start_of_clustering_finishing;
     }
 }
 

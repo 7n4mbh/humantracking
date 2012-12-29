@@ -13,7 +13,9 @@ private:
     unsigned long long t_start_of_tracking_block, t_end_of_tracking_block;
     unsigned long long t_process_of_making_trajectory, t_start_of_making_trajectory, t_end_of_making_trajectory;
     unsigned long long t_process_of_clustering, t_start_of_clustering, t_end_of_clustering;
+    unsigned long long t_process_of_clustering_hashmap, t_start_of_clustering_hashmap, t_end_of_clustering_hashmap;
     unsigned long long t_process_of_clustering_ccl, t_start_of_clustering_ccl, t_end_of_clustering_ccl;
+    unsigned long long t_process_of_clustering_finishing, t_start_of_clustering_finishing, t_end_of_clustering_finishing;
     unsigned long long t_process_of_renovation, t_start_of_renovation, t_end_of_renovation;
     unsigned long long t_process_of_renovation_hashmap, t_start_of_renovation_hashmap, t_end_of_renovation_hashmap;
     unsigned long long t_process_of_renovation_score, t_start_of_renovation_score, t_end_of_renovation_score;
@@ -36,7 +38,9 @@ public:
     void receive_pepmap( const PEPMapInfo& pepmap );
     void making_trajectory( TrackingProcessLogger::Event evt );
     void clustering( TrackingProcessLogger::Event evt );
+    void clustering_hashmap( TrackingProcessLogger::Event evt );
     void clustering_ccl( TrackingProcessLogger::Event evt );
+    void clustering_finishing( TrackingProcessLogger::Event evt );
     void renovation( TrackingProcessLogger::Event evt );
     void renovation_hashmap( TrackingProcessLogger::Event evt );
     void renovation_score( TrackingProcessLogger::Event evt );
