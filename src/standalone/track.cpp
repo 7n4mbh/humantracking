@@ -958,6 +958,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         cout << endl;
         cout << "Selecting the best combination of the clusters..." << endl;
         cout << " creating a hash table...";
+        logTracking.renovation_hashmap( TrackingProcessLogger::Start );
         // Create a hash table that maps a trajectory (CTrajectory) to where it occupied on plan-view map.
         vector< map<unsigned long long, set<int> > > trj_time_to_hash_where_occupied( nCluster );
         for( int i = 0; i < trajectoriesClustered.size(); ++i ) {
@@ -971,6 +972,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 }
             }
         }   
+        logTracking.renovation_hashmap( TrackingProcessLogger::End );
         cout << endl;
 
         // Create an 'independence' table for every two trajectories. 
@@ -1025,7 +1027,9 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
             score.resize( combination.size() );
             for( int i = 0; i < combination.size(); ++i ) {
+                logTracking.renovation_score( TrackingProcessLogger::Start );
                 score[ i ] = fitting_score( combination[ i ], trajectoriesAveraged, time_to_hash_where_occupied, trj_time_to_hash_where_occupied );
+                logTracking.renovation_score( TrackingProcessLogger::End );
                 ofs << "Combination " << i << ": "
                      << "fitting_score=" << score[ i ]
                      << ", ";
@@ -1329,10 +1333,10 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         {
                 ostringstream oss;
     #ifdef WINDOWS_OS
-		        oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
+		        //oss << "C:\\Users\\fukushi\\Documents\\project\\HumanTracking\\bin\\tmp_trajectories\\";
     #endif
     #ifdef LINUX_OS
-			    oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
+			    //oss << "/home/fukushi/project/HumanTracking/bin/tmp_trajectories/";
     #endif
                 oss << "tracking.csv";
                 ofstream ofs( oss.str().c_str(), std::ios::out | std::ios::app );
