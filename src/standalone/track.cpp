@@ -365,6 +365,29 @@ void connect( vector< vector< vector<int> > >* pDst, vector< vector<int> > init,
     return;
 }
 
+void connected_component_labeling( int label, int col_on_tableCCL, int row_on_tableCCL, int* tableCCL, int nColTableCCL, int nRowTableCCL )
+{
+    if( col_on_tableCCL < 0 || col_on_tableCCL >= nColTableCCL || row_on_tableCCL < 0 || row_on_tableCCL >= nRowTableCCL ) {
+        return;
+    }
+
+    if( tableCCL[ row_on_tableCCL * nColTableCCL + col_on_tableCCL ] != -1 ) {
+        return;
+    }
+
+    tableCCL[ row_on_tableCCL * nColTableCCL + col_on_tableCCL ] = label;
+
+    connected_component_labeling( label, col_on_tableCCL - 1, row_on_tableCCL - 1, tableCCL, nColTableCCL, nRowTableCCL );  // ç∂è„
+    connected_component_labeling( label, col_on_tableCCL    , row_on_tableCCL - 1, tableCCL, nColTableCCL, nRowTableCCL );  // è„
+    connected_component_labeling( label, col_on_tableCCL + 1, row_on_tableCCL - 1, tableCCL, nColTableCCL, nRowTableCCL );  // âEè„
+    connected_component_labeling( label, col_on_tableCCL - 1, row_on_tableCCL    , tableCCL, nColTableCCL, nRowTableCCL );  // ç∂
+    connected_component_labeling( label, col_on_tableCCL + 1, row_on_tableCCL    , tableCCL, nColTableCCL, nRowTableCCL );  // âE
+    connected_component_labeling( label, col_on_tableCCL - 1, row_on_tableCCL + 1, tableCCL, nColTableCCL, nRowTableCCL );  // ç∂â∫
+    connected_component_labeling( label, col_on_tableCCL    , row_on_tableCCL + 1, tableCCL, nColTableCCL, nRowTableCCL );  // â∫
+    connected_component_labeling( label, col_on_tableCCL + 1, row_on_tableCCL + 1, tableCCL, nColTableCCL, nRowTableCCL );  // âEâ∫
+
+}
+
 bool load_track_parameters( std::string strPath, std::string strFileName )
 {
     commonParam.termTracking = 10000000;//8500000;//10000000;
@@ -733,11 +756,60 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             }
         }
         double* dist = new double[ sizeDist * sizeDist ];
+
+        const double thCCL = 0.07;
+        const int nRowTableCCL = (int)( roi_height * ( 1.0 / thCCL ) );
+        const int nColTableCCL = (int)( roi_width * ( 1.0 / thCCL ) );
+        int* tableCCL = new int[ nRowTableCCL * nColTableCCL ];
+        memset( tableCCL, 0, nRowTableCCL * nColTableCCL * sizeof(int) );
+        vector<int> trjIdxToCCLHash, classID;
+
         itTrjIdxToPos = time_to_TrjIdx_and_pos.begin();
         for( ; itTrjIdxToPos != time_to_TrjIdx_and_pos.end(); ++itTrjIdxToPos ) {
             const unsigned long long time = itTrjIdxToPos->first;
             const int nTrj_at_time = itTrjIdxToPos->second.size();
+#define NEW_CCL_ALGORITHM
+#ifdef NEW_CCL_ALGORITHM
+            time_to_hash_where_occupied[ time ].resize( (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) + 1, false );
+            trjIdxToCCLHash.resize( nTrj_at_time, 0 );
+            map<int,PosXYTID>::iterator itPos = itTrjIdxToPos->second.begin();
+            logTracking.clustering_hashmap( TrackingProcessLogger::Start );
+            for( int idx = 0; idx < nTrj_at_time; ++idx, ++itPos) {
+                {
+                    const int row_on_pepmap = scale_m2px * ( ( itPos->second.x - roi_x ) + roi_height / 2.0f );
+                    const int col_on_pepmap = scale_m2px * ( ( itPos->second.y - roi_y ) + roi_width / 2.0f );
+                    const int nCol = (int)( scale_m2px * roi_width );
+                    int keyval = row_on_pepmap * nCol + col_on_pepmap + 1;
+                    time_to_hash_where_occupied[ time ][ keyval ] = true;
+                }
+                {
+                    const int row_on_tableCCL = ( 1.0 / thCCL ) * ( ( itPos->second.x - roi_x ) + roi_height / 2.0f );
+                    const int col_on_tableCCL = ( 1.0 / thCCL ) * ( ( itPos->second.y - roi_y ) + roi_width / 2.0f );
+                    int CCLHash = row_on_tableCCL * nColTableCCL + col_on_tableCCL;
+                    trjIdxToCCLHash[ idx ] = CCLHash;
+                    tableCCL[ CCLHash ] = -1;
+                }
+            }
+            logTracking.clustering_hashmap( TrackingProcessLogger::End );
 
+            logTracking.clustering_ccl( TrackingProcessLogger::Start );
+            int label = 1;
+            for( int col_on_tableCCL = 0; col_on_tableCCL < nColTableCCL; ++col_on_tableCCL ) {
+                for( int row_on_tableCCL = 0; row_on_tableCCL < nColTableCCL; ++row_on_tableCCL ) {
+                    if( tableCCL[ row_on_tableCCL * nColTableCCL + col_on_tableCCL ] == -1 ) {
+                        connected_component_labeling( label, col_on_tableCCL, row_on_tableCCL, tableCCL, nColTableCCL, nRowTableCCL );
+                        ++label;
+                    }
+                }
+            }
+
+            classID.resize( nTrj_at_time );
+            for( int idx = 0; idx < nTrj_at_time; ++idx ) {
+                const int CCLHash = trjIdxToCCLHash[ idx ];
+                classID[ idx ] = tableCCL[ CCLHash ];
+            }
+            logTracking.clustering_ccl( TrackingProcessLogger::End );
+#else
             time_to_hash_where_occupied[ time ].resize( (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) + 1, false );
 
             // Make a distance table at 'time'
@@ -774,7 +846,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             int nClass = Clustering( &classID, dist, nTrj_at_time, 0.07/*0.18*//*0.22*//*0.2*//*0.07*/ );
             logTracking.clustering_ccl( TrackingProcessLogger::End );
             cout << ", nClass=" << nClass << ", nTrj_at_time=" << nTrj_at_time << endl << flush;
-
+#endif
             if( flgOutputTrackingProcessData2Files ) {
                 img = Scalar( 255, 255, 255 );
 
@@ -794,7 +866,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
             logTracking.clustering_finishing( TrackingProcessLogger::Start );
             // Set classID to the field of 'ID' of PosXYTID at each trajectory.
-            map<int,PosXYTID>::iterator itPos = itTrjIdxToPos->second.begin();
+            /*map<int,PosXYTID>::iterator*/ itPos = itTrjIdxToPos->second.begin();
             for( int idx = 0; idx < nTrj_at_time; ++idx, ++itPos ) {
                 map<int,CTrajectory>::iterator itIdxToTrj = trajectoryForClustering.find( itPos->first ); 
                 if( itIdxToTrj != trajectoryForClustering.end() ) {
@@ -813,7 +885,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
 
         // Make a distance table among every trajectory
-        cout << " Make a distance table among every trajectory...";
+        cout << " Make a distance table among every trajectory..." << flush;
         const int nTrj = trajectoryForClustering.size();
         if( sizeDist < nTrj ) {
             delete [] dist;
@@ -828,7 +900,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     dist_trajectory_element( *itTrj1->second.begin(), *itTrj2->second.begin() );
             }
         }
-        cout << "done." << endl;
+        cout << "done." << endl << flush;
         
         //Clustering
         //vector<int> classID( nTrj, -1 );
@@ -838,10 +910,10 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
 
         //vector< vector<int> > tmp;
         //Clustering2( &tmp, classID, dist, nTrj, 0.1, 10.0 );
-        cout << " Clustering3()...";
+        cout << " Clustering3()..." << flush;
         vector< vector<int> > tmp;
         Clustering3( &tmp, dist, nTrj, 0.1 );
-        cout << "done." << endl;
+        cout << "done." << endl << flush;
 
         cout << " Storing the trajectories to trajectoriesClustered...";
         trajectoriesClustered.clear();
