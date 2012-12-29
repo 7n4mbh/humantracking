@@ -717,7 +717,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             vector<int> classID( nTrj, -1 );
             logTracking.clustering_ccl( TrackingProcessLogger::Start );
             int nClass = Clustering( &classID, dist, nTrj, 0.07/*0.18*//*0.22*//*0.2*//*0.07*/ );
-             logTracking.clustering_ccl( TrackingProcessLogger::End );
+            logTracking.clustering_ccl( TrackingProcessLogger::End );
             cout << " time=" << time << ", nClass=" << nClass << ", nTrj=" << nTrj << endl;
 
             if( flgOutputTrackingProcessData2Files ) {
@@ -737,6 +737,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 videoWriter.write( img );
             }
 
+            logTracking.clustering_finishing( TrackingProcessLogger::Start );
             // Set classID to the field of 'ID' of PosXYTID at each trajectory.
             map<int,PosXYTID>::iterator itPos = itTrjIdxToPos->second.begin();
             for( int idx = 0; idx < nTrj; ++idx, ++itPos ) {
@@ -751,6 +752,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                     }
                 }
             }
+            logTracking.clustering_finishing( TrackingProcessLogger::End );
 
             delete [] dist;
         }
