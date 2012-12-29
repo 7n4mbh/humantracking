@@ -725,16 +725,17 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
         map<unsigned long long,vector<bool> > time_to_hash_where_occupied;
 
         map<unsigned long long, map<int,PosXYTID> >::iterator itTrjIdxToPos = time_to_TrjIdx_and_pos.begin();
+        const int nTrj = trajectoryForClustering.size();
+        double* dist = new double[ nTrj * nTrj ];
         for( ; itTrjIdxToPos != time_to_TrjIdx_and_pos.end(); ++itTrjIdxToPos ) {
             const unsigned long long time = itTrjIdxToPos->first;
-            const int nTrj = itTrjIdxToPos->second.size();
-            double* dist = new double[ nTrj * nTrj ];
+            const int nTrj_at_time = itTrjIdxToPos->second.size();
 
             time_to_hash_where_occupied[ time ].resize( (int)( roi_height * scale_m2px ) * (int)( roi_width * scale_m2px ) + 1, false );
 
             // Make a distance table at 'time'
             map<int,PosXYTID>::iterator itPos1 = itTrjIdxToPos->second.begin();
-            for( int idx1 = 0; idx1 < nTrj; ++idx1, ++itPos1 ) {
+            for( int idx1 = 0; idx1 < nTrj_at_time; ++idx1, ++itPos1 ) {
 
                 logTracking.clustering_hashmap( TrackingProcessLogger::Start );
                 {
@@ -748,28 +749,28 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
                 logTracking.clustering_hashmap( TrackingProcessLogger::End );
 
                 map<int,PosXYTID>::iterator itPos2 = itPos1;
-                for( int idx2 = idx1; idx2 < nTrj; ++idx2, ++itPos2 ) {
+                for( int idx2 = idx1; idx2 < nTrj_at_time; ++idx2, ++itPos2 ) {
                     double dist_x, dist_y, d;
                     dist_x = ( itPos1->second.x - itPos2->second.x );
                     dist_y = ( itPos1->second.y - itPos2->second.y );
                     d = sqrt( dist_x * dist_x + dist_y * dist_y );
-                    dist[ idx1 + idx2 * nTrj ] = dist[ idx2 + idx1 * nTrj ] = d;
+                    dist[ idx1 + idx2 * nTrj_at_time ] = dist[ idx2 + idx1 * nTrj_at_time ] = d;
                 }
             }
 
             // clustering
-            vector<int> classID( nTrj, -1 );
+            vector<int> classID( nTrj_at_time, -1 );
             cout << " CCL(time=" << time << ")";
             logTracking.clustering_ccl( TrackingProcessLogger::Start );
-            int nClass = Clustering( &classID, dist, nTrj, 0.07/*0.18*//*0.22*//*0.2*//*0.07*/ );
+            int nClass = Clustering( &classID, dist, nTrj_at_time, 0.07/*0.18*//*0.22*//*0.2*//*0.07*/ );
             logTracking.clustering_ccl( TrackingProcessLogger::End );
-            cout << ", nClass=" << nClass << ", nTrj=" << nTrj << endl;
+            cout << ", nClass=" << nClass << ", nTrj_at_time=" << nTrj_at_time << endl;
 
             if( flgOutputTrackingProcessData2Files ) {
                 img = Scalar( 255, 255, 255 );
 
                 map<int,PosXYTID>::iterator itPos = itTrjIdxToPos->second.begin();
-                for( int i = 0; i < nTrj; ++i, ++itPos ) {
+                for( int i = 0; i < nTrj_at_time; ++i, ++itPos ) {
                     int row = (int)( scale_m2px_for_clustering_video * ( ( itPos->second.x - roi_x ) + roi_height / 2.0f ) );
                     int col = (int)( scale_m2px_for_clustering_video * ( ( itPos->second.y - roi_y ) + roi_width / 2.0f ) );
                     Scalar color = color_table[ classID[ i ] % sizeColorTable ];
@@ -785,7 +786,7 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             logTracking.clustering_finishing( TrackingProcessLogger::Start );
             // Set classID to the field of 'ID' of PosXYTID at each trajectory.
             map<int,PosXYTID>::iterator itPos = itTrjIdxToPos->second.begin();
-            for( int idx = 0; idx < nTrj; ++idx, ++itPos ) {
+            for( int idx = 0; idx < nTrj_at_time; ++idx, ++itPos ) {
                 map<int,CTrajectory>::iterator itIdxToTrj = trajectoryForClustering.find( itPos->first ); 
                 if( itIdxToTrj != trajectoryForClustering.end() ) {
                     TrajectoryElement::iterator it = itIdxToTrj->second.begin()->find( PosXYT( 0.0, 0.0, time ) );
@@ -799,13 +800,13 @@ bool track( std::map< unsigned long long, std::map<int,cv::Point2d> >* p_result,
             }
             logTracking.clustering_finishing( TrackingProcessLogger::End );
 
-            delete [] dist;
         }
+
 
         // Make a distance table among every trajectory
         cout << " Make a distance table among every trajectory...";
-        const int nTrj = trajectoryForClustering.size();
-        double* dist = new double[ nTrj * nTrj ];
+        //const int nTrj = trajectoryForClustering.size();
+        //double* dist = new double[ nTrj * nTrj ];
         map<int,CTrajectory>::iterator itTrj1 = trajectoryForClustering.begin();
         for( int idx1 = 0; idx1 < nTrj; ++idx1, ++itTrj1 ) {
             map<int,CTrajectory>::iterator itTrj2 = itTrj1;
